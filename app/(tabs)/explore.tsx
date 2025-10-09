@@ -1,112 +1,261 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { ThemedText } from "@/components/themed-text";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import React from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+interface SettingItemProps {
+  title: string;
+  icon: string;
+  onPress?: () => void;
+  showChevron?: boolean;
+}
 
-export default function TabTwoScreen() {
+function SettingItem({
+  title,
+  icon,
+  onPress,
+  showChevron = true,
+}: SettingItemProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
+    <TouchableOpacity
+      style={[
+        styles.settingItem,
+        {
+          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+        },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.settingContent}>
+        <View
+          style={[
+            styles.settingIconContainer,
+            {
+              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+            },
+          ]}
+        >
+          <IconSymbol
+            name={icon}
+            size={22}
+            color={isDark ? "#FFFFFF" : "#000000"}
+          />
+        </View>
+        <ThemedText style={styles.settingTitle}>{title}</ThemedText>
+      </View>
+      {showChevron && (
         <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
+          name="chevron.right"
+          size={20}
+          color={isDark ? "#8E8E93" : "#C7C7CC"}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+export default function ProfileScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  return (
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
+      ]}
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#000000" : "#F2F2F7"}
+      />
+      <View style={styles.header}>
+        <ThemedText style={styles.headerTitle}>Profile</ThemedText>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Section */}
+        <View style={styles.section}>
+          <View
+            style={[
+              styles.profileCard,
+              {
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.avatar,
+                {
+                  backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                },
+              ]}
+            >
+              <IconSymbol
+                name="person.fill"
+                size={32}
+                color={isDark ? "#FFFFFF" : "#000000"}
+              />
+            </View>
+            <ThemedText style={styles.userName}>User</ThemedText>
+            <ThemedText style={styles.userEmail}>user@example.com</ThemedText>
+          </View>
+        </View>
+
+        {/* Settings Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Settings</ThemedText>
+          <SettingItem
+            title="Notifications"
+            icon="bell.fill"
+            onPress={() => console.log("Notifications pressed")}
+          />
+          <SettingItem
+            title="Language"
+            icon="globe"
+            onPress={() => console.log("Language pressed")}
+          />
+          <SettingItem
+            title="Font Size"
+            icon="textformat.size"
+            onPress={() => console.log("Font Size pressed")}
+          />
+          <SettingItem
+            title="Theme"
+            icon="moon.fill"
+            onPress={() => console.log("Theme pressed")}
+          />
+        </View>
+
+        {/* About Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>About</ThemedText>
+          <SettingItem
+            title="Rate App"
+            icon="star.fill"
+            onPress={() => console.log("Rate App pressed")}
+          />
+          <SettingItem
+            title="Share App"
+            icon="square.and.arrow.up"
+            onPress={() => console.log("Share App pressed")}
+          />
+          <SettingItem
+            title="Privacy Policy"
+            icon="lock.fill"
+            onPress={() => console.log("Privacy Policy pressed")}
+          />
+          <SettingItem
+            title="Terms of Service"
+            icon="doc.text.fill"
+            onPress={() => console.log("Terms of Service pressed")}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 34,
+    fontWeight: "700",
+    letterSpacing: -1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    opacity: 0.6,
+    marginBottom: 12,
+    marginLeft: 4,
+    letterSpacing: 0.5,
+  },
+  profileCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 32,
+    alignItems: "center",
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  userName: {
+    fontSize: 22,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 15,
+    opacity: 0.6,
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 8,
+  },
+  settingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  settingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  settingTitle: {
+    fontSize: 17,
+    fontWeight: "500",
+    letterSpacing: -0.4,
   },
 });

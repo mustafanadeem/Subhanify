@@ -1,98 +1,317 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { CategoryCard } from "@/components/category-card";
+import { DuaCard } from "@/components/dua-card";
+import { ThemedText } from "@/components/themed-text";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useRouter } from "expo-router";
+import React, { useRef, useState } from "react";
+import {
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+type TabType = "adhkar" | "duas";
+
+const adhkarCategories = [
+  {
+    id: "1",
+    title: "Morning",
+    subtitle: "Tap to explore",
+    icon: "sunrise.fill",
+    count: 3,
+  },
+  {
+    id: "2",
+    title: "Evening",
+    subtitle: "Tap to explore",
+    icon: "sunset.fill",
+    count: 2,
+  },
+  {
+    id: "3",
+    title: "Before Sleep",
+    subtitle: "Tap to explore",
+    icon: "moon.fill",
+    count: 1,
+  },
+  {
+    id: "4",
+    title: "After Prayer",
+    subtitle: "Tap to explore",
+    icon: "sparkles",
+    count: 2,
+  },
+  {
+    id: "5",
+    title: "General",
+    subtitle: "Tap to explore",
+    icon: "star.fill",
+    count: 1,
+  },
+];
+
+const duasCategories = [
+  {
+    id: "1",
+    title: "Daily Duas",
+    subtitle: "Tap to explore",
+    icon: "sun.max.fill",
+    count: 5,
+  },
+  {
+    id: "2",
+    title: "Traveling",
+    subtitle: "Tap to explore",
+    icon: "airplane",
+    count: 3,
+  },
+  {
+    id: "3",
+    title: "Health",
+    subtitle: "Tap to explore",
+    icon: "heart.fill",
+    count: 4,
+  },
+  {
+    id: "4",
+    title: "Protection",
+    subtitle: "Tap to explore",
+    icon: "shield.fill",
+    count: 2,
+  },
+  {
+    id: "5",
+    title: "Gratitude",
+    subtitle: "Tap to explore",
+    icon: "hands.sparkles.fill",
+    count: 3,
+  },
+];
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [activeTab, setActiveTab] = useState<TabType>("adhkar");
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const scrollViewRef = useRef<ScrollView>(null);
+  const router = useRouter();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleTabPress = (tab: TabType) => {
+    setActiveTab(tab);
+    const pageIndex = tab === "adhkar" ? 0 : 1;
+    scrollViewRef.current?.scrollTo({
+      x: pageIndex * SCREEN_WIDTH,
+      animated: true,
+    });
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const page = Math.round(offsetX / SCREEN_WIDTH);
+    const newTab = page === 0 ? "adhkar" : "duas";
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  };
+
+  const handleCardPress = (category: string) => {
+    router.push({
+      pathname: "/adhkar-detail",
+      params: { category },
+    });
+  };
+
+  return (
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
+      ]}
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#000000" : "#F2F2F7"}
+      />
+      <View style={styles.header}>
+        <ThemedText style={styles.headerTitle}>Subhanify</ThemedText>
+      </View>
+
+      {/* Tabs */}
+      <View
+        style={[
+          styles.tabsContainer,
+          { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
+        ]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            activeTab === "adhkar" && styles.tabActive,
+            activeTab === "adhkar" && {
+              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+            },
+          ]}
+          onPress={() => handleTabPress("adhkar")}
+        >
+          <ThemedText
+            style={[
+              styles.tabText,
+              activeTab === "adhkar" && styles.tabTextActive,
+            ]}
+          >
+            Adhkar
+          </ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            activeTab === "duas" && styles.tabActive,
+            activeTab === "duas" && {
+              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+            },
+          ]}
+          onPress={() => handleTabPress("duas")}
+        >
+          <ThemedText
+            style={[
+              styles.tabText,
+              activeTab === "duas" && styles.tabTextActive,
+            ]}
+          >
+            Duas
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable Content */}
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.pagerView}
+      >
+        {/* Adhkar Page */}
+        <View style={styles.page}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.cardsContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {adhkarCategories.map((category) => (
+              <CategoryCard
+                key={category.id}
+                title={category.title}
+                subtitle={category.subtitle}
+                icon={category.icon}
+                count={category.count}
+                onPress={() => handleCardPress(category.title)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Duas Page */}
+        <View style={styles.page}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.gridContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.grid}>
+              {duasCategories.map((category) => (
+                <View key={category.id} style={styles.gridItem}>
+                  <DuaCard
+                    title={category.title}
+                    subtitle={category.subtitle}
+                    icon={category.icon}
+                    count={category.count}
+                    onPress={() => handleCardPress(category.title)}
+                  />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  headerTitle: {
+    fontSize: 34,
+    fontWeight: "700",
+    letterSpacing: -1,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    padding: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  tabActive: {
+    // backgroundColor applied inline based on theme
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: "500",
+    opacity: 0.6,
+  },
+  tabTextActive: {
+    fontWeight: "600",
+    opacity: 1,
+  },
+  pagerView: {
+    flex: 1,
+  },
+  page: {
+    width: SCREEN_WIDTH,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  cardsContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  gridContainer: {
+    paddingHorizontal: 14,
+    paddingBottom: 20,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -6,
+  },
+  gridItem: {
+    width: "50%",
+    paddingHorizontal: 6,
+    marginBottom: 12,
   },
 });
