@@ -9,7 +9,20 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mustafanadeen23.subhanifyreact",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Subhanify needs your location to remind you of adhkar when you enter or leave specific places like mosques, home, or market.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Subhanify needs background location access to send you adhkar reminders when you enter or leave your saved locations, even when the app is not active.",
+        "NSLocationAlwaysUsageDescription": "Subhanify needs background location access to send you adhkar reminders when you enter or leave your saved locations.",
+        "UIBackgroundModes": [
+          "location"
+        ]
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyCDw4QycSxCmGs1o6GMvifFL32qAR6L5wc"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +32,19 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.mustafanadeen23.subhanifyreact",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "POST_NOTIFICATIONS"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCDw4QycSxCmGs1o6GMvifFL32qAR6L5wc"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -38,11 +63,36 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Subhanify needs your location to remind you of adhkar when you enter or leave specific places like mosques, home, or market.",
+          "locationAlwaysPermission": "Subhanify needs background location access to send you adhkar reminders when you enter or leave your saved locations.",
+          "locationWhenInUsePermission": "Subhanify needs your location to remind you of adhkar when you enter or leave specific places.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#2196F3",
+          "sounds": []
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1298b47e-e2ba-46f8-afa9-70caf85dc5b7"
+      }
     }
   }
 }

@@ -3,13 +3,13 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface SettingItemProps {
   title: string;
@@ -77,6 +77,7 @@ export default function ProfileScreen() {
         styles.container,
         { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
       ]}
+      edges={["top", "left", "right"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
@@ -181,11 +182,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 34,
+    paddingTop: 16,
     fontWeight: "700",
     letterSpacing: -1,
   },
