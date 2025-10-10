@@ -304,8 +304,9 @@ export default function LocationsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Map */}
-      <View style={styles.mapContainer}>
+      <ScrollView style={styles.scrollContent}>
+        {/* Map */}
+        <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
           provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
@@ -348,10 +349,10 @@ export default function LocationsScreen() {
             </React.Fragment>
           ))}
         </MapView>
-      </View>
+        </View>
 
-      {/* Geofencing Toggle */}
-      <View
+        {/* Geofencing Toggle */}
+        <View
         style={[
           styles.toggleContainer,
           { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
@@ -391,10 +392,9 @@ export default function LocationsScreen() {
           onValueChange={handleToggleGeofencing}
           disabled={locations.length === 0}
         />
-      </View>
+        </View>
 
-      {/* Locations List */}
-      <ScrollView style={styles.listContainer}>
+        {/* Locations List */}
         {locations.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons
@@ -487,6 +487,9 @@ export default function LocationsScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollContent: {
     flex: 1,
   },
   header: {

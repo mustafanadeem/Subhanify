@@ -598,11 +598,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    padding: 8,
   },
   categoryLabel: {
     marginTop: 8,
     fontSize: 12,
     fontWeight: "600",
+    textAlign: "center",
   },
   mapContainer: {
     height: 200,
