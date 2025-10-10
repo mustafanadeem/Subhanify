@@ -17,8 +17,8 @@ import {
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -70,6 +70,17 @@ export default function LocationsScreen() {
   useEffect(() => {
     initialize();
   }, []);
+
+  // Reload locations when screen comes into focus (after adding/editing)
+  useFocusEffect(
+    useCallback(() => {
+      loadLocations();
+      // Also refresh geofencing status
+      getGeofencingStatus().then((status) => {
+        setGeofencingActive(status.isMonitoring);
+      });
+    }, [])
+  );
 
   const initialize = async () => {
     try {
@@ -127,6 +138,7 @@ export default function LocationsScreen() {
   const loadLocations = async () => {
     try {
       const savedLocations = await getAllLocations();
+      console.log("Loaded locations:", savedLocations.length);
       setLocations(savedLocations);
     } catch (error) {
       console.error("Error loading locations:", error);
