@@ -10,7 +10,7 @@ import { LocationCategory, SavedLocation } from "@/types/location";
 import { getLocationById, saveLocation } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -34,7 +34,7 @@ const categoryOptions: {
   label: string;
   icon: string;
 }[] = [
-  { value: "mosque", label: "Mosque", icon: "business" },
+  { value: "mosque", label: "Mosque", icon: "moon" },
   { value: "home", label: "Home", icon: "home" },
   { value: "work", label: "Work", icon: "briefcase" },
   { value: "market", label: "Market", icon: "cart" },
@@ -206,13 +206,15 @@ export default function LocationDetailScreen() {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: Colors[colorScheme ?? "light"].background },
-      ]}
-    >
-      {/* Header */}
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
+        ]}
+      >
+        {/* Header */}
       <View
         style={[
           styles.header,
@@ -538,6 +540,7 @@ export default function LocationDetailScreen() {
         </View>
       </ScrollView>
     </View>
+    </>
   );
 }
 

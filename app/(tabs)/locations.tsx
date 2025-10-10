@@ -33,7 +33,7 @@ import {
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 const categoryIcons: Record<LocationCategory, string> = {
-  mosque: "business",
+  mosque: "moon",
   home: "home",
   work: "briefcase",
   market: "cart",
