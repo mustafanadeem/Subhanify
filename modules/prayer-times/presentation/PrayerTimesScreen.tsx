@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
 import { PrayerTimesRepository } from "../data/repository";
@@ -31,6 +32,16 @@ export default function PrayerTimesScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Reload settings when screen comes into focus (e.g., after changing settings)
+  useFocusEffect(
+    useCallback(() => {
+      const newSettings = repo.loadSettings();
+      setSettings(newSettings);
+      // Reload prayer times to reflect any calculation method changes
+      load();
+    }, [load])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
