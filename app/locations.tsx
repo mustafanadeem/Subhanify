@@ -17,12 +17,13 @@ import {
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Switch,
@@ -56,6 +57,7 @@ export default function LocationsScreen() {
 
   const [locations, setLocations] = useState<SavedLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObject | null>(null);
   const [geofencingActive, setGeofencingActive] = useState(false);
@@ -70,6 +72,13 @@ export default function LocationsScreen() {
   useEffect(() => {
     initialize();
   }, []);
+
+  // Reload locations when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadLocations();
+    }, [])
+  );
 
   const initialize = async () => {
     try {
@@ -112,10 +121,19 @@ export default function LocationsScreen() {
   const loadLocations = async () => {
     try {
       const savedLocations = await getAllLocations();
+      console.log("Loaded locations:", savedLocations.length);
       setLocations(savedLocations);
     } catch (error) {
       console.error("Error loading locations:", error);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadLocations();
+    const status = await getGeofencingStatus();
+    setGeofencingActive(status.isMonitoring);
+    setRefreshing(false);
   };
 
   const handleAddLocation = () => {
@@ -354,7 +372,12 @@ export default function LocationsScreen() {
       </View>
 
       {/* Locations List */}
-      <ScrollView style={styles.listContainer}>
+      <ScrollView
+        style={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
         {locations.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons
@@ -557,4 +580,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

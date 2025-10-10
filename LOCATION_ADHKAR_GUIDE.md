@@ -173,3 +173,4 @@ Added authentic adhkar for:
 
 For issues or questions, please check app settings and permissions first.
 
+
