@@ -1,5 +1,11 @@
 # Welcome to your Expo app 👋
 
+## Prayer Times
+
+Feature adds a `Prayer Times` tab for London using AlAdhan monthly calendar with caching and a Settings tab for method, Asr school, high-latitude, and tuning.
+
+No API keys required.
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
