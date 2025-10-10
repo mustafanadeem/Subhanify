@@ -1,19 +1,20 @@
 import { CategoryCard } from "@/components/category-card";
 import { DuaCard } from "@/components/dua-card";
+import { PrayerCarousel } from "@/components/prayer-carousel";
 import { ThemedText } from "@/components/themed-text";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
-  Dimensions,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -137,6 +138,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.cardsContainer}
             showsVerticalScrollIndicator={false}
           >
+            <PrayerCarousel />
             {adhkarCategories.map((category) => (
               <CategoryCard
                 key={category.id}

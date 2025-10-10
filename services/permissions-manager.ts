@@ -14,7 +14,6 @@
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { Alert, Linking, Platform } from 'react-native';
-import * as IntentLauncher from 'expo-intent-launcher';
 
 export interface PermissionStatus {
   granted: boolean;
