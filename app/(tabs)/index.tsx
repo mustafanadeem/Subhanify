@@ -2,99 +2,27 @@ import { CategoryCard } from "@/components/category-card";
 import { DuaCard } from "@/components/dua-card";
 import { ThemedText } from "@/components/themed-text";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 type TabType = "adhkar" | "duas";
 
-const adhkarCategories = [
-  {
-    id: "1",
-    title: "Morning",
-    subtitle: "Tap to explore",
-    icon: "sunrise.fill",
-    count: 3,
-  },
-  {
-    id: "2",
-    title: "Evening",
-    subtitle: "Tap to explore",
-    icon: "sunset.fill",
-    count: 2,
-  },
-  {
-    id: "3",
-    title: "Before Sleep",
-    subtitle: "Tap to explore",
-    icon: "moon.fill",
-    count: 1,
-  },
-  {
-    id: "4",
-    title: "After Prayer",
-    subtitle: "Tap to explore",
-    icon: "sparkles",
-    count: 2,
-  },
-  {
-    id: "5",
-    title: "General",
-    subtitle: "Tap to explore",
-    icon: "star.fill",
-    count: 1,
-  },
-];
-
-const duasCategories = [
-  {
-    id: "1",
-    title: "Daily Duas",
-    subtitle: "Tap to explore",
-    icon: "sun.max.fill",
-    count: 5,
-  },
-  {
-    id: "2",
-    title: "Traveling",
-    subtitle: "Tap to explore",
-    icon: "airplane",
-    count: 3,
-  },
-  {
-    id: "3",
-    title: "Health",
-    subtitle: "Tap to explore",
-    icon: "heart.fill",
-    count: 4,
-  },
-  {
-    id: "4",
-    title: "Protection",
-    subtitle: "Tap to explore",
-    icon: "shield.fill",
-    count: 2,
-  },
-  {
-    id: "5",
-    title: "Gratitude",
-    subtitle: "Tap to explore",
-    icon: "hands.sparkles.fill",
-    count: 3,
-  },
-];
+// Get real data from database
+const adhkarCategories = getAdhkarCategories();
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("adhkar");
@@ -121,10 +49,10 @@ export default function HomeScreen() {
     }
   };
 
-  const handleCardPress = (category: string) => {
+  const handleCardPress = (title: string, categoryKey: string) => {
     router.push({
       pathname: "/adhkar-detail",
-      params: { category },
+      params: { category: categoryKey, title },
     });
   };
 
@@ -134,6 +62,7 @@ export default function HomeScreen() {
         styles.container,
         { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
       ]}
+      edges={["top", "left", "right"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
@@ -215,7 +144,9 @@ export default function HomeScreen() {
                 subtitle={category.subtitle}
                 icon={category.icon}
                 count={category.count}
-                onPress={() => handleCardPress(category.title)}
+                onPress={() =>
+                  handleCardPress(category.title, category.category)
+                }
               />
             ))}
           </ScrollView>
@@ -236,7 +167,9 @@ export default function HomeScreen() {
                     subtitle={category.subtitle}
                     icon={category.icon}
                     count={category.count}
-                    onPress={() => handleCardPress(category.title)}
+                    onPress={() =>
+                      handleCardPress(category.title, category.category)
+                    }
                   />
                 </View>
               ))}
@@ -254,11 +187,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 34,
+    paddingTop: 16,
     fontWeight: "700",
     letterSpacing: -1,
   },
