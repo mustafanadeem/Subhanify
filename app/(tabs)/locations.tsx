@@ -56,6 +56,7 @@ export default function LocationsScreen() {
 
   const [locations, setLocations] = useState<SavedLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObject | null>(null);
   const [geofencingActive, setGeofencingActive] = useState(false);
@@ -74,12 +75,19 @@ export default function LocationsScreen() {
   // Reload locations when screen comes into focus (after adding/editing)
   useFocusEffect(
     useCallback(() => {
-      loadLocations();
-      // Also refresh geofencing status
-      getGeofencingStatus().then((status) => {
-        setGeofencingActive(status.isMonitoring);
-      });
-    }, [])
+      // Only reload if already initialized to avoid database errors
+      if (isInitialized) {
+        loadLocations();
+        // Also refresh geofencing status
+        getGeofencingStatus()
+          .then((status) => {
+            setGeofencingActive(status.isMonitoring);
+          })
+          .catch((error) => {
+            console.warn("Error refreshing geofencing status:", error);
+          });
+      }
+    }, [isInitialized])
   );
 
   const initialize = async () => {
@@ -88,6 +96,7 @@ export default function LocationsScreen() {
 
       // Initialize database
       await initDatabase();
+      setIsInitialized(true);
 
       // Request permissions (handle Expo Go gracefully)
       try {
@@ -140,8 +149,12 @@ export default function LocationsScreen() {
       const savedLocations = await getAllLocations();
       console.log("Loaded locations:", savedLocations.length);
       setLocations(savedLocations);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading locations:", error);
+      // Only show alert if it's not a database initialization error
+      if (!error?.message?.includes("Database not initialized")) {
+        Alert.alert("Error", "Failed to load locations");
+      }
     }
   };
 
