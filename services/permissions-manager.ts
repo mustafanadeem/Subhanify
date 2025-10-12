@@ -4,6 +4,37 @@
  * Centralized module for handling all permission requests, status checks,
  * and user navigation to device settings.
  * 
+ * Platform-specific implementation details:
+ * 
+ * Android Permissions:
+ * - ACCESS_FINE_LOCATION (foreground, runtime permission)
+ * - ACCESS_COARSE_LOCATION (foreground, runtime permission)  
+ * - ACCESS_BACKGROUND_LOCATION (background, requires separate request on Android 10+)
+ * - POST_NOTIFICATIONS (Android 13+)
+ * 
+ * Android Behavior:
+ * - API 29+ (Android 10+): Background location requires separate permission dialog
+ * - User must explicitly grant "Allow all the time" option
+ * - System shows additional warning for background location access
+ * 
+ * iOS Permissions:
+ * - WhenInUse: NSLocationWhenInUseUsageDescription (foreground access)
+ * - Always: NSLocationAlwaysAndWhenInUseUsageDescription (background access)
+ * - NSLocationAlwaysUsageDescription (iOS 10 compatibility)
+ * 
+ * iOS Behavior:
+ * - Initial request shows WhenInUse option
+ * - Background request shows "Change to Always Allow" dialog
+ * - User can select: While Using, Allow Once, or Don't Allow
+ * 
+ * IMPORTANT - Info.plist Setup Required:
+ * The following keys MUST be added to app.json -> expo.ios.infoPlist:
+ * 
+ * "NSLocationWhenInUseUsageDescription": "Subhanify needs your location to remind you of adhkar when entering/leaving places"
+ * "NSLocationAlwaysAndWhenInUseUsageDescription": "Subhanify needs background location to send adhkar reminders even when app is not active"
+ * "NSLocationAlwaysUsageDescription": "Subhanify needs background location for adhkar reminders"
+ * "UIBackgroundModes": ["location"]
+ * 
  * Supports:
  * - Location permissions (foreground and background)
  * - Notification permissions

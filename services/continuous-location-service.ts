@@ -1,11 +1,33 @@
 /**
  * Continuous Location Tracking Service
  * 
+ * Platform-specific implementation details:
+ * - Android: Uses FusedLocationProvider with foreground service
+ * - iOS: Uses CLLocationManager with continuous updates (activityType: other)
+ * 
  * Provides continuous location updates for scenarios where geofencing
  * is not sufficient (e.g., real-time tracking, journey recording)
  * 
+ * Platform Implementation:
+ * 
+ * Android:
+ * - Requires ACCESS_FINE_LOCATION and ACCESS_BACKGROUND_LOCATION
+ * - Uses FusedLocationProvider.requestLocationUpdates()
+ * - Shows persistent notification via foreground service (required for background tracking)
+ * - Priority: PRIORITY_BALANCED_POWER_ACCURACY
+ * 
+ * iOS:
+ * - Requires NSLocationAlwaysAndWhenInUseUsageDescription in Info.plist
+ * - Uses CLLocationManager with startUpdatingLocation()
+ * - Shows blue status bar indicator when tracking in background
+ * - desiredAccuracy: kCLLocationAccuracyBest (configurable)
+ * 
  * Note: This is more battery-intensive than geofencing.
  * Use geofencing for location-based triggers when possible.
+ * 
+ * Prerequisites:
+ * - Request permissions using permissions-manager.ts before starting tracking
+ * - Ensure both foreground and background location permissions are granted
  */
 
 import * as Location from 'expo-location';
@@ -92,6 +114,14 @@ TaskManager.defineTask(LOCATION_TRACKING_TASK, async ({ data, error }: any) => {
 
 /**
  * Start continuous location tracking
+ * 
+ * Prerequisites:
+ * - Foreground and background location permissions must be granted
+ * - Use permissions-manager.ts to request permissions before calling this
+ * 
+ * Platform Behavior:
+ * - Android: Shows persistent notification with app name
+ * - iOS: Shows blue status bar indicator when in background
  * 
  * @param callback - Function to call on each location update
  * @param options - Tracking configuration options

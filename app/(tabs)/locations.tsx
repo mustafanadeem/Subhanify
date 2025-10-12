@@ -1,34 +1,38 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-  getCurrentLocation,
-  getGeofencingStatus,
-  requestLocationPermissions,
-  restartGeofencing,
-  stopGeofencingMonitoring,
+    getGeofencingStatus,
+    restartGeofencing,
+    stopGeofencingMonitoring,
 } from "@/services/geofence-service";
-import { requestNotificationPermissions } from "@/services/notification-service";
-import { LocationCategory, SavedLocation } from "@/types/location";
+import { loadMosques } from "@/services/mosque-data-service";
 import {
-  deleteLocation,
-  getAllLocations,
-  initDatabase,
-  toggleLocationEnabled,
+    getMosqueMonitoringStats,
+    shouldUpdateMosqueMonitoring,
+    updateNearbyMosqueGeofencing,
+} from "@/services/nearby-mosque-manager";
+import { LocationCategory, SavedLocation } from "@/types/location";
+import { Mosque } from "@/types/mosque";
+import {
+    deleteLocation,
+    getAllLocations,
+    initDatabase,
+    toggleLocationEnabled,
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
@@ -55,6 +59,10 @@ export default function LocationsScreen() {
   const isDark = colorScheme === "dark";
 
   const [locations, setLocations] = useState<SavedLocation[]>([]);
+  const [mosques, setMosques] = useState<Mosque[]>([]);
+  const [showMosques, setShowMosques] = useState(true);
+  const [autoMosqueMonitoring, setAutoMosqueMonitoring] = useState(true);
+  const [nearbyMosquesCount, setNearbyMosquesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [currentLocation, setCurrentLocation] =
@@ -62,10 +70,10 @@ export default function LocationsScreen() {
   const [geofencingActive, setGeofencingActive] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [mapRegion, setMapRegion] = useState({
-    latitude: 37.78825,
-    longitude: -122.4324,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitude: 51.5074,
+    longitude: -0.1278,
+    latitudeDelta: 0.2,
+    longitudeDelta: 0.2,
   });
 
   useEffect(() => {
@@ -94,19 +102,37 @@ export default function LocationsScreen() {
     try {
       setIsLoading(true);
 
-      // Initialize database
       await initDatabase();
       setIsInitialized(true);
 
-      // Request permissions (handle Expo Go gracefully)
       try {
-        const locationPerms = await requestLocationPermissions();
-        const notificationPerms = await requestNotificationPermissions();
-        setPermissionsGranted(locationPerms.granted && notificationPerms);
+        console.log("Checking location permissions...");
+        const foregroundPerm = await Location.requestForegroundPermissionsAsync();
+        
+        if (foregroundPerm.status !== 'granted') {
+          console.warn("Location permissions not granted");
+          Alert.alert(
+            "Location Permission Required",
+            "This app needs location access to show your current position and add location-based adhkar reminders.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Try Again", onPress: () => initialize() }
+            ]
+          );
+          setIsLoading(false);
+          return;
+        }
 
-        // Get current location
-        const location = await getCurrentLocation();
+        setPermissionsGranted(true);
+        console.log("Location permissions granted");
+
+        console.log("Attempting to get current location...");
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
         if (location) {
+          console.log("Location retrieved successfully");
           setCurrentLocation(location);
           setMapRegion({
             latitude: location.coords.latitude,
@@ -116,31 +142,87 @@ export default function LocationsScreen() {
           });
         }
 
-        // Check geofencing status
         const status = await getGeofencingStatus();
         setGeofencingActive(status.isMonitoring);
+
       } catch (permError: any) {
-        console.warn("Location permissions not available:", permError.message);
-        // Show info about Expo Go limitations
-        if (
-          permError.message?.includes("NSLocation") ||
-          permError.message?.includes("Info.plist")
-        ) {
-          Alert.alert(
-            "Expo Go Limitation",
-            "Location features require a development build. You can view the UI but cannot add locations in Expo Go.\n\nTo use all features:\neas build --profile development --platform android",
-            [{ text: "OK" }]
-          );
-        }
+        console.error("Location error:", permError);
+        Alert.alert(
+          "Location Error",
+          "Could not access location. Please ensure location services are enabled in your device settings."
+        );
       }
 
-      // Load saved locations (this works even without permissions)
       await loadLocations();
+      await loadMosquesData();
+      await updateNearbyMosques();
     } catch (error) {
       console.error("Error initializing locations screen:", error);
       Alert.alert("Error", "Failed to initialize location services");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadMosquesData = async () => {
+    try {
+      const mosquesData = await loadMosques();
+      setMosques(mosquesData);
+      console.log("Loaded mosques:", mosquesData.length);
+      
+      const stats = await getMosqueMonitoringStats();
+      setNearbyMosquesCount(stats.monitored);
+    } catch (error) {
+      console.error("Error loading mosques:", error);
+    }
+  };
+
+  const updateNearbyMosques = async () => {
+    try {
+      if (!autoMosqueMonitoring) return;
+      if (!currentLocation) return;
+
+      const shouldUpdate = await shouldUpdateMosqueMonitoring(
+        currentLocation.coords.latitude,
+        currentLocation.coords.longitude
+      );
+
+      if (shouldUpdate) {
+        console.log("Updating nearby mosque monitoring...");
+        const count = await updateNearbyMosqueGeofencing(
+          currentLocation.coords.latitude,
+          currentLocation.coords.longitude,
+          locations
+        );
+        setNearbyMosquesCount(count);
+        console.log(`Now monitoring ${count} nearby mosques`);
+      }
+    } catch (error) {
+      console.error("Error updating nearby mosques:", error);
+    }
+  };
+
+  const handleToggleAutoMosqueMonitoring = async (value: boolean) => {
+    setAutoMosqueMonitoring(value);
+    
+    if (value && currentLocation) {
+      const count = await updateNearbyMosqueGeofencing(
+        currentLocation.coords.latitude,
+        currentLocation.coords.longitude,
+        locations
+      );
+      setNearbyMosquesCount(count);
+      Alert.alert(
+        "Mosque Monitoring Enabled",
+        `Now monitoring ${count} nearby mosques. This will automatically update as you move.`
+      );
+    } else if (!value) {
+      setNearbyMosquesCount(0);
+      await restartGeofencing();
+      Alert.alert(
+        "Mosque Monitoring Disabled",
+        "Only your saved locations will be monitored."
+      );
     }
   };
 
@@ -151,7 +233,6 @@ export default function LocationsScreen() {
       setLocations(savedLocations);
     } catch (error: any) {
       console.error("Error loading locations:", error);
-      // Only show alert if it's not a database initialization error
       if (!error?.message?.includes("Database not initialized")) {
         Alert.alert("Error", "Failed to load locations");
       }
@@ -162,10 +243,10 @@ export default function LocationsScreen() {
     if (!permissionsGranted) {
       Alert.alert(
         "Permissions Required",
-        "Please grant location and notification permissions to add locations.",
+        "Location permission is required to add locations.",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Grant Permissions", onPress: initialize },
+          { text: "Grant Permission", onPress: initialize },
         ]
       );
       return;
@@ -348,7 +429,132 @@ export default function LocationsScreen() {
                 />
               </React.Fragment>
             ))}
+
+            {showMosques && mosques.map((mosque, index) => (
+              <React.Fragment key={`mosque-${mosque.latitude}-${mosque.longitude}-${index}`}>
+                <Marker
+                  coordinate={{
+                    latitude: mosque.latitude,
+                    longitude: mosque.longitude,
+                  }}
+                  onPress={() => {
+                    Alert.alert(
+                      mosque.name,
+                      [
+                        mosque.address && `Address: ${mosque.address}`,
+                        mosque.postcode && `Postcode: ${mosque.postcode}`,
+                        `Radius: ${mosque.radius}m`,
+                      ]
+                        .filter(Boolean)
+                        .join("\n"),
+                      [{ text: "OK" }]
+                    );
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.markerContainer,
+                      { backgroundColor: categoryColors.mosque },
+                    ]}
+                  >
+                    <Ionicons
+                      name="moon"
+                      size={20}
+                      color="white"
+                    />
+                  </View>
+                </Marker>
+                <Circle
+                  center={{
+                    latitude: mosque.latitude,
+                    longitude: mosque.longitude,
+                  }}
+                  radius={mosque.radius}
+                  strokeColor={`${categoryColors.mosque}60`}
+                  fillColor={`${categoryColors.mosque}15`}
+                  strokeWidth={1}
+                />
+              </React.Fragment>
+            ))}
           </MapView>
+        </View>
+
+        {/* Auto Mosque Monitoring Toggle */}
+        <View
+          style={[
+            styles.toggleContainer,
+            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+          ]}
+        >
+          <View style={styles.toggleInfo}>
+            <Ionicons
+              name="moon"
+              size={24}
+              color={categoryColors.mosque}
+            />
+            <View style={styles.toggleText}>
+              <Text
+                style={[
+                  styles.toggleTitle,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Auto Mosque Monitoring
+              </Text>
+              <Text
+                style={[
+                  styles.toggleSubtitle,
+                  { color: Colors[colorScheme ?? "light"].textSecondary },
+                ]}
+              >
+                {autoMosqueMonitoring
+                  ? `Monitoring ${nearbyMosquesCount} nearby mosques`
+                  : "Disabled - only saved locations"}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={autoMosqueMonitoring}
+            onValueChange={handleToggleAutoMosqueMonitoring}
+          />
+        </View>
+
+        {/* Show Mosques Toggle */}
+        <View
+          style={[
+            styles.toggleContainer,
+            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+          ]}
+        >
+          <View style={styles.toggleInfo}>
+            <Ionicons
+              name="eye"
+              size={24}
+              color={Colors[colorScheme ?? "light"].textSecondary}
+            />
+            <View style={styles.toggleText}>
+              <Text
+                style={[
+                  styles.toggleTitle,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Show All Mosques on Map
+              </Text>
+              <Text
+                style={[
+                  styles.toggleSubtitle,
+                  { color: Colors[colorScheme ?? "light"].textSecondary },
+                ]}
+              >
+                {showMosques ? `${mosques.length} mosques visible` : "Hidden"}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={showMosques}
+            onValueChange={setShowMosques}
+          />
         </View>
 
         {/* Geofencing Toggle */}

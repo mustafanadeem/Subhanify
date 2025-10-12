@@ -1,9 +1,39 @@
+/**
+ * Notification Service
+ * 
+ * Platform-specific implementation details:
+ * - Android: Uses Firebase Cloud Messaging (FCM) for push notifications
+ * - iOS: Uses Apple Push Notification service (APNs)
+ * 
+ * Platform Implementation:
+ * 
+ * Android:
+ * - Requires POST_NOTIFICATIONS permission (Android 13+)
+ * - Uses NotificationManager and NotificationChannel API
+ * - Supports notification channels for categorization
+ * - Priority levels: HIGH, DEFAULT, LOW, MIN
+ * 
+ * iOS:
+ * - Requires User Notification Framework (UNUserNotificationCenter)
+ * - Permission request shows system dialog
+ * - Options: Alert, Badge, Sound
+ * - No explicit permission in Info.plist required (handled at runtime)
+ * 
+ * Note: All notification permission requests should go through permissions-manager.ts
+ * for consistency and proper user rationale dialogs.
+ */
+
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { AdhkarItem } from '../types/adhkar';
 
 /**
  * Configure notification handler for foreground notifications
+ * 
+ * Determines how notifications are displayed when app is in foreground:
+ * - shouldShowAlert: Display notification banner
+ * - shouldPlaySound: Play notification sound
+ * - shouldSetBadge: Update app icon badge (iOS)
  */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -16,9 +46,36 @@ Notifications.setNotificationHandler({
 });
 
 /**
+ * Setup notification channel for Android
+ * 
+ * Android requires notification channels (API 26+) to categorize notifications.
+ * This should be called once during app initialization.
+ * 
+ * @returns Promise<void>
+ */
+export async function setupNotificationChannel(): Promise<void> {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('location-adhkar', {
+      name: 'Location Adhkar',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      sound: 'default',
+    });
+  }
+}
+
+/**
  * Request notification permissions
+ * 
+ * DEPRECATED: Use permissions-manager.ts requestNotificationPermissionsWithRationale() instead
+ * This function is kept for backward compatibility but should not be used directly.
+ * 
+ * @returns Promise<boolean>
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
+  console.warn('notification-service.requestNotificationPermissions() is deprecated. Use permissions-manager.ts instead.');
+  
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   
@@ -32,22 +89,21 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     return false;
   }
   
-  // Configure notification channel for Android
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('location-adhkar', {
-      name: 'Location Adhkar',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-      sound: 'default',
-    });
-  }
+  await setupNotificationChannel();
   
   return true;
 }
 
 /**
  * Show a notification with adhkar content
+ * 
+ * Platform Behavior:
+ * - Android: Shows notification with channel 'location-adhkar'
+ * - iOS: Shows notification with sound and badge
+ * 
+ * @param locationName - Name of the location (mosque, home, etc.)
+ * @param eventType - 'entry' or 'exit'
+ * @param adhkar - Adhkar item to display
  */
 export async function showAdhkarNotification(
   locationName: string,
@@ -76,6 +132,13 @@ export async function showAdhkarNotification(
 
 /**
  * Show multiple adhkar notifications (with slight delay between each)
+ * 
+ * Schedules multiple notifications with 2-second intervals to avoid overwhelming the user.
+ * Only the first notification plays a sound.
+ * 
+ * @param locationName - Name of the location
+ * @param eventType - 'entry' or 'exit'
+ * @param adhkarList - Array of adhkar items to display
  */
 export async function showMultipleAdhkarNotifications(
   locationName: string,

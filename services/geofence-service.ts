@@ -1,3 +1,24 @@
+/**
+ * Geofencing Service
+ * 
+ * Platform-specific implementation details:
+ * - Android: Uses FusedLocationProvider API for geofencing
+ * - iOS: Uses Core Location framework (CLLocationManager)
+ * 
+ * Expo abstracts these platform-specific APIs, but understanding is important:
+ * 
+ * Android Implementation:
+ * - Requires ACCESS_FINE_LOCATION and ACCESS_BACKGROUND_LOCATION permissions
+ * - Uses Geofencing API with PendingIntent for background triggers
+ * - Foreground service notification required for background location
+ * 
+ * iOS Implementation:
+ * - Requires NSLocationWhenInUseUsageDescription and NSLocationAlwaysAndWhenInUseUsageDescription
+ * - Background location requires UIBackgroundModes: ["location"] in Info.plist
+ * - Uses CLCircularRegion for geofence definitions
+ * - Limit: iOS supports up to 20 geofence regions per app
+ */
+
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import adhkarData from '../data/adkar_dua.json';
@@ -5,52 +26,10 @@ import { AdhkarItem } from '../types/adhkar';
 import { SavedLocation } from '../types/location';
 import { getEnabledLocations } from '../utils/location-db';
 import { showAdhkarNotification } from './notification-service';
+import { checkLocationPermissions } from './permissions-manager';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 const GEOFENCING_TASK_NAME = 'geofencing-task';
-
-/**
- * Request location permissions
- */
-export async function requestLocationPermissions(): Promise<{
-  granted: boolean;
-  foreground: boolean;
-  background: boolean;
-}> {
-  // Request foreground permission first
-  const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
-  
-  if (foregroundStatus !== 'granted') {
-    return { granted: false, foreground: false, background: false };
-  }
-  
-  // Request background permission
-  const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-  
-  return {
-    granted: foregroundStatus === 'granted',
-    foreground: foregroundStatus === 'granted',
-    background: backgroundStatus === 'granted',
-  };
-}
-
-/**
- * Get current location permissions status
- */
-export async function getLocationPermissionsStatus(): Promise<{
-  granted: boolean;
-  foreground: boolean;
-  background: boolean;
-}> {
-  const foreground = await Location.getForegroundPermissionsAsync();
-  const background = await Location.getBackgroundPermissionsAsync();
-  
-  return {
-    granted: foreground.granted,
-    foreground: foreground.granted,
-    background: background.granted,
-  };
-}
 
 /**
  * Define the geofencing task
@@ -110,12 +89,19 @@ TaskManager.defineTask(GEOFENCING_TASK_NAME, async ({ data, error }: any) => {
 
 /**
  * Start geofencing monitoring
+ * 
+ * Prerequisites:
+ * - Foreground and background location permissions must be granted
+ * - Use permissions-manager.ts to request permissions before calling this
+ * 
+ * Platform Notes:
+ * - Android: Will show persistent notification when monitoring active
+ * - iOS: Limited to 20 regions; this function will only monitor first 20 if more provided
  */
 export async function startGeofencingMonitoring(locations: SavedLocation[]): Promise<void> {
-  // Check if location permissions are granted
-  const permissions = await getLocationPermissionsStatus();
-  if (!permissions.granted) {
-    throw new Error('Location permissions not granted');
+  const permissions = await checkLocationPermissions();
+  if (!permissions.granted || !permissions.background) {
+    throw new Error('Background location permissions not granted. Use permissions-manager to request permissions first.');
   }
   
   // Stop existing geofencing
@@ -207,22 +193,107 @@ export function calculateDistance(
 }
 
 /**
- * Get current location
+ * Get current location with retry logic
+ * 
+ * Platform Implementation:
+ * - Android: Uses FusedLocationProvider.getLastLocation() then requestLocationUpdates()
+ * - iOS: Uses CLLocationManager.requestLocation()
+ * 
+ * @param retries - Number of retry attempts if first request fails
+ * @returns LocationObject or null if unable to get location
  */
-export async function getCurrentLocation(): Promise<Location.LocationObject | null> {
+export async function getCurrentLocation(retries: number = 2): Promise<Location.LocationObject | null> {
   try {
-    const permissions = await getLocationPermissionsStatus();
+    const permissions = await checkLocationPermissions();
     if (!permissions.granted) {
+      console.log('Location permissions not granted, cannot get current location');
       return null;
     }
     
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+    console.log('Getting current position (attempt 1)...');
+    
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      
+      console.log('Current location obtained:', {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy,
+      });
+      
+      return location;
+    } catch (posError: any) {
+      console.warn('First attempt failed:', posError.message);
+      
+      if (retries > 0) {
+        console.log(`Retrying... (${retries} attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return getCurrentLocation(retries - 1);
+      }
+      
+      console.log('Trying with lower accuracy...');
+      try {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Low,
+        });
+        
+        console.log('Location obtained with lower accuracy:', {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        
+        return location;
+      } catch (lowAccError) {
+        console.error('Failed to get location even with low accuracy:', lowAccError);
+        throw posError;
+      }
+    }
+  } catch (error: any) {
+    console.error('Error getting current location:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
     });
+    return null;
+  }
+}
+
+/**
+ * Get last known location (fallback when getCurrentPosition fails)
+ * 
+ * Platform Implementation:
+ * - Android: Uses FusedLocationProvider.getLastLocation() (cached location)
+ * - iOS: Uses CLLocationManager.location (last known location)
+ * 
+ * This is faster but may return stale location data.
+ */
+export async function getLastKnownLocation(): Promise<Location.LocationObject | null> {
+  try {
+    const permissions = await checkLocationPermissions();
+    if (!permissions.granted) {
+      console.log('Location permissions not granted');
+      return null;
+    }
+    
+    console.log('Getting last known location...');
+    const location = await Location.getLastKnownPositionAsync({
+      maxAge: 60000,
+      requiredAccuracy: 1000,
+    });
+    
+    if (location) {
+      console.log('Last known location obtained:', {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    }
     
     return location;
   } catch (error) {
-    console.error('Error getting current location:', error);
+    console.error('Error getting last known location:', error);
     return null;
   }
 }
