@@ -1,15 +1,16 @@
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import React from "react";
+import { useRouter } from "expo-router";
 import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 interface SettingItemProps {
   title: string;
@@ -70,21 +71,35 @@ function SettingItem({
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const router = useRouter();
 
   return (
-    <SafeAreaView
+    <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
-      edges={["top", "left", "right"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={isDark ? "#000000" : "#F2F2F7"}
+        backgroundColor="transparent"
+        translucent
       />
-      <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Profile</ThemedText>
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
+        ]}
+      >
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
+        >
+          Settings
+        </Text>
       </View>
 
       <ScrollView
@@ -126,6 +141,16 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Settings</ThemedText>
           <SettingItem
+            title="Appearance"
+            icon="paintbrush.fill"
+            onPress={() => router.push("/appearance-settings")}
+          />
+          <SettingItem
+            title="Prayer Settings"
+            icon="clock.fill"
+            onPress={() => router.push("/prayer-settings")}
+          />
+          <SettingItem
             title="Notifications"
             icon="bell.fill"
             onPress={() => console.log("Notifications pressed")}
@@ -134,16 +159,6 @@ export default function ProfileScreen() {
             title="Language"
             icon="globe"
             onPress={() => console.log("Language pressed")}
-          />
-          <SettingItem
-            title="Font Size"
-            icon="textformat.size"
-            onPress={() => console.log("Font Size pressed")}
-          />
-          <SettingItem
-            title="Theme"
-            icon="moon.fill"
-            onPress={() => console.log("Theme pressed")}
           />
         </View>
 
@@ -172,7 +187,7 @@ export default function ProfileScreen() {
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -181,14 +196,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 34,
-    paddingTop: 16,
-    fontWeight: "700",
-    letterSpacing: -1,
+    fontSize: 28,
+    fontWeight: "bold",
   },
   scrollView: {
     flex: 1,

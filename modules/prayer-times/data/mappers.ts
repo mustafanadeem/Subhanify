@@ -11,7 +11,15 @@ export function mapDtoToToday(dto: AlAdhanDayDTO, dtoAltAsr?: AlAdhanDayDTO): To
   const readable = dto.date?.readable;
   const dateIso = dto.date?.gregorian?.date?.replaceAll("/", "-") ?? "";
   return {
-    info: { dateIso, hijriDate: hijri, readable },
+    info: { 
+      dateIso, 
+      hijriDate: hijri, 
+      readable,
+      hijri: dto.date?.hijri ? {
+        date: dto.date.hijri.date,
+        weekday: dto.date.hijri.weekday,
+      } : undefined,
+    },
     fajr: { name: "Fajr", timeIso: toIso(dto.timings.Fajr) },
     sunrise: { name: "Sunrise", timeIso: toIso(dto.timings.Sunrise) },
     dhuhr: { name: "Dhuhr", timeIso: toIso(dto.timings.Dhuhr) },

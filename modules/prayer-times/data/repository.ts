@@ -14,6 +14,7 @@ export class PrayerTimesRepository {
 
   getDefaultSettings(): UserSettings {
     return {
+      useLocationBased: true, // Default to app recommended
       method: 15,
       schoolPrimary: 0,
       lam: 3,

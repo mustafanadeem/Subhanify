@@ -41,27 +41,22 @@ export default function TabLayout() {
       <Tabs.Screen
         name="prayer-times"
         options={{
-          title: "Prayer Times",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="clock.fill" color={color} />
-          ),
+          href: null, // Hide from tab bar, accessible only via navigation
+          tabBarStyle: { display: "none" }, // Hide bottom nav on this screen
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="gearshape.fill" color={color} />
-          ),
+          href: null, // Hide from tab bar, prayer settings now in explore
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Profile",
+          title: "Settings",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
+            <IconSymbol size={28} name="gearshape.fill" color={color} />
           ),
         }}
       />

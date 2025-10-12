@@ -1,6 +1,7 @@
 export type PrayerName = "Fajr" | "Sunrise" | "Dhuhr" | "AsrMithl1" | "AsrMithl2" | "Maghrib" | "Isha";
 
 export type UserSettings = {
+  useLocationBased?: boolean; // Use nearby mosque or location-based method
   method: number; // default 15
   schoolPrimary: 0 | 1; // which Asr to show as primary
   lam: 1 | 2 | 3; // high latitude adjustment
@@ -13,6 +14,10 @@ export type DayInfo = {
   dateIso: string; // YYYY-MM-DD
   hijriDate?: string;
   readable?: string;
+  hijri?: {
+    date?: string;
+    weekday?: { en?: string };
+  };
 };
 
 export type PrayerTime = {

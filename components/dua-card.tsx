@@ -1,5 +1,4 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "./themed-text";
 import { IconSymbol } from "./ui/icon-symbol";
@@ -75,7 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     padding: 20,
-    minHeight: 160,
+    height: 180,
     justifyContent: "space-between",
   },
   topRow: {
@@ -112,8 +111,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     opacity: 0.6,
     letterSpacing: -0.2,
+    flexShrink: 1,
   },
 });

@@ -1,22 +1,23 @@
 import { CategoryCard } from "@/components/category-card";
 import { DuaCard } from "@/components/dua-card";
-import { PrayerCarousel } from "@/components/prayer-carousel";
+import { PrayerTimeCard } from "@/components/prayer-time-card";
 import { ThemedText } from "@/components/themed-text";
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
-    Dimensions,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -58,22 +59,38 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView
+    <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
-      edges={["top", "left", "right"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={isDark ? "#000000" : "#F2F2F7"}
+        backgroundColor="transparent"
+        translucent
       />
-      <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Subhanify</ThemedText>
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
+        ]}
+      >
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
+        >
+          Subhanify
+        </Text>
       </View>
 
-      {/* Tabs */}
+      {/* Prayer Time Card - Fixed */}
+      <PrayerTimeCard />
+
+      {/* Tabs - Fixed */}
       <View
         style={[
           styles.tabsContainer,
@@ -138,7 +155,6 @@ export default function HomeScreen() {
             contentContainerStyle={styles.cardsContainer}
             showsVerticalScrollIndicator={false}
           >
-            <PrayerCarousel />
             {adhkarCategories.map((category) => (
               <CategoryCard
                 key={category.id}
@@ -179,7 +195,7 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -188,14 +204,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 34,
-    paddingTop: 16,
-    fontWeight: "700",
-    letterSpacing: -1,
+    fontSize: 28,
+    fontWeight: "bold",
   },
   tabsContainer: {
     flexDirection: "row",
@@ -203,6 +221,7 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 12,
     marginBottom: 20,
+    marginTop: 0,
   },
   tab: {
     flex: 1,

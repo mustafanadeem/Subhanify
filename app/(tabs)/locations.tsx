@@ -307,91 +307,91 @@ export default function LocationsScreen() {
       <ScrollView style={styles.scrollContent}>
         {/* Map */}
         <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-          region={mapRegion}
-          showsUserLocation
-          showsMyLocationButton
-        >
-          {locations.map((location) => (
-            <React.Fragment key={location.id}>
-              <Marker
-                coordinate={{
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                }}
-                onPress={() => handleMarkerPress(location)}
-              >
-                <View
-                  style={[
-                    styles.markerContainer,
-                    { backgroundColor: categoryColors[location.category] },
-                  ]}
+          <MapView
+            style={styles.map}
+            provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+            region={mapRegion}
+            showsUserLocation
+            showsMyLocationButton
+          >
+            {locations.map((location) => (
+              <React.Fragment key={location.id}>
+                <Marker
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
+                  onPress={() => handleMarkerPress(location)}
                 >
-                  <Ionicons
-                    name={categoryIcons[location.category] as any}
-                    size={24}
-                    color="white"
-                  />
-                </View>
-              </Marker>
-              <Circle
-                center={{
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                }}
-                radius={location.radius}
-                strokeColor={categoryColors[location.category]}
-                fillColor={`${categoryColors[location.category]}20`}
-                strokeWidth={2}
-              />
-            </React.Fragment>
-          ))}
-        </MapView>
+                  <View
+                    style={[
+                      styles.markerContainer,
+                      { backgroundColor: categoryColors[location.category] },
+                    ]}
+                  >
+                    <Ionicons
+                      name={categoryIcons[location.category] as any}
+                      size={24}
+                      color="white"
+                    />
+                  </View>
+                </Marker>
+                <Circle
+                  center={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
+                  radius={location.radius}
+                  strokeColor={categoryColors[location.category]}
+                  fillColor={`${categoryColors[location.category]}20`}
+                  strokeWidth={2}
+                />
+              </React.Fragment>
+            ))}
+          </MapView>
         </View>
 
         {/* Geofencing Toggle */}
         <View
-        style={[
-          styles.toggleContainer,
-          { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
-        ]}
-      >
-        <View style={styles.toggleInfo}>
-          <Ionicons
-            name="location"
-            size={24}
-            color={Colors[colorScheme ?? "light"].tint}
-          />
-          <View style={styles.toggleText}>
-            <Text
-              style={[
-                styles.toggleTitle,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Location Monitoring
-            </Text>
-            <Text
-              style={[
-                styles.toggleSubtitle,
-                { color: Colors[colorScheme ?? "light"].textSecondary },
-              ]}
-            >
-              {geofencingActive
-                ? `Monitoring ${
-                    locations.filter((l) => l.enabled).length
-                  } locations`
-                : "Disabled"}
-            </Text>
+          style={[
+            styles.toggleContainer,
+            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+          ]}
+        >
+          <View style={styles.toggleInfo}>
+            <Ionicons
+              name="location"
+              size={24}
+              color={Colors[colorScheme ?? "light"].tint}
+            />
+            <View style={styles.toggleText}>
+              <Text
+                style={[
+                  styles.toggleTitle,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Location Monitoring
+              </Text>
+              <Text
+                style={[
+                  styles.toggleSubtitle,
+                  { color: Colors[colorScheme ?? "light"].textSecondary },
+                ]}
+              >
+                {geofencingActive
+                  ? `Monitoring ${
+                      locations.filter((l) => l.enabled).length
+                    } locations`
+                  : "Disabled"}
+              </Text>
+            </View>
           </View>
-        </View>
-        <Switch
-          value={geofencingActive}
-          onValueChange={handleToggleGeofencing}
-          disabled={locations.length === 0}
-        />
+          <Switch
+            value={geofencingActive}
+            onValueChange={handleToggleGeofencing}
+            disabled={locations.length === 0}
+          />
         </View>
 
         {/* Locations List */}

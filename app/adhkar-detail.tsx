@@ -1,10 +1,12 @@
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AdhkarItem } from "@/types/adhkar";
 import { getAdhkarByCategory } from "@/utils/adhkar-utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -16,10 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -30,7 +28,7 @@ export default function AdhkarDetailScreen() {
   const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const insets = useSafeAreaInsets();
+  const { getFontFamily, arabicTextSize } = useFont();
 
   // Get the category from params
   const categoryTitle = (params.title as string) || "Morning";
@@ -73,22 +71,22 @@ export default function AdhkarDetailScreen() {
   // If no data found, show empty state
   if (!currentAdhkar) {
     return (
-      <SafeAreaView
+      <View
         style={[
           styles.container,
-          { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
       >
         <StatusBar
           barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor={isDark ? "#000000" : "#F2F2F7"}
+          backgroundColor="transparent"
+          translucent
         />
         <View
           style={[
             styles.header,
             {
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
+              backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
             },
           ]}
         >
@@ -99,7 +97,7 @@ export default function AdhkarDetailScreen() {
             <IconSymbol
               name="chevron.left"
               size={24}
-              color={isDark ? "#FFFFFF" : "#000000"}
+              color={Colors[colorScheme ?? "light"].text}
             />
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
@@ -107,7 +105,7 @@ export default function AdhkarDetailScreen() {
           </View>
           <View style={styles.headerActions} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -165,556 +163,562 @@ export default function AdhkarDetailScreen() {
   };
 
   return (
-    <SafeAreaView
+    <View
       style={[
-        styles.safeContainer,
-        { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
+        styles.container,
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
-      edges={["top", "left", "right"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={isDark ? "#000000" : "#F2F2F7"}
+        backgroundColor="transparent"
+        translucent
       />
-      <View style={styles.container}>
-        {/* Header */}
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
-            },
-          ]}
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => router.back()}
         >
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => router.back()}
-          >
+          <IconSymbol
+            name="chevron.left"
+            size={24}
+            color={Colors[colorScheme ?? "light"].text}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.headerTitleContainer}>
+          <ThemedText style={styles.headerTitle}>{categoryTitle}</ThemedText>
+        </View>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton}>
             <IconSymbol
-              name="chevron.left"
-              size={24}
-              color={isDark ? "#FFFFFF" : "#000000"}
+              name="house.fill"
+              size={22}
+              color={Colors[colorScheme ?? "light"].text}
             />
           </TouchableOpacity>
-
-          <View style={styles.headerTitleContainer}>
-            <ThemedText style={styles.headerTitle}>{categoryTitle}</ThemedText>
-          </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerButton}>
-              <IconSymbol
-                name="house.fill"
-                size={22}
-                color={isDark ? "#FFFFFF" : "#000000"}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton}>
-              <IconSymbol
-                name="ellipsis"
-                size={22}
-                color={isDark ? "#FFFFFF" : "#000000"}
-              />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.headerButton}>
+            <IconSymbol
+              name="ellipsis"
+              size={22}
+              color={Colors[colorScheme ?? "light"].text}
+            />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
+      {/* Progress Indicator */}
+      <View style={styles.progressContainer}>
+        <View
+          style={[
+            styles.progressBar,
+            { backgroundColor: isDark ? "#2C2C2E" : "#E5E5EA" },
+          ]}
+        >
           <View
             style={[
-              styles.progressBar,
-              { backgroundColor: isDark ? "#2C2C2E" : "#E5E5EA" },
+              styles.progressFill,
+              {
+                width: `${((currentIndex + 1) / totalCount) * 100}%`,
+                backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+              },
             ]}
-          >
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${((currentIndex + 1) / totalCount) * 100}%`,
-                  backgroundColor: isDark ? "#0A84FF" : "#007AFF",
-                },
-              ]}
-            />
-          </View>
+          />
         </View>
+      </View>
 
-        {/* Content Container with Animation */}
-        <View style={styles.contentWrapper}>
-          {/* Horizontal Scrollable Content */}
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            style={styles.horizontalScroll}
-          >
-            {adhkarList.map((adhkar, index) => (
-              <View key={index} style={styles.page}>
-                <ScrollView
-                  style={styles.content}
-                  contentContainerStyle={styles.contentContainer}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {/* Title and Counter */}
-                  <View style={styles.titleSection}>
-                    <ThemedText style={styles.title}>
-                      {adhkar.Adhkar}
-                    </ThemedText>
-                    <View style={styles.badgeRow}>
+      {/* Content Container with Animation */}
+      <View style={styles.contentWrapper}>
+        {/* Horizontal Scrollable Content */}
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          style={styles.horizontalScroll}
+        >
+          {adhkarList.map((adhkar, index) => (
+            <View key={index} style={styles.page}>
+              <ScrollView
+                style={styles.content}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Title and Counter */}
+                <View style={styles.titleSection}>
+                  <ThemedText style={styles.title}>{adhkar.Adhkar}</ThemedText>
+                  <View style={styles.badgeRow}>
+                    <View
+                      style={[
+                        styles.counterBadge,
+                        {
+                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                        },
+                      ]}
+                    >
+                      <ThemedText style={styles.counterText}>
+                        {index + 1}/{totalCount}
+                      </ThemedText>
+                    </View>
+                    {adhkar.quantity > 1 && (
                       <View
                         style={[
-                          styles.counterBadge,
+                          styles.quantityBadge,
+                          {
+                            backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+                          },
+                        ]}
+                      >
+                        <ThemedText style={styles.quantityText}>
+                          {adhkar.quantity}x
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Arabic Text */}
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                      borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.arabicText,
+                      {
+                        fontFamily: getFontFamily(),
+                        fontSize: arabicTextSize,
+                      },
+                    ]}
+                  >
+                    {adhkar.Arabic}
+                  </ThemedText>
+                </View>
+
+                {/* Transliteration */}
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                      borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                    },
+                  ]}
+                >
+                  <ThemedText style={styles.transliteration}>
+                    {adhkar.transliteration}
+                  </ThemedText>
+                </View>
+
+                {/* Translation */}
+                {typeof adhkar.translation === "string" && (
+                  <View
+                    style={[
+                      styles.card,
+                      {
+                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                      },
+                    ]}
+                  >
+                    <ThemedText style={styles.translation}>
+                      {adhkar.translation}
+                    </ThemedText>
+                  </View>
+                )}
+
+                {/* Virtue */}
+                {adhkar.virtue && (
+                  <View
+                    style={[
+                      styles.virtueCard,
+                      {
+                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                      },
+                    ]}
+                  >
+                    <View style={styles.referenceHeader}>
+                      <IconSymbol
+                        name="star.fill"
+                        size={18}
+                        color={isDark ? "#FFD60A" : "#FFCC00"}
+                      />
+                      <ThemedText style={styles.referenceTitle}>
+                        Virtue
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={styles.referenceText}>
+                      {adhkar.virtue}
+                    </ThemedText>
+                  </View>
+                )}
+
+                {/* Reference */}
+                {adhkar.reference && (
+                  <View
+                    style={[
+                      styles.referenceCard,
+                      {
+                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                      },
+                    ]}
+                  >
+                    <View style={styles.referenceHeader}>
+                      <IconSymbol
+                        name="book.fill"
+                        size={18}
+                        color={isDark ? "#8E8E93" : "#8E8E93"}
+                      />
+                      <ThemedText style={styles.referenceTitle}>
+                        Reference
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={styles.referenceText}>
+                      {adhkar.reference}
+                    </ThemedText>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Vertical Slide Animation Overlay - Content Only */}
+        {isAnimating && currentIndex < totalCount - 1 && (
+          <Animated.View
+            style={[
+              styles.contentAnimationOverlay,
+              {
+                transform: [{ translateY: slideAnim }],
+                backgroundColor: isDark ? "#000000" : "#F2F2F7",
+              },
+            ]}
+          >
+            <ScrollView
+              style={styles.content}
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Next Adhkar Content */}
+              {adhkarList[currentIndex + 1] &&
+                (() => {
+                  const nextAdhkar = adhkarList[currentIndex + 1];
+                  return (
+                    <>
+                      {/* Title and Counter */}
+                      <View style={styles.titleSection}>
+                        <ThemedText style={styles.title}>
+                          {nextAdhkar.Adhkar}
+                        </ThemedText>
+                        <View style={styles.badgeRow}>
+                          <View
+                            style={[
+                              styles.counterBadge,
+                              {
+                                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                              },
+                            ]}
+                          >
+                            <ThemedText style={styles.counterText}>
+                              {currentIndex + 2}/{totalCount}
+                            </ThemedText>
+                          </View>
+                          {nextAdhkar.quantity > 1 && (
+                            <View
+                              style={[
+                                styles.quantityBadge,
+                                {
+                                  backgroundColor: isDark
+                                    ? "#0A84FF"
+                                    : "#007AFF",
+                                },
+                              ]}
+                            >
+                              <ThemedText style={styles.quantityText}>
+                                {nextAdhkar.quantity}x
+                              </ThemedText>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+
+                      {/* Arabic Text */}
+                      <View
+                        style={[
+                          styles.card,
                           {
                             backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
                             borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
                           },
                         ]}
                       >
-                        <ThemedText style={styles.counterText}>
-                          {index + 1}/{totalCount}
-                        </ThemedText>
-                      </View>
-                      {adhkar.quantity > 1 && (
-                        <View
+                        <ThemedText
                           style={[
-                            styles.quantityBadge,
+                            styles.arabicText,
                             {
-                              backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+                              fontFamily: getFontFamily(),
+                              fontSize: arabicTextSize,
                             },
                           ]}
                         >
-                          <ThemedText style={styles.quantityText}>
-                            {adhkar.quantity}x
+                          {nextAdhkar.Arabic}
+                        </ThemedText>
+                      </View>
+
+                      {/* Transliteration */}
+                      <View
+                        style={[
+                          styles.card,
+                          {
+                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                          },
+                        ]}
+                      >
+                        <ThemedText style={styles.transliteration}>
+                          {nextAdhkar.transliteration}
+                        </ThemedText>
+                      </View>
+
+                      {/* Translation */}
+                      {typeof nextAdhkar.translation === "string" && (
+                        <View
+                          style={[
+                            styles.card,
+                            {
+                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                            },
+                          ]}
+                        >
+                          <ThemedText style={styles.translation}>
+                            {nextAdhkar.translation}
                           </ThemedText>
                         </View>
                       )}
-                    </View>
-                  </View>
 
-                  {/* Arabic Text */}
-                  <View
-                    style={[
-                      styles.card,
-                      {
-                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                      },
-                    ]}
-                  >
-                    <ThemedText style={styles.arabicText}>
-                      {adhkar.Arabic}
-                    </ThemedText>
-                  </View>
-
-                  {/* Transliteration */}
-                  <View
-                    style={[
-                      styles.card,
-                      {
-                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                      },
-                    ]}
-                  >
-                    <ThemedText style={styles.transliteration}>
-                      {adhkar.transliteration}
-                    </ThemedText>
-                  </View>
-
-                  {/* Translation */}
-                  {typeof adhkar.translation === "string" && (
-                    <View
-                      style={[
-                        styles.card,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
-                      <ThemedText style={styles.translation}>
-                        {adhkar.translation}
-                      </ThemedText>
-                    </View>
-                  )}
-
-                  {/* Virtue */}
-                  {adhkar.virtue && (
-                    <View
-                      style={[
-                        styles.virtueCard,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
-                      <View style={styles.referenceHeader}>
-                        <IconSymbol
-                          name="star.fill"
-                          size={18}
-                          color={isDark ? "#FFD60A" : "#FFCC00"}
-                        />
-                        <ThemedText style={styles.referenceTitle}>
-                          Virtue
-                        </ThemedText>
-                      </View>
-                      <ThemedText style={styles.referenceText}>
-                        {adhkar.virtue}
-                      </ThemedText>
-                    </View>
-                  )}
-
-                  {/* Reference */}
-                  {adhkar.reference && (
-                    <View
-                      style={[
-                        styles.referenceCard,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
-                      <View style={styles.referenceHeader}>
-                        <IconSymbol
-                          name="book.fill"
-                          size={18}
-                          color={isDark ? "#8E8E93" : "#8E8E93"}
-                        />
-                        <ThemedText style={styles.referenceTitle}>
-                          Reference
-                        </ThemedText>
-                      </View>
-                      <ThemedText style={styles.referenceText}>
-                        {adhkar.reference}
-                      </ThemedText>
-                    </View>
-                  )}
-                </ScrollView>
-              </View>
-            ))}
-          </ScrollView>
-
-          {/* Vertical Slide Animation Overlay - Content Only */}
-          {isAnimating && currentIndex < totalCount - 1 && (
-            <Animated.View
-              style={[
-                styles.contentAnimationOverlay,
-                {
-                  transform: [{ translateY: slideAnim }],
-                  backgroundColor: isDark ? "#000000" : "#F2F2F7",
-                },
-              ]}
-            >
-              <ScrollView
-                style={styles.content}
-                contentContainerStyle={styles.contentContainer}
-                showsVerticalScrollIndicator={false}
-              >
-                {/* Next Adhkar Content */}
-                {adhkarList[currentIndex + 1] &&
-                  (() => {
-                    const nextAdhkar = adhkarList[currentIndex + 1];
-                    return (
-                      <>
-                        {/* Title and Counter */}
-                        <View style={styles.titleSection}>
-                          <ThemedText style={styles.title}>
-                            {nextAdhkar.Adhkar}
-                          </ThemedText>
-                          <View style={styles.badgeRow}>
-                            <View
-                              style={[
-                                styles.counterBadge,
-                                {
-                                  backgroundColor: isDark
-                                    ? "#1C1C1E"
-                                    : "#FFFFFF",
-                                  borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                                },
-                              ]}
-                            >
-                              <ThemedText style={styles.counterText}>
-                                {currentIndex + 2}/{totalCount}
-                              </ThemedText>
-                            </View>
-                            {nextAdhkar.quantity > 1 && (
-                              <View
-                                style={[
-                                  styles.quantityBadge,
-                                  {
-                                    backgroundColor: isDark
-                                      ? "#0A84FF"
-                                      : "#007AFF",
-                                  },
-                                ]}
-                              >
-                                <ThemedText style={styles.quantityText}>
-                                  {nextAdhkar.quantity}x
-                                </ThemedText>
-                              </View>
-                            )}
-                          </View>
-                        </View>
-
-                        {/* Arabic Text */}
+                      {/* Virtue */}
+                      {nextAdhkar.virtue && (
                         <View
                           style={[
-                            styles.card,
+                            styles.virtueCard,
                             {
                               backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
                               borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
                             },
                           ]}
                         >
-                          <ThemedText style={styles.arabicText}>
-                            {nextAdhkar.Arabic}
+                          <View style={styles.referenceHeader}>
+                            <IconSymbol
+                              name="star.fill"
+                              size={18}
+                              color={isDark ? "#FFD60A" : "#FFCC00"}
+                            />
+                            <ThemedText style={styles.referenceTitle}>
+                              Virtue
+                            </ThemedText>
+                          </View>
+                          <ThemedText style={styles.referenceText}>
+                            {nextAdhkar.virtue}
                           </ThemedText>
                         </View>
+                      )}
 
-                        {/* Transliteration */}
+                      {/* Reference */}
+                      {nextAdhkar.reference && (
                         <View
                           style={[
-                            styles.card,
+                            styles.referenceCard,
                             {
                               backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
                               borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
                             },
                           ]}
                         >
-                          <ThemedText style={styles.transliteration}>
-                            {nextAdhkar.transliteration}
+                          <View style={styles.referenceHeader}>
+                            <IconSymbol
+                              name="book.fill"
+                              size={18}
+                              color={isDark ? "#8E8E93" : "#8E8E93"}
+                            />
+                            <ThemedText style={styles.referenceTitle}>
+                              Reference
+                            </ThemedText>
+                          </View>
+                          <ThemedText style={styles.referenceText}>
+                            {nextAdhkar.reference}
                           </ThemedText>
                         </View>
+                      )}
+                    </>
+                  );
+                })()}
+            </ScrollView>
+          </Animated.View>
+        )}
+      </View>
 
-                        {/* Translation */}
-                        {typeof nextAdhkar.translation === "string" && (
-                          <View
-                            style={[
-                              styles.card,
-                              {
-                                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                              },
-                            ]}
-                          >
-                            <ThemedText style={styles.translation}>
-                              {nextAdhkar.translation}
-                            </ThemedText>
-                          </View>
-                        )}
-
-                        {/* Virtue */}
-                        {nextAdhkar.virtue && (
-                          <View
-                            style={[
-                              styles.virtueCard,
-                              {
-                                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                              },
-                            ]}
-                          >
-                            <View style={styles.referenceHeader}>
-                              <IconSymbol
-                                name="star.fill"
-                                size={18}
-                                color={isDark ? "#FFD60A" : "#FFCC00"}
-                              />
-                              <ThemedText style={styles.referenceTitle}>
-                                Virtue
-                              </ThemedText>
-                            </View>
-                            <ThemedText style={styles.referenceText}>
-                              {nextAdhkar.virtue}
-                            </ThemedText>
-                          </View>
-                        )}
-
-                        {/* Reference */}
-                        {nextAdhkar.reference && (
-                          <View
-                            style={[
-                              styles.referenceCard,
-                              {
-                                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                              },
-                            ]}
-                          >
-                            <View style={styles.referenceHeader}>
-                              <IconSymbol
-                                name="book.fill"
-                                size={18}
-                                color={isDark ? "#8E8E93" : "#8E8E93"}
-                              />
-                              <ThemedText style={styles.referenceTitle}>
-                                Reference
-                              </ThemedText>
-                            </View>
-                            <ThemedText style={styles.referenceText}>
-                              {nextAdhkar.reference}
-                            </ThemedText>
-                          </View>
-                        )}
-                      </>
-                    );
-                  })()}
-              </ScrollView>
-            </Animated.View>
-          )}
-        </View>
-
-        {/* Bottom Actions */}
-        <View
-          style={[
-            styles.bottomBar,
-            {
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              borderTopColor: isDark ? "#2C2C2E" : "#E5E5EA",
-              paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
-            },
-          ]}
+      {/* Bottom Actions */}
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
+            borderTopColor: isDark ? "#2C2C2E" : "#E5E5EA",
+            paddingBottom: 34,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handlePrevious}
+          disabled={currentIndex === 0}
         >
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handlePrevious}
-            disabled={currentIndex === 0}
-          >
-            <IconSymbol
-              name="play.fill"
-              size={24}
-              color={
-                currentIndex === 0
-                  ? isDark
-                    ? "#3A3A3C"
-                    : "#C7C7CC"
-                  : isDark
-                  ? "#FFFFFF"
-                  : "#000000"
-              }
-              style={{ transform: [{ rotate: "180deg" }] }}
-            />
-          </TouchableOpacity>
+          <IconSymbol
+            name="play.fill"
+            size={24}
+            color={
+              currentIndex === 0
+                ? isDark
+                  ? "#3A3A3C"
+                  : "#C7C7CC"
+                : isDark
+                ? "#FFFFFF"
+                : "#000000"
+            }
+            style={{ transform: [{ rotate: "180deg" }] }}
+          />
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
-            <IconSymbol
-              name="info.circle.fill"
-              size={24}
-              color={isDark ? "#FFFFFF" : "#000000"}
-            />
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton}>
+          <IconSymbol
+            name="info.circle.fill"
+            size={24}
+            color={isDark ? "#FFFFFF" : "#000000"}
+          />
+        </TouchableOpacity>
 
-          <View style={styles.countButtonContainer}>
-            {/* Circular Progress Background */}
-            <Svg width={68} height={68} style={styles.progressCircle}>
-              {/* Background circle */}
+        <View style={styles.countButtonContainer}>
+          {/* Circular Progress Background */}
+          <Svg width={68} height={68} style={styles.progressCircle}>
+            {/* Background circle */}
+            <Circle
+              cx="34"
+              cy="34"
+              r="30"
+              stroke={isDark ? "#2C2C2E" : "#E5E5EA"}
+              strokeWidth="4"
+              fill="none"
+            />
+            {/* Progress circle */}
+            {currentAdhkar && currentAdhkar.quantity > 0 && (
               <Circle
                 cx="34"
                 cy="34"
                 r="30"
-                stroke={isDark ? "#2C2C2E" : "#E5E5EA"}
+                stroke={
+                  count === 0
+                    ? isDark
+                      ? "#2C2C2E"
+                      : "#E5E5EA"
+                    : isDark
+                    ? "#0A84FF"
+                    : "#007AFF"
+                }
                 strokeWidth="4"
                 fill="none"
+                strokeDasharray={`${2 * Math.PI * 30}`}
+                strokeDashoffset={`${
+                  2 * Math.PI * 30 * (count / currentAdhkar.quantity)
+                }`}
+                strokeLinecap="round"
+                transform="rotate(-90 34 34)"
               />
-              {/* Progress circle */}
-              {currentAdhkar && currentAdhkar.quantity > 0 && (
-                <Circle
-                  cx="34"
-                  cy="34"
-                  r="30"
-                  stroke={
-                    count === 0
-                      ? isDark
-                        ? "#2C2C2E"
-                        : "#E5E5EA"
-                      : isDark
-                      ? "#0A84FF"
-                      : "#007AFF"
-                  }
-                  strokeWidth="4"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 30}`}
-                  strokeDashoffset={`${
-                    2 * Math.PI * 30 * (count / currentAdhkar.quantity)
-                  }`}
-                  strokeLinecap="round"
-                  transform="rotate(-90 34 34)"
-                />
-              )}
-            </Svg>
+            )}
+          </Svg>
 
-            {/* Counter Button */}
-            <TouchableOpacity
-              style={[
-                styles.countButton,
-                {
-                  backgroundColor:
-                    count === 0
-                      ? isDark
-                        ? "#2C2C2E"
-                        : "#E5E5EA"
-                      : isDark
-                      ? "#0A84FF"
-                      : "#007AFF",
-                },
-              ]}
-              onPress={handleCount}
-              disabled={count === 0}
-            >
-              <ThemedText
-                style={[
-                  styles.countButtonText,
-                  count === 0 && { color: isDark ? "#8E8E93" : "#8E8E93" },
-                ]}
-              >
-                {count}
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity style={styles.actionButton}>
-            <IconSymbol
-              name="square.and.arrow.up.fill"
-              size={24}
-              color={isDark ? "#FFFFFF" : "#000000"}
-            />
-          </TouchableOpacity>
-
+          {/* Counter Button */}
           <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleNext}
-            disabled={currentIndex === totalCount - 1}
+            style={[
+              styles.countButton,
+              {
+                backgroundColor:
+                  count === 0
+                    ? isDark
+                      ? "#2C2C2E"
+                      : "#E5E5EA"
+                    : isDark
+                    ? "#0A84FF"
+                    : "#007AFF",
+              },
+            ]}
+            onPress={handleCount}
+            disabled={count === 0}
           >
-            <IconSymbol
-              name="play.fill"
-              size={24}
-              color={
-                currentIndex === totalCount - 1
-                  ? isDark
-                    ? "#3A3A3C"
-                    : "#C7C7CC"
-                  : isDark
-                  ? "#FFFFFF"
-                  : "#000000"
-              }
-            />
+            <ThemedText
+              style={[
+                styles.countButtonText,
+                count === 0 && { color: isDark ? "#8E8E93" : "#8E8E93" },
+              ]}
+            >
+              {count}
+            </ThemedText>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity style={styles.actionButton}>
+          <IconSymbol
+            name="square.and.arrow.up.fill"
+            size={24}
+            color={isDark ? "#FFFFFF" : "#000000"}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleNext}
+          disabled={currentIndex === totalCount - 1}
+        >
+          <IconSymbol
+            name="play.fill"
+            size={24}
+            color={
+              currentIndex === totalCount - 1
+                ? isDark
+                  ? "#3A3A3C"
+                  : "#C7C7CC"
+                : isDark
+                ? "#FFFFFF"
+                : "#000000"
+            }
+          />
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeContainer: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
@@ -722,9 +726,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
   },
   headerButton: {
     width: 40,
@@ -822,7 +826,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   arabicText: {
-    fontSize: 32,
     fontWeight: "400",
     textAlign: "center",
     lineHeight: 50,

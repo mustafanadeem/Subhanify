@@ -38,7 +38,17 @@ export async function initDatabase(): Promise<void> {
 }
 
 /**
- * Get the database instance
+ * Get the database instance, initializing if necessary
+ */
+async function ensureDbInitialized(): Promise<SQLite.SQLiteDatabase> {
+  if (!db) {
+    await initDatabase();
+  }
+  return db!;
+}
+
+/**
+ * Get the database instance (synchronous - use with caution)
  */
 function getDb(): SQLite.SQLiteDatabase {
   if (!db) {
@@ -51,7 +61,7 @@ function getDb(): SQLite.SQLiteDatabase {
  * Save a new location or update an existing one
  */
 export async function saveLocation(location: SavedLocation): Promise<void> {
-  const database = getDb();
+  const database = await ensureDbInitialized();
   
   await database.runAsync(
     `INSERT OR REPLACE INTO locations 
@@ -76,7 +86,7 @@ export async function saveLocation(location: SavedLocation): Promise<void> {
  * Get all saved locations
  */
 export async function getAllLocations(): Promise<SavedLocation[]> {
-  const database = getDb();
+  const database = await ensureDbInitialized();
   
   const result = await database.getAllAsync<any>(
     'SELECT * FROM locations ORDER BY created_at DESC'
@@ -100,7 +110,7 @@ export async function getAllLocations(): Promise<SavedLocation[]> {
  * Get all enabled locations
  */
 export async function getEnabledLocations(): Promise<SavedLocation[]> {
-  const database = getDb();
+  const database = await ensureDbInitialized();
   
   const result = await database.getAllAsync<any>(
     'SELECT * FROM locations WHERE enabled = 1 ORDER BY created_at DESC'
@@ -124,7 +134,7 @@ export async function getEnabledLocations(): Promise<SavedLocation[]> {
  * Get a location by ID
  */
 export async function getLocationById(id: string): Promise<SavedLocation | null> {
-  const database = getDb();
+  const database = await ensureDbInitialized();
   
   const result = await database.getFirstAsync<any>(
     'SELECT * FROM locations WHERE id = ?',
@@ -151,7 +161,7 @@ export async function getLocationById(id: string): Promise<SavedLocation | null>
  * Delete a location by ID
  */
 export async function deleteLocation(id: string): Promise<void> {
-  const database = getDb();
+  const database = await ensureDbInitialized();
   await database.runAsync('DELETE FROM locations WHERE id = ?', [id]);
 }
 
@@ -159,7 +169,7 @@ export async function deleteLocation(id: string): Promise<void> {
  * Toggle location enabled status
  */
 export async function toggleLocationEnabled(id: string, enabled: boolean): Promise<void> {
-  const database = getDb();
+  const database = await ensureDbInitialized();
   await database.runAsync(
     'UPDATE locations SET enabled = ? WHERE id = ?',
     [enabled ? 1 : 0, id]
@@ -170,7 +180,7 @@ export async function toggleLocationEnabled(id: string, enabled: boolean): Promi
  * Get locations by category
  */
 export async function getLocationsByCategory(category: LocationCategory): Promise<SavedLocation[]> {
-  const database = getDb();
+  const database = await ensureDbInitialized();
   
   const result = await database.getAllAsync<any>(
     'SELECT * FROM locations WHERE category = ? ORDER BY created_at DESC',
