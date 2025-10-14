@@ -1,13 +1,15 @@
-export type PrayerName = "Fajr" | "Sunrise" | "Dhuhr" | "AsrMithl1" | "AsrMithl2" | "Maghrib" | "Isha";
+export type PrayerName = "Fajr" | "Sunrise" | "Dhuhr" | "AsrMithl1" | "AsrMithl2" | "Maghrib" | "Isha" | "Midnight" | "LastThird";
 
 export type UserSettings = {
-  useLocationBased?: boolean; // Use nearby mosque or location-based method
-  method: number; // default 15
-  schoolPrimary: 0 | 1; // which Asr to show as primary
-  lam: 1 | 2 | 3; // high latitude adjustment
+  useLocationBased?: boolean;
+  method: number;
+  schoolPrimary: 0 | 1;
+  lam: 1 | 2 | 3;
   showBothAsr: boolean;
+  showMidnight: boolean;
+  showLastThird: boolean;
   tune: { fajr: number; dhuhr: number; asr: number; maghrib: number; isha: number };
-  timeFormat24h?: boolean; // optional preference, else device locale
+  timeFormat24h?: boolean;
 };
 
 export type DayInfo = {
@@ -34,7 +36,9 @@ export type TodayPrayerTimes = {
   asrMithl2: PrayerTime;
   maghrib: PrayerTime;
   isha: PrayerTime;
-  lastUpdated: number; // epoch ms
+  midnight: PrayerTime;
+  lastThird: PrayerTime;
+  lastUpdated: number;
   offline: boolean;
 };
 

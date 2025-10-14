@@ -1,13 +1,13 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
-import { TodayPrayerTimes } from "@/modules/prayer-times/domain/entities";
+import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/entities";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Dimensions, StyleSheet, Text, View } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const CARD_WIDTH = SCREEN_WIDTH - 40; // match container padding in Home
+const CARD_WIDTH = SCREEN_WIDTH - 40;
 
-type PrayerKey = "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
+type PrayerKey = "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha" | "Midnight" | "Last Third";
 
 type PrayerItem = { key: PrayerKey; timeIso: string };
 
@@ -15,6 +15,7 @@ export function PrayerCarousel() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [times, setTimes] = useState<TodayPrayerTimes | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [initialIndex, setInitialIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const repo = useMemo(() => new PrayerTimesRepository(), []);
@@ -23,25 +24,37 @@ export function PrayerCarousel() {
     (async () => {
       try {
         const t = await repo.getToday();
+        const s = repo.loadSettings();
         setTimes(t);
-        const idx = computeCurrentIndex(t);
+        setSettings(s);
+        const idx = computeCurrentIndex(t, s);
         setInitialIndex(idx);
       } catch {
-        // ignore; component will render nothing
       }
     })();
   }, []);
 
   const data: PrayerItem[] = useMemo(() => {
-    if (!times) return [];
-    return [
+    if (!times || !settings) return [];
+    const primaryAsr = settings.schoolPrimary === 0 ? times.asrMithl1 : times.asrMithl2;
+    const items: PrayerItem[] = [
       { key: "Fajr", timeIso: times.fajr.timeIso },
       { key: "Dhuhr", timeIso: times.dhuhr.timeIso },
-      { key: "Asr", timeIso: (times as any).asrMithl1?.timeIso ?? times.asrMithl2.timeIso },
+      { key: "Asr", timeIso: primaryAsr.timeIso },
       { key: "Maghrib", timeIso: times.maghrib.timeIso },
       { key: "Isha", timeIso: times.isha.timeIso },
     ];
-  }, [times]);
+    
+    if (settings.showMidnight) {
+      items.push({ key: "Midnight", timeIso: times.midnight.timeIso });
+    }
+    
+    if (settings.showLastThird) {
+      items.push({ key: "Last Third", timeIso: times.lastThird.timeIso });
+    }
+    
+    return items;
+  }, [times, settings]);
 
   if (!times) return null;
 
@@ -103,14 +116,24 @@ function CarouselItem({ index, label, time, scrollX }: { index: number; label: s
   );
 }
 
-function computeCurrentIndex(t: TodayPrayerTimes): number {
+function computeCurrentIndex(t: TodayPrayerTimes, s: UserSettings): number {
+  const primaryAsr = s.schoolPrimary === 0 ? t.asrMithl1 : t.asrMithl2;
   const order: { key: PrayerKey; iso: string }[] = [
     { key: "Fajr", iso: t.fajr.timeIso },
     { key: "Dhuhr", iso: t.dhuhr.timeIso },
-    { key: "Asr", iso: (t as any).asrMithl1?.timeIso ?? t.asrMithl2.timeIso },
+    { key: "Asr", iso: primaryAsr.timeIso },
     { key: "Maghrib", iso: t.maghrib.timeIso },
     { key: "Isha", iso: t.isha.timeIso },
   ];
+  
+  if (s.showMidnight) {
+    order.push({ key: "Midnight", iso: t.midnight.timeIso });
+  }
+  
+  if (s.showLastThird) {
+    order.push({ key: "Last Third", iso: t.lastThird.timeIso });
+  }
+  
   const now = Date.now();
   let idx = 0;
   for (let i = 0; i < order.length; i++) {

@@ -1,14 +1,15 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
+    Pressable,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
 } from "react-native";
 import { PrayerTimesRepository } from "../data/repository";
 import { UserSettings } from "../domain/entities";
@@ -26,6 +27,7 @@ export default function SettingsScreen() {
   const cs = useColorScheme();
   const text = { color: Colors[cs ?? "light"].text };
   const isDark = cs === "dark";
+  const router = useRouter();
 
   function update(partial: Partial<UserSettings>) {
     const next = { ...settings, ...partial };
@@ -111,6 +113,24 @@ export default function SettingsScreen() {
           onValueChange={(v) => update({ showBothAsr: v })}
         />
 
+        <Text style={[{ marginTop: 8 }, text]}>Show Midnight</Text>
+        <Text style={[{ fontSize: 12, color: "#666", marginTop: 2 }]}>
+          Midpoint between Maghrib and Fajr
+        </Text>
+        <Switch
+          value={settings.showMidnight ?? false}
+          onValueChange={(v) => update({ showMidnight: v })}
+        />
+
+        <Text style={[{ marginTop: 8 }, text]}>Show Last Third of Night</Text>
+        <Text style={[{ fontSize: 12, color: "#666", marginTop: 2 }]}>
+          Best time for Tahajjud prayer
+        </Text>
+        <Switch
+          value={settings.showLastThird ?? false}
+          onValueChange={(v) => update({ showLastThird: v })}
+        />
+
         <Text style={[{ marginTop: 8 }, text]}>Tune (minutes)</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           <TuneChoice
@@ -189,6 +209,33 @@ export default function SettingsScreen() {
               })
             }
           />
+        </View>
+
+        {/* Rain Alerts Section */}
+        <View style={{ marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: Colors[cs ?? "light"].text + "20" }}>
+          <Text style={[{ fontSize: 18, fontWeight: "600", marginBottom: 12 }, text]}>Rain Alerts</Text>
+          <Pressable
+            onPress={() => router.push("/rain-alert-settings")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: Colors[cs ?? "light"].text + "08",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: Colors[cs ?? "light"].text + "20",
+            }}
+          >
+            <Text style={{ fontSize: 24, marginRight: 12 }}>🌧️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>Rain Alerts</Text>
+              <Text style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}>
+                Get notified when rain starts with dua reminders
+              </Text>
+            </View>
+            <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

@@ -14,17 +14,21 @@ export class PrayerTimesRepository {
 
   getDefaultSettings(): UserSettings {
     return {
-      useLocationBased: true, // Default to app recommended
+      useLocationBased: true,
       method: 15,
       schoolPrimary: 0,
       lam: 3,
       showBothAsr: true,
+      showMidnight: false,
+      showLastThird: false,
       tune: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 },
     };
   }
 
   loadSettings(): UserSettings {
-    return this.db.loadSetting<UserSettings>("prayer_settings", this.getDefaultSettings());
+    const defaults = this.getDefaultSettings();
+    const loaded = this.db.loadSetting<UserSettings>("prayer_settings", defaults);
+    return { ...defaults, ...loaded };
   }
 
   saveSettings(s: UserSettings): void {
@@ -91,7 +95,7 @@ export class PrayerTimesRepository {
       dtoAlt = monthAlt.data[day - 1];
     }
 
-    const mapped = mapDtoToToday(dtoPrimary, dtoAlt);
+    const mapped = mapDtoToToday(dtoPrimary, dtoAlt, settings.schoolPrimary);
     return { ...mapped, offline: usedOffline };
   }
 }

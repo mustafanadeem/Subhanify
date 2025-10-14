@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>BGTaskSchedulerPermittedIdentifiers</key>
+  <array>
+    <string>com.subhanify.rainAlertRefresh</string>
+  </array>
+  
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>We need your coarse location to send rain alerts with dua reminders when it rains near you. Only approximate location tiles are used for privacy.</string>
+  
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>We need your coarse location to send rain alerts with dua reminders even when the app is in the background. Only approximate location tiles are used for privacy.</string>
+  
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>fetch</string>
+    <string>remote-notification</string>
+    <string>processing</string>
+  </array>
+</dict>
+</plist>
+

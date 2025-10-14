@@ -4,14 +4,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { PrayerTimesRepository } from "../data/repository";
 import { TodayPrayerTimes, UserSettings } from "../domain/entities";
@@ -62,6 +62,16 @@ export default function PrayerTimesScreen() {
 
   const primaryAsr =
     settings.schoolPrimary === 0 ? data?.asrMithl1 : data?.asrMithl2;
+  
+  const mithl1Time = data?.asrMithl1 ? new Date(data.asrMithl1.timeIso).getTime() : 0;
+  const mithl2Time = data?.asrMithl2 ? new Date(data.asrMithl2.timeIso).getTime() : 0;
+  const mithl1IsEarlier = mithl1Time <= mithl2Time;
+  
+  const firstAsr = mithl1IsEarlier ? data?.asrMithl1 : data?.asrMithl2;
+  const secondAsr = mithl1IsEarlier ? data?.asrMithl2 : data?.asrMithl1;
+  const firstAsrLabel = mithl1IsEarlier ? "Shafi'i, Maliki, Hanbali" : "Hanafi";
+  const secondAsrLabel = mithl1IsEarlier ? "Hanafi" : "Shafi'i, Maliki, Hanbali";
+  const firstAsrIsPrimary = (mithl1IsEarlier && settings.schoolPrimary === 0) || (!mithl1IsEarlier && settings.schoolPrimary === 1);
 
   const textColor = { color: Colors[colorScheme ?? "light"].text };
   const isDark = colorScheme === "dark";
@@ -277,28 +287,31 @@ export default function PrayerTimesScreen() {
             colorScheme={colorScheme}
             isPrimary={true}
           />
-          <PrayerTimeRow
-            label={`Asr${settings.showBothAsr ? " (Primary)" : ""}`}
-            value={formatTime(primaryAsr?.timeIso ?? "")}
-            icon="partly-sunny"
-            colorScheme={colorScheme}
-            isPrimary={true}
-          />
-          {settings.showBothAsr && (
+          {!settings.showBothAsr ? (
+            <PrayerTimeRow
+              label="Asr"
+              value={formatTime(primaryAsr?.timeIso ?? "")}
+              icon="partly-sunny"
+              colorScheme={colorScheme}
+              isPrimary={true}
+            />
+          ) : (
             <>
               <PrayerTimeRow
-                label="Asr (Mithl 1)"
-                value={formatTime(data.asrMithl1.timeIso)}
-                icon="time-outline"
+                label={`Asr (${firstAsrLabel})`}
+                value={formatTime(firstAsr?.timeIso ?? "")}
+                icon="partly-sunny"
                 colorScheme={colorScheme}
-                isSecondary={true}
+                isPrimary={firstAsrIsPrimary}
+                isSecondary={!firstAsrIsPrimary}
               />
               <PrayerTimeRow
-                label="Asr (Mithl 2)"
-                value={formatTime(data.asrMithl2.timeIso)}
+                label={`Asr (${secondAsrLabel})`}
+                value={formatTime(secondAsr?.timeIso ?? "")}
                 icon="time-outline"
                 colorScheme={colorScheme}
-                isSecondary={true}
+                isPrimary={!firstAsrIsPrimary}
+                isSecondary={firstAsrIsPrimary}
               />
             </>
           )}
@@ -316,6 +329,24 @@ export default function PrayerTimesScreen() {
             colorScheme={colorScheme}
             isPrimary={true}
           />
+          {settings.showMidnight && data.midnight && (
+            <PrayerTimeRow
+              label="Midnight"
+              value={formatTime(data.midnight.timeIso)}
+              icon="moon-outline"
+              colorScheme={colorScheme}
+              isInfo={true}
+            />
+          )}
+          {settings.showLastThird && data.lastThird && (
+            <PrayerTimeRow
+              label="Last Third"
+              value={formatTime(data.lastThird.timeIso)}
+              icon="star-outline"
+              colorScheme={colorScheme}
+              isInfo={true}
+            />
+          )}
         </View>
 
         {/* Settings Info */}

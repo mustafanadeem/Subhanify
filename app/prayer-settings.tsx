@@ -4,13 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { PrayerTimesRepository } from "../modules/prayer-times/data/repository";
 import { UserSettings } from "../modules/prayer-times/domain/entities";
@@ -430,6 +430,74 @@ export default function PrayerSettingsScreen() {
             </View>
           </View>
         )}
+
+        {/* Midnight and Last Third */}
+        <View style={styles.section}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor:
+                  Colors[colorScheme ?? "light"].cardBackground,
+                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+              },
+            ]}
+          >
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text
+                  style={[
+                    styles.settingLabel,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Show Midnight
+                </Text>
+                <Text
+                  style={[
+                    styles.settingSubtext,
+                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                  ]}
+                >
+                  Midpoint between Maghrib and Fajr
+                </Text>
+              </View>
+              <Switch
+                value={settings.showMidnight ?? false}
+                onValueChange={(v) => update({ showMidnight: v })}
+                trackColor={{ false: "#767577", true: "#81C784" }}
+                thumbColor={settings.showMidnight ? "#4CAF50" : "#f4f3f4"}
+              />
+            </View>
+
+            <View style={[styles.settingRow, { borderTopWidth: 1, borderTopColor: isDark ? "#2C2C2E" : "#E5E5EA" }]}>
+              <View style={styles.settingInfo}>
+                <Text
+                  style={[
+                    styles.settingLabel,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Show Last Third of Night
+                </Text>
+                <Text
+                  style={[
+                    styles.settingSubtext,
+                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                  ]}
+                >
+                  Best time for Tahajjud prayer
+                </Text>
+              </View>
+              <Switch
+                value={settings.showLastThird ?? false}
+                onValueChange={(v) => update({ showLastThird: v })}
+                trackColor={{ false: "#767577", true: "#81C784" }}
+                thumbColor={settings.showLastThird ? "#4CAF50" : "#f4f3f4"}
+              />
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );

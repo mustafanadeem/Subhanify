@@ -14,8 +14,9 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Subhanify needs your location to remind you of adhkar when you enter or leave specific places like mosques, home, or market.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Subhanify needs background location access to send you adhkar reminders when you enter or leave your saved locations, even when the app is not active.",
-        "NSLocationAlwaysUsageDescription": "Subhanify needs background location access to send you adhkar reminders when you enter or leave your saved locations.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Subhanify needs background location access to send you adhkar reminders when you enter or leave your saved locations, even when the app is not active. This enables automatic mosque detection and travel-based adhkar.",
+        "NSLocationAlwaysUsageDescription": "Subhanify needs background location access to send you adhkar reminders when you enter or leave your saved locations, and to detect when you're traveling for travel-specific adhkar.",
+        "NSMotionUsageDescription": "Subhanify uses motion data to detect when you're traveling for travel-specific adhkar, and to avoid sending notifications while you're driving for safety. Motion data is processed locally and never shared.",
         "UIBackgroundModes": [
           "location"
         ]
@@ -38,6 +39,7 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
+        "ACTIVITY_RECOGNITION",
         "POST_NOTIFICATIONS"
       ],
       "config": {

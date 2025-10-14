@@ -5,18 +5,21 @@ import { useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AdhkarItem } from "@/types/adhkar";
 import { getAdhkarByCategory } from "@/utils/adhkar-utils";
+import Slider from "@react-native-community/slider";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Modal,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
@@ -28,7 +31,7 @@ export default function AdhkarDetailScreen() {
   const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { getFontFamily, arabicTextSize } = useFont();
+  const { getFontFamily, arabicTextSize, setArabicTextSize } = useFont();
 
   // Get the category from params
   const categoryTitle = (params.title as string) || "Morning";
@@ -45,6 +48,11 @@ export default function AdhkarDetailScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [textSize, setTextSize] = useState(17);
+  const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "auto">("auto");
+  const slideAnim2 = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  const [showRelatedArticles, setShowRelatedArticles] = useState(false);
 
   // Get current adhkar
   const currentAdhkar: AdhkarItem | undefined = adhkarList[currentIndex];
@@ -58,6 +66,24 @@ export default function AdhkarDetailScreen() {
       setCount(currentAdhkar.quantity);
     }
   }, [currentIndex, currentAdhkar]);
+
+  // Quick settings slide animation
+  useEffect(() => {
+    if (showQuickSettings) {
+      Animated.spring(slideAnim2, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 65,
+        friction: 11,
+      }).start();
+    } else {
+      Animated.timing(slideAnim2, {
+        toValue: SCREEN_WIDTH,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showQuickSettings]);
 
   // Handle horizontal scroll
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -195,18 +221,18 @@ export default function AdhkarDetailScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
-          <ThemedText style={styles.headerTitle}>{categoryTitle}</ThemedText>
+          <ThemedText style={styles.headerTitle}>Adhkar</ThemedText>
         </View>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/(tabs)')}>
             <IconSymbol
               name="house.fill"
               size={22}
               color={Colors[colorScheme ?? "light"].text}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity style={styles.headerButton} onPress={() => setShowQuickSettings(true)}>
             <IconSymbol
               name="ellipsis"
               size={22}
@@ -215,6 +241,426 @@ export default function AdhkarDetailScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Related Articles Button */}
+      <TouchableOpacity
+        style={[
+          styles.relatedArticlesButton,
+          {
+            backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
+            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+          },
+        ]}
+        onPress={() => setShowRelatedArticles(true)}
+      >
+        <View style={styles.relatedArticlesContent}>
+          <IconSymbol
+            name="list.bullet.rectangle"
+            size={20}
+            color="#3B82F6"
+          />
+          <Text
+            style={[
+              styles.relatedArticlesText,
+              { color: Colors[colorScheme ?? "light"].text },
+            ]}
+          >
+            {categoryTitle}
+          </Text>
+        </View>
+        <IconSymbol
+          name="chevron.right"
+          size={16}
+          color={Colors[colorScheme ?? "light"].textSecondary}
+        />
+      </TouchableOpacity>
+
+      {/* Related Articles Modal */}
+      <Modal
+        visible={showRelatedArticles}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowRelatedArticles(false)}
+      >
+        <View style={styles.relatedModalContainer}>
+          <View
+            style={[
+              styles.relatedModalContent,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].background,
+              },
+            ]}
+          >
+             {/* Modal Header */}
+             <View
+               style={[
+                 styles.relatedModalHeader,
+                 {
+                   backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
+                   borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                 },
+               ]}
+             >
+               <TouchableOpacity
+                 style={styles.headerButton}
+                 onPress={() => setShowRelatedArticles(false)}
+               >
+                 <IconSymbol
+                   name="chevron.left"
+                   size={24}
+                   color={Colors[colorScheme ?? "light"].text}
+                 />
+               </TouchableOpacity>
+               <View style={styles.relatedModalTitleContainer}>
+                 <Text
+                   style={[
+                     styles.relatedModalTitle,
+                     { color: Colors[colorScheme ?? "light"].text },
+                   ]}
+                 >
+                   {categoryTitle}
+                 </Text>
+               </View>
+              <View style={{ width: 44 }} />
+             </View>
+
+            {/* List of Adhkar */}
+            <ScrollView style={styles.relatedModalList}>
+              {adhkarList.map((adhkar, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.relatedArticleItem,
+                    {
+                      backgroundColor: currentIndex === index
+                        ? isDark ? "#2C2C2E" : "#E8F4FD"
+                        : isDark ? "#1C1C1E" : "#FFFFFF",
+                      borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                    },
+                  ]}
+                  onPress={() => {
+                    setShowRelatedArticles(false);
+                    scrollToIndex(index);
+                  }}
+                >
+                  <View style={styles.relatedArticleNumber}>
+                    <Text
+                      style={[
+                        styles.relatedArticleNumberText,
+                        {
+                          color: currentIndex === index
+                            ? "#3B82F6"
+                            : Colors[colorScheme ?? "light"].textSecondary,
+                        },
+                      ]}
+                    >
+                      {index + 1}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.relatedArticleTitle,
+                      {
+                        color: Colors[colorScheme ?? "light"].text,
+                        fontWeight: currentIndex === index ? "600" : "400",
+                      },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {adhkar.Adhkar}
+                  </Text>
+                  {currentIndex === index && (
+                    <IconSymbol
+                      name="checkmark.circle.fill"
+                      size={20}
+                      color="#3B82F6"
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Quick Settings Modal */}
+      <Modal
+        visible={showQuickSettings}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowQuickSettings(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowQuickSettings(false)}
+          />
+          <Animated.View
+            style={[
+              styles.quickSettingsContainer,
+              {
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                transform: [{ translateX: slideAnim2 }],
+              },
+            ]}
+          >
+            <View style={styles.quickSettingsHeader}>
+              <Text
+                style={[
+                  styles.quickSettingsTitle,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Quick Settings
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowQuickSettings(false)}
+                style={styles.closeButton}
+              >
+                <IconSymbol
+                  name="xmark"
+                  size={20}
+                  color={Colors[colorScheme ?? "light"].text}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.quickSettingsContent}>
+              {/* Arabic Text Size */}
+              <View style={styles.settingItem}>
+                <View style={styles.settingHeader}>
+                  <IconSymbol
+                    name="textformat.size"
+                    size={20}
+                    color="#3B82F6"
+                  />
+                  <Text
+                    style={[
+                      styles.settingLabel,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    Arabic Text Size
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingValue,
+                      { color: Colors[colorScheme ?? "light"].textSecondary },
+                    ]}
+                  >
+                    {Math.round(arabicTextSize)}
+                  </Text>
+                </View>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={20}
+                  maximumValue={48}
+                  step={1}
+                  value={arabicTextSize}
+                  onValueChange={setArabicTextSize}
+                  minimumTrackTintColor="#3B82F6"
+                  maximumTrackTintColor={isDark ? "#3A3A3C" : "#D1D5DB"}
+                  thumbTintColor="#3B82F6"
+                />
+              </View>
+
+              {/* Text Size */}
+              <View style={styles.settingItem}>
+                <View style={styles.settingHeader}>
+                  <IconSymbol
+                    name="textformat"
+                    size={20}
+                    color="#3B82F6"
+                  />
+                  <Text
+                    style={[
+                      styles.settingLabel,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    Text Size
+                  </Text>
+                  <Text
+                    style={[
+                      styles.settingValue,
+                      { color: Colors[colorScheme ?? "light"].textSecondary },
+                    ]}
+                  >
+                    {Math.round(textSize)}
+                  </Text>
+                </View>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={12}
+                  maximumValue={24}
+                  step={1}
+                  value={textSize}
+                  onValueChange={setTextSize}
+                  minimumTrackTintColor="#3B82F6"
+                  maximumTrackTintColor={isDark ? "#3A3A3C" : "#D1D5DB"}
+                  thumbTintColor="#3B82F6"
+                />
+              </View>
+
+              {/* Select Theme */}
+              <View style={styles.themeSection}>
+                <View style={styles.settingHeader}>
+                  <IconSymbol
+                    name="paintbrush.fill"
+                    size={20}
+                    color="#3B82F6"
+                  />
+                  <Text
+                    style={[
+                      styles.settingLabel,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    Select Theme
+                  </Text>
+                </View>
+                <View style={styles.themeOptions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.themeOption,
+                      {
+                        backgroundColor: selectedTheme === "light" 
+                          ? "#3B82F6" 
+                          : isDark ? "#2C2C2E" : "#F2F2F7",
+                        borderColor: selectedTheme === "light"
+                          ? "#3B82F6"
+                          : isDark ? "#3A3A3C" : "#E5E5EA",
+                      },
+                    ]}
+                    onPress={() => setSelectedTheme("light")}
+                  >
+                    <IconSymbol
+                      name="sun.max.fill"
+                      size={20}
+                      color={selectedTheme === "light" ? "#FFFFFF" : isDark ? "#FFFFFF" : "#000000"}
+                    />
+                    <Text
+                      style={[
+                        styles.themeOptionText,
+                        {
+                          color: selectedTheme === "light"
+                            ? "#FFFFFF"
+                            : Colors[colorScheme ?? "light"].text,
+                        },
+                      ]}
+                    >
+                      Light
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.themeOption,
+                      {
+                        backgroundColor: selectedTheme === "dark"
+                          ? "#3B82F6"
+                          : isDark ? "#2C2C2E" : "#F2F2F7",
+                        borderColor: selectedTheme === "dark"
+                          ? "#3B82F6"
+                          : isDark ? "#3A3A3C" : "#E5E5EA",
+                      },
+                    ]}
+                    onPress={() => setSelectedTheme("dark")}
+                  >
+                    <IconSymbol
+                      name="moon.fill"
+                      size={20}
+                      color={selectedTheme === "dark" ? "#FFFFFF" : isDark ? "#FFFFFF" : "#000000"}
+                    />
+                    <Text
+                      style={[
+                        styles.themeOptionText,
+                        {
+                          color: selectedTheme === "dark"
+                            ? "#FFFFFF"
+                            : Colors[colorScheme ?? "light"].text,
+                        },
+                      ]}
+                    >
+                      Dark
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.themeOption,
+                      {
+                        backgroundColor: selectedTheme === "auto"
+                          ? "#3B82F6"
+                          : isDark ? "#2C2C2E" : "#F2F2F7",
+                        borderColor: selectedTheme === "auto"
+                          ? "#3B82F6"
+                          : isDark ? "#3A3A3C" : "#E5E5EA",
+                      },
+                    ]}
+                    onPress={() => setSelectedTheme("auto")}
+                  >
+                    <IconSymbol
+                      name="sparkles"
+                      size={20}
+                      color={selectedTheme === "auto" ? "#FFFFFF" : isDark ? "#FFFFFF" : "#000000"}
+                    />
+                    <Text
+                      style={[
+                        styles.themeOptionText,
+                        {
+                          color: selectedTheme === "auto"
+                            ? "#FFFFFF"
+                            : Colors[colorScheme ?? "light"].text,
+                        },
+                      ]}
+                    >
+                      Auto
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* More Settings */}
+              <TouchableOpacity
+                style={[
+                  styles.moreSettingsButton,
+                  {
+                    backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                    borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                  },
+                ]}
+                onPress={() => {
+                  setShowQuickSettings(false);
+                  router.push("/appearance-settings");
+                }}
+              >
+                <View style={styles.moreSettingsContent}>
+                  <IconSymbol
+                    name="gearshape.fill"
+                    size={20}
+                    color="#3B82F6"
+                  />
+                  <Text
+                    style={[
+                      styles.moreSettingsText,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    More Settings
+                  </Text>
+                </View>
+                <IconSymbol
+                  name="chevron.right"
+                  size={16}
+                  color={Colors[colorScheme ?? "light"].textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
 
       {/* Progress Indicator */}
       <View style={styles.progressContainer}>
@@ -322,7 +768,7 @@ export default function AdhkarDetailScreen() {
                     },
                   ]}
                 >
-                  <ThemedText style={styles.transliteration}>
+                  <ThemedText style={[styles.transliteration, { fontSize: textSize }]}>
                     {adhkar.transliteration}
                   </ThemedText>
                 </View>
@@ -338,7 +784,7 @@ export default function AdhkarDetailScreen() {
                       },
                     ]}
                   >
-                    <ThemedText style={styles.translation}>
+                    <ThemedText style={[styles.translation, { fontSize: textSize }]}>
                       {adhkar.translation}
                     </ThemedText>
                   </View>
@@ -912,5 +1358,201 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     zIndex: 1000,
+  },
+  modalOverlay: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "flex-start",
+  },
+  modalBackdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  quickSettingsContainer: {
+    width: 280,
+    marginTop: 60,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  quickSettingsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+  },
+  quickSettingsTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.4,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickSettingsContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 24,
+    gap: 24,
+  },
+  settingItem: {
+    gap: 12,
+  },
+  settingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    flex: 1,
+  },
+  settingValue: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  slider: {
+    width: "100%",
+    height: 40,
+  },
+  themeSection: {
+    gap: 12,
+  },
+  themeOptions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  moreSettingsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  moreSettingsContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  moreSettingsText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  relatedArticlesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  relatedArticlesContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  relatedArticlesText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  relatedModalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  relatedModalContent: {
+    flex: 1,
+    marginTop: 60,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  relatedModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  relatedModalTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  relatedModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  relatedModalList: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  relatedArticleItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  relatedArticleNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  relatedArticleNumberText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  relatedArticleTitle: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
   },
 });

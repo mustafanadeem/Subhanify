@@ -1,7 +1,7 @@
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -12,6 +12,7 @@ import "react-native-reanimated";
 
 import { FontProvider } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { RainAlertNotificationHandler } from "@/services/rain-alert-notification-handler";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -33,6 +34,10 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    RainAlertNotificationHandler.initialize();
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;
@@ -64,6 +69,14 @@ export default function RootLayout() {
           <Stack.Screen
             name="appearance-settings"
             options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="rain-alert-settings"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="rain-dua"
+            options={{ headerShown: false, presentation: "modal" }}
           />
         </Stack>
         <StatusBar style="auto" />

@@ -4,12 +4,12 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface SettingItemProps {
@@ -50,7 +50,7 @@ function SettingItem({
           ]}
         >
           <IconSymbol
-            name={icon}
+            name={icon as any}
             size={22}
             color={isDark ? "#FFFFFF" : "#000000"}
           />
@@ -141,6 +141,21 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Settings</ThemedText>
           <SettingItem
+            title="Privacy & Permissions"
+            icon="lock.shield.fill"
+            onPress={() => router.push("/privacy-settings" as any)}
+          />
+          <SettingItem
+            title="Travel Settings"
+            icon="car.fill"
+            onPress={() => router.push("/travel-settings" as any)}
+          />
+          <SettingItem
+            title="Rain Alerts"
+            icon="cloud.rain.fill"
+            onPress={() => router.push("/rain-alert-settings" as any)}
+          />
+          <SettingItem
             title="Appearance"
             icon="paintbrush.fill"
             onPress={() => router.push("/appearance-settings")}
@@ -201,7 +216,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 20,
+  paddingBottom: 20,
   },
   headerTitle: {
     fontSize: 28,
