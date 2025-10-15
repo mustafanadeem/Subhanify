@@ -305,6 +305,7 @@ export default function AdhkarDetailScreen() {
                       {
                         fontFamily: getFontFamily(),
                         fontSize: arabicTextSize,
+                        lineHeight: arabicTextSize * 2,
                       },
                     ]}
                   >
@@ -478,6 +479,7 @@ export default function AdhkarDetailScreen() {
                             {
                               fontFamily: getFontFamily(),
                               fontSize: arabicTextSize,
+                              lineHeight: arabicTextSize * 2,
                             },
                           ]}
                         >
@@ -781,6 +783,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 20,
     paddingBottom: 40,
+    flexGrow: 1,
   },
   titleSection: {
     marginBottom: 20,
@@ -822,24 +825,26 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 20,
+    padding: 24,
     marginBottom: 12,
+    minHeight: 100,
   },
   arabicText: {
     fontWeight: "400",
-    textAlign: "center",
-    lineHeight: 50,
-    letterSpacing: 1,
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   transliteration: {
-    fontSize: 18,
+    fontSize: 16,
     fontStyle: "italic",
-    lineHeight: 26,
+    lineHeight: 24,
+    textAlign: "left",
   },
   translation: {
-    fontSize: 17,
-    lineHeight: 26,
-    fontWeight: "500",
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "400",
+    textAlign: "left",
   },
   virtueCard: {
     borderRadius: 16,
