@@ -1,7 +1,7 @@
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -78,6 +78,8 @@ export default function RootLayout() {
             name="rain-dua"
             options={{ headerShown: false, presentation: "modal" }}
           />
+          <Stack.Screen name="support" options={{ headerShown: false }} />
+          <Stack.Screen name="view-feedback" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

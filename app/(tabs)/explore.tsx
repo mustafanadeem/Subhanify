@@ -177,6 +177,21 @@ export default function ProfileScreen() {
           />
         </View>
 
+        {/* Support Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Support</ThemedText>
+          <SettingItem
+            title="Send Feedback"
+            icon="bubble.left.and.bubble.right.fill"
+            onPress={() => router.push("/support")}
+          />
+          <SettingItem
+            title="View Feedback"
+            icon="list.bullet.clipboard.fill"
+            onPress={() => router.push("/view-feedback")}
+          />
+        </View>
+
         {/* About Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>About</ThemedText>

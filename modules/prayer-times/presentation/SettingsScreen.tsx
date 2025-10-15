@@ -3,13 +3,13 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-    Pressable,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    View,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
 } from "react-native";
 import { PrayerTimesRepository } from "../data/repository";
 import { UserSettings } from "../domain/entities";
@@ -212,8 +212,22 @@ export default function SettingsScreen() {
         </View>
 
         {/* Rain Alerts Section */}
-        <View style={{ marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: Colors[cs ?? "light"].text + "20" }}>
-          <Text style={[{ fontSize: 18, fontWeight: "600", marginBottom: 12 }, text]}>Rain Alerts</Text>
+        <View
+          style={{
+            marginTop: 24,
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: Colors[cs ?? "light"].text + "20",
+          }}
+        >
+          <Text
+            style={[
+              { fontSize: 18, fontWeight: "600", marginBottom: 12 },
+              text,
+            ]}
+          >
+            Rain Alerts
+          </Text>
           <Pressable
             onPress={() => router.push("/rain-alert-settings")}
             style={{
@@ -229,9 +243,86 @@ export default function SettingsScreen() {
           >
             <Text style={{ fontSize: 24, marginRight: 12 }}>🌧️</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>Rain Alerts</Text>
-              <Text style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}>
+              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>
+                Rain Alerts
+              </Text>
+              <Text
+                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}
+              >
                 Get notified when rain starts with dua reminders
+              </Text>
+            </View>
+            <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
+          </Pressable>
+        </View>
+
+        {/* Support & Feedback Section */}
+        <View
+          style={{
+            marginTop: 24,
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: Colors[cs ?? "light"].text + "20",
+          }}
+        >
+          <Text
+            style={[
+              { fontSize: 18, fontWeight: "600", marginBottom: 12 },
+              text,
+            ]}
+          >
+            Support
+          </Text>
+          <Pressable
+            onPress={() => router.push("/support")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: Colors[cs ?? "light"].text + "08",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: Colors[cs ?? "light"].text + "20",
+              marginBottom: 8,
+            }}
+          >
+            <Text style={{ fontSize: 24, marginRight: 12 }}>💬</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>
+                Send Feedback
+              </Text>
+              <Text
+                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}
+              >
+                Share your thoughts and help us improve
+              </Text>
+            </View>
+            <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/view-feedback")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: Colors[cs ?? "light"].text + "08",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: Colors[cs ?? "light"].text + "20",
+            }}
+          >
+            <Text style={{ fontSize: 24, marginRight: 12 }}>📋</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>
+                View Feedback
+              </Text>
+              <Text
+                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}
+              >
+                Review all submitted feedback (Dev only)
               </Text>
             </View>
             <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
