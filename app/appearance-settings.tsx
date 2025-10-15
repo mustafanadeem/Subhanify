@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import { ArabicFont as FontType, useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -250,14 +251,24 @@ export default function AppearanceSettingsScreen() {
 
         {/* Arabic Text Size Section */}
         <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            Arabic Text Size
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Arabic Text Size
+            </Text>
+            <Text
+              style={[
+                styles.sizeLabel,
+                { color: Colors[colorScheme ?? "light"].textSecondary },
+              ]}
+            >
+              {arabicTextSize}px
+            </Text>
+          </View>
           <View
             style={[
               styles.card,
@@ -268,49 +279,28 @@ export default function AppearanceSettingsScreen() {
             ]}
           >
             <View style={styles.sliderContainer}>
-              <View style={styles.sizeControls}>
-                <TouchableOpacity
-                  style={[
-                    styles.sizeButton,
-                    {
-                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                    },
-                  ]}
-                  onPress={() =>
-                    setArabicTextSize(Math.max(14, arabicTextSize - 1))
-                  }
-                >
-                  <Ionicons
-                    name="remove"
-                    size={20}
-                    color={Colors[colorScheme ?? "light"].text}
-                  />
-                </TouchableOpacity>
-                <Text
-                  style={[
-                    styles.sizeValue,
-                    { color: Colors[colorScheme ?? "light"].text },
-                  ]}
-                >
-                  {arabicTextSize}
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.sizeButton,
-                    {
-                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                    },
-                  ]}
-                  onPress={() =>
-                    setArabicTextSize(Math.min(64, arabicTextSize + 1))
-                  }
-                >
-                  <Ionicons
-                    name="add"
-                    size={20}
-                    color={Colors[colorScheme ?? "light"].text}
-                  />
-                </TouchableOpacity>
+              <View style={styles.sliderRow}>
+                <Ionicons
+                  name="text"
+                  size={16}
+                  color={Colors[colorScheme ?? "light"].textSecondary}
+                />
+                <Slider
+                  style={styles.slider}
+                  minimumValue={14}
+                  maximumValue={64}
+                  step={1}
+                  value={arabicTextSize}
+                  onValueChange={setArabicTextSize}
+                  minimumTrackTintColor={isDark ? "#0A84FF" : "#007AFF"}
+                  maximumTrackTintColor={isDark ? "#2C2C2E" : "#E5E5EA"}
+                  thumbTintColor={isDark ? "#0A84FF" : "#007AFF"}
+                />
+                <Ionicons
+                  name="text"
+                  size={28}
+                  color={Colors[colorScheme ?? "light"].textSecondary}
+                />
               </View>
             </View>
           </View>
@@ -319,14 +309,24 @@ export default function AppearanceSettingsScreen() {
         {/* Translation Text Size Section */}
         {showTranslation && (
           <View style={styles.section}>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Translation Text Size
-            </Text>
+            <View style={styles.sectionHeader}>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Translation Text Size
+              </Text>
+              <Text
+                style={[
+                  styles.sizeLabel,
+                  { color: Colors[colorScheme ?? "light"].textSecondary },
+                ]}
+              >
+                {translationTextSize}px
+              </Text>
+            </View>
             <View
               style={[
                 styles.card,
@@ -338,53 +338,28 @@ export default function AppearanceSettingsScreen() {
               ]}
             >
               <View style={styles.sliderContainer}>
-                <View style={styles.sizeControls}>
-                  <TouchableOpacity
-                    style={[
-                      styles.sizeButton,
-                      {
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                      },
-                    ]}
-                    onPress={() =>
-                      setTranslationTextSize(
-                        Math.max(14, translationTextSize - 1)
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name="remove"
-                      size={20}
-                      color={Colors[colorScheme ?? "light"].text}
-                    />
-                  </TouchableOpacity>
-                  <Text
-                    style={[
-                      styles.sizeValue,
-                      { color: Colors[colorScheme ?? "light"].text },
-                    ]}
-                  >
-                    {translationTextSize}
-                  </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.sizeButton,
-                      {
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                      },
-                    ]}
-                    onPress={() =>
-                      setTranslationTextSize(
-                        Math.min(64, translationTextSize + 1)
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name="add"
-                      size={20}
-                      color={Colors[colorScheme ?? "light"].text}
-                    />
-                  </TouchableOpacity>
+                <View style={styles.sliderRow}>
+                  <Ionicons
+                    name="text"
+                    size={16}
+                    color={Colors[colorScheme ?? "light"].textSecondary}
+                  />
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={14}
+                    maximumValue={64}
+                    step={1}
+                    value={translationTextSize}
+                    onValueChange={setTranslationTextSize}
+                    minimumTrackTintColor={isDark ? "#0A84FF" : "#007AFF"}
+                    maximumTrackTintColor={isDark ? "#2C2C2E" : "#E5E5EA"}
+                    thumbTintColor={isDark ? "#0A84FF" : "#007AFF"}
+                  />
+                  <Ionicons
+                    name="text"
+                    size={28}
+                    color={Colors[colorScheme ?? "light"].textSecondary}
+                  />
                 </View>
               </View>
             </View>
@@ -394,14 +369,24 @@ export default function AppearanceSettingsScreen() {
         {/* Transliteration Text Size Section */}
         {showTransliteration && (
           <View style={styles.section}>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Transliteration Text Size
-            </Text>
+            <View style={styles.sectionHeader}>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Transliteration Text Size
+              </Text>
+              <Text
+                style={[
+                  styles.sizeLabel,
+                  { color: Colors[colorScheme ?? "light"].textSecondary },
+                ]}
+              >
+                {transliterationTextSize}px
+              </Text>
+            </View>
             <View
               style={[
                 styles.card,
@@ -413,53 +398,28 @@ export default function AppearanceSettingsScreen() {
               ]}
             >
               <View style={styles.sliderContainer}>
-                <View style={styles.sizeControls}>
-                  <TouchableOpacity
-                    style={[
-                      styles.sizeButton,
-                      {
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                      },
-                    ]}
-                    onPress={() =>
-                      setTransliterationTextSize(
-                        Math.max(14, transliterationTextSize - 1)
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name="remove"
-                      size={20}
-                      color={Colors[colorScheme ?? "light"].text}
-                    />
-                  </TouchableOpacity>
-                  <Text
-                    style={[
-                      styles.sizeValue,
-                      { color: Colors[colorScheme ?? "light"].text },
-                    ]}
-                  >
-                    {transliterationTextSize}
-                  </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.sizeButton,
-                      {
-                        backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                      },
-                    ]}
-                    onPress={() =>
-                      setTransliterationTextSize(
-                        Math.min(64, transliterationTextSize + 1)
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name="add"
-                      size={20}
-                      color={Colors[colorScheme ?? "light"].text}
-                    />
-                  </TouchableOpacity>
+                <View style={styles.sliderRow}>
+                  <Ionicons
+                    name="text"
+                    size={16}
+                    color={Colors[colorScheme ?? "light"].textSecondary}
+                  />
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={14}
+                    maximumValue={64}
+                    step={1}
+                    value={transliterationTextSize}
+                    onValueChange={setTransliterationTextSize}
+                    minimumTrackTintColor={isDark ? "#0A84FF" : "#007AFF"}
+                    maximumTrackTintColor={isDark ? "#2C2C2E" : "#E5E5EA"}
+                    thumbTintColor={isDark ? "#0A84FF" : "#007AFF"}
+                  />
+                  <Ionicons
+                    name="text"
+                    size={28}
+                    color={Colors[colorScheme ?? "light"].textSecondary}
+                  />
                 </View>
               </View>
             </View>
@@ -471,7 +431,10 @@ export default function AppearanceSettingsScreen() {
           <Text
             style={[
               styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
+              {
+                color: Colors[colorScheme ?? "light"].text,
+                marginBottom: 12,
+              },
             ]}
           >
             Text Preview
@@ -494,6 +457,7 @@ export default function AppearanceSettingsScreen() {
                     color: Colors[colorScheme ?? "light"].text,
                     fontFamily: getFontFamily(),
                     fontSize: arabicTextSize,
+                    lineHeight: arabicTextSize * 1.8,
                   },
                 ]}
               >
@@ -509,6 +473,7 @@ export default function AppearanceSettingsScreen() {
                     styles.previewTransliteration,
                     {
                       fontSize: transliterationTextSize,
+                      lineHeight: transliterationTextSize * 1.6,
                       color: Colors[colorScheme ?? "light"].text,
                     },
                   ]}
@@ -526,6 +491,7 @@ export default function AppearanceSettingsScreen() {
                     styles.previewTranslation,
                     {
                       fontSize: translationTextSize,
+                      lineHeight: translationTextSize * 1.5,
                       color: Colors[colorScheme ?? "light"].text,
                     },
                   ]}
@@ -721,10 +687,19 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
-    marginBottom: 12,
+  },
+  sizeLabel: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   card: {
     borderRadius: 16,
@@ -753,25 +728,16 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     padding: 16,
+    paddingHorizontal: 20,
   },
-  sizeControls: {
+  sliderRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 20,
+    gap: 12,
   },
-  sizeButton: {
-    width: 40,
+  slider: {
+    flex: 1,
     height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sizeValue: {
-    fontSize: 20,
-    fontWeight: "600",
-    minWidth: 50,
-    textAlign: "center",
   },
   previewCard: {
     borderRadius: 16,
@@ -784,18 +750,16 @@ const styles = StyleSheet.create({
   },
   previewArabic: {
     fontWeight: "400",
-    textAlign: "center",
-    lineHeight: 48,
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   previewTransliteration: {
     fontStyle: "italic",
     textAlign: "center",
-    lineHeight: 28,
   },
   previewTranslation: {
-    fontWeight: "500",
+    fontWeight: "400",
     textAlign: "center",
-    lineHeight: 26,
   },
   modalOverlay: {
     flex: 1,
