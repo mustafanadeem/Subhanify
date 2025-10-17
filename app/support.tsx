@@ -82,7 +82,7 @@ export default function SupportScreen() {
         backgroundColor="transparent"
         translucent
       />
-      
+
       {/* Header */}
       <View
         style={[
@@ -236,7 +236,8 @@ export default function SupportScreen() {
               style={[
                 styles.textInputContainer,
                 {
-                  backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
                   borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
                 },
               ]}

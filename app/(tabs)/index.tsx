@@ -4,7 +4,7 @@ import { PrayerTimeCard } from "@/components/prayer-time-card";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
+import { getAdhkarCategories, getDuasCategories } from "@/utils/adhkar-utils";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
@@ -25,6 +25,7 @@ type TabType = "adhkar" | "duas";
 
 // Get real data from database
 const adhkarCategories = getAdhkarCategories();
+const duasCategories = getDuasCategories();
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("adhkar");
@@ -51,9 +52,13 @@ export default function HomeScreen() {
     }
   };
 
-  const handleCardPress = (title: string, categoryKey: string) => {
+  const handleCardPress = (
+    title: string,
+    categoryKey: string,
+    isDua: boolean = false
+  ) => {
     router.push({
-      pathname: "/adhkar-detail",
+      pathname: isDua ? "/duas-detail" : "/adhkar-detail",
       params: { category: categoryKey, title },
     });
   };
@@ -186,7 +191,7 @@ export default function HomeScreen() {
                     icon={category.icon}
                     count={category.count}
                     onPress={() =>
-                      handleCardPress(category.title, category.category)
+                      handleCardPress(category.title, category.category, true)
                     }
                   />
                 </View>
@@ -255,7 +260,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   gridContainer: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   grid: {

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "leaving-house",
+    "title": "Du'a for Leaving the House",
+    "arabic": "بسم الله توكلت على الله، لا حول ولا قوة إلا بالله",
+    "transliteration": "Bismillah, tawakkaltu ala Allah, la hawla wa la quwwata illa billah",
+    "translation": "In the name of Allah, I trust in Allah; there is no might and no power except with Allah.",
+    "reference": "Sunan Abu Dawud 5095, Sunan At-Tirmidhi, Sunan An-Nasa'i, Riyad as-Salihin 83",
+    "commentary": "Sayyiduna Anas ibn Malik (radiyallahu ‘anhu) reports that Rasulullah ﷺ said, 'Whoever recites this dua, it is proclaimed to him: You have been guided, sufficed, and protected — and Shaytan leaves his path.'"
+  },
+  {
+    "id": "entering-house",
+    "title": "Du'a for Entering the House",
+    "arabic": "بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا",
+    "transliteration": "Bismillahi walajna, wa bismillahi kharajna, wa 'ala Allahi Rabbina tawakkalna",
+    "translation": "In the name of Allah we enter, in the name of Allah we leave, and upon our Lord we place our trust.",
+    "reference": "Sahih Muslim 2018",
+    "commentary": null
+  },
+  {
+    "id": "entering-mosque",
+    "title": "Du'a for Entering the Mosque",
+    "arabic": "اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ",
+    "transliteration": "Allahumma iftah li abwaba rahmatika",
+    "translation": "O Allah, open for me the doors of Your mercy.",
+    "reference": "Sahih Muslim 713a (SunnahDaily Hadith Online)",
+    "commentary": null
+  },
+  {
+    "id": "leaving-mosque",
+    "title": "Du'a for Leaving the Mosque",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ",
+    "transliteration": "Allahumma inni as'aluka min fadlika",
+    "translation": "O Allah, I ask You from Your bounty.",
+    "reference": "Sahih Muslim 713a (SunnahDaily Hadith Online)",
+    "commentary": "Both du'as are from the same hadith narrated by Abu Usaid in Sahih Muslim 713a."
+  },
+  {
+    "id": "rain",
+    "title": "Du'a When It Rains",
+    "arabic": "اللَّهُمَّ صَيِّبًا هَنِيئًا",
+    "transliteration": "Allahumma sayyiban hanee'an",
+    "translation": "O Allah! Send beneficial downpour.",
+    "reference": "Sunan Abi Dawud 5099",
+    "commentary": null
+  },
+  {
+    "id": "beneficial-rain",
+    "title": "Du'a for Beneficial Rain",
+    "arabic": "اللَّهُمَّ صَيِّبًا نَافِعًا",
+    "transliteration": "Allahumma sayyiban nafi'an",
+    "translation": "O Allah! Let it be a strong fruitful rain.",
+    "reference": "Sahih al-Bukhari 1032 (Book of Invoking Allah for Rain)",
+    "commentary": "Narrated Aisha (RA): Whenever Allah's Messenger ﷺ saw the rain, he used to say, 'O Allah! Let it be a strong fruitful rain.'"
+  },
+  {
+    "id": "travel",
+    "title": "Du'a for Travel",
+    "arabic": "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ، وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ",
+    "transliteration": "Subhan alladhi sakhkhara lana hadha wa ma kunna lahu muqrineen, wa inna ila Rabbina lamunqaliboon",
+    "translation": "Glory be to Him Who has subjected this to us, and we could never have it (by our efforts), and to our Lord, surely, must we return.",
+    "reference": "Sahih Muslim 1342",
+    "commentary": null
+  },
+  {
+    "id": "destination",
+    "title": "Du'a for Reaching Destination",
+    "arabic": "أَعُوذُ بِكَلِمَاتِ اللهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
+    "transliteration": "A'ūdhu bi kalimāt-illāhi't-tāmmāti min sharri mā khalaq",
+    "translation": "I seek refuge in the Perfect Words of Allah from the evil of what He has created.",
+    "reference": "Sahih Muslim 2708",
+    "commentary": "This supplication provides protection against evils and harm while at that location until one leaves the place."
+  }
+]

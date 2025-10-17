@@ -27,6 +27,7 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     "Hafs-Regular": require("../assets/fonts/Hafs-Regular.otf"),
     "Saleen-Regular": require("../assets/fonts/Saleen-Regular.ttf"),
+    "PolySans-Bulky": require("../assets/fonts/polysanstrial-bulky.otf"),
   });
 
   useEffect(() => {
@@ -48,7 +49,9 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="adhkar-detail" options={{ headerShown: false }} />
+          <Stack.Screen name="duas-detail" options={{ headerShown: false }} />
           <Stack.Screen
             name="location-detail"
             options={{ headerShown: false }}

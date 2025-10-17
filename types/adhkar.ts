@@ -23,4 +23,14 @@ export interface CategorySummary {
   category: string;
 }
 
+export interface DuaItem {
+  id: string;
+  title: string;
+  arabic: string;
+  transliteration: string;
+  translation: string;
+  reference: string;
+  commentary: string | null;
+}
+
 
