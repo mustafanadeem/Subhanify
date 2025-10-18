@@ -8,7 +8,7 @@ import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/entities";
 import { getCurrentStreak, updateStreak } from "@/services/streak-service";
 import { AdhkarPeriod, getAdhkarTimeRange, getCurrentAdhkarPeriod } from "@/utils/adhkar-time-utils";
-import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
+import { getAdhkarCategories, getDuasCategories } from "@/utils/adhkar-utils";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
