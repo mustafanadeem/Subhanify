@@ -41,14 +41,6 @@ const categoryDisplayInfo: Record<string, CategorySummary> = {
     count: getCategoryCount("evening"),
     category: "evening",
   },
-  night: {
-    id: "night",
-    title: "Night",
-    subtitle: "Before Sleep",
-    icon: "moon.stars.fill",
-    count: getCategoryCount("night"),
-    category: "night",
-  },
 };
 
 // Get all adhkar categories for the home screen
@@ -77,44 +69,44 @@ export const getDuaCategoryCount = (category: string): number => {
   return getDuasByCategory(category).length;
 };
 
-// Category mapping for duas display
-const duaCategoryDisplayInfo: Record<string, CategorySummary> = {
-  home: {
-    id: "home",
-    title: "Home",
-    subtitle: "Entering & leaving",
-    icon: "house.fill",
-    count: getDuaCategoryCount("home"),
-    category: "home",
-  },
-  mosque: {
-    id: "mosque",
-    title: "Mosque",
-    subtitle: "Entering & leaving",
-    icon: "building.columns.fill",
-    count: getDuaCategoryCount("mosque"),
-    category: "mosque",
-  },
-  rain: {
-    id: "rain",
-    title: "Rain",
-    subtitle: "When it rains",
-    icon: "cloud.rain.fill",
-    count: getDuaCategoryCount("rain"),
-    category: "rain",
-  },
-  travel: {
-    id: "travel",
-    title: "Travel",
-    subtitle: "Journey supplications",
-    icon: "car.fill",
-    count: getDuaCategoryCount("travel"),
-    category: "travel",
-  },
-};
-
 // Get all duas categories for the home screen
 export const getDuasCategories = (): CategorySummary[] => {
+  // Build categories dynamically to avoid initialization errors
+  const duaCategoryDisplayInfo: Record<string, CategorySummary> = {
+    home: {
+      id: "home",
+      title: "Home",
+      subtitle: "Entering & leaving",
+      icon: "house.fill",
+      count: getDuaCategoryCount("home"),
+      category: "home",
+    },
+    mosque: {
+      id: "mosque",
+      title: "Mosque",
+      subtitle: "Entering & leaving",
+      icon: "building.columns.fill",
+      count: getDuaCategoryCount("mosque"),
+      category: "mosque",
+    },
+    rain: {
+      id: "rain",
+      title: "Rain",
+      subtitle: "When it rains",
+      icon: "cloud.rain.fill",
+      count: getDuaCategoryCount("rain"),
+      category: "rain",
+    },
+    travel: {
+      id: "travel",
+      title: "Travel",
+      subtitle: "Journey supplications",
+      icon: "car.fill",
+      count: getDuaCategoryCount("travel"),
+      category: "travel",
+    },
+  };
+
   return Object.values(duaCategoryDisplayInfo);
 };
 
