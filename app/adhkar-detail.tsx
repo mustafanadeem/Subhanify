@@ -41,12 +41,26 @@ export default function AdhkarDetailScreen() {
   const categoryTitle = (params.title as string) || "Morning";
   const categoryKey = (params.category as string)?.toLowerCase() || "morning";
 
-  // Fetch adhkar for this category
-  const adhkarList = useMemo(
-    () => getAdhkarByCategory(categoryKey),
-    [categoryKey]
-  );
+  // State for adhkar list
+  const [adhkarList, setAdhkarList] = useState<AdhkarItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const totalCount = adhkarList.length;
+
+  useEffect(() => {
+    const loadAdhkarList = async () => {
+      try {
+        setIsLoading(true);
+        const list = await getAdhkarByCategory(categoryKey);
+        setAdhkarList(list);
+      } catch (error) {
+        console.error("Error loading adhkar:", error);
+        setAdhkarList([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadAdhkarList();
+  }, [categoryKey]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -59,7 +73,6 @@ export default function AdhkarDetailScreen() {
   const slideAnim2 = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const [showRelatedArticles, setShowRelatedArticles] = useState(false);
 
-  // Get current adhkar
   const currentAdhkar: AdhkarItem | undefined = adhkarList[currentIndex];
 
   // Initialize countdown from quantity
@@ -138,8 +151,47 @@ export default function AdhkarDetailScreen() {
     }
   };
 
-  // If no data found, show empty state
-  if (!currentAdhkar) {
+  if (isLoading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
+        ]}
+      >
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor="transparent"
+          translucent
+        />
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.back()}
+          >
+            <IconSymbol
+              name="chevron.left"
+              size={24}
+              color={Colors[colorScheme ?? "light"].text}
+            />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <ThemedText style={styles.headerTitle}>Loading...</ThemedText>
+          </View>
+          <View style={styles.headerActions} />
+        </View>
+      </View>
+    );
+  }
+
+  if (!currentAdhkar || totalCount === 0) {
     return (
       <View
         style={[

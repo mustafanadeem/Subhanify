@@ -9,6 +9,7 @@ import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/en
 import { getAllAdhkarProgressForToday } from "@/services/adhkar-progress-service";
 import { getCurrentStreak, updateStreak } from "@/services/streak-service";
 import { AdhkarPeriod, getAdhkarTimeRange, getCurrentAdhkarPeriod } from "@/utils/adhkar-time-utils";
+import { CategorySummary } from "@/types/adhkar";
 import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -28,9 +29,6 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 
 type TabType = "adhkar" | "duas";
 
-// Get real data from database
-const adhkarCategories = getAdhkarCategories();
-
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("adhkar");
   const colorScheme = useColorScheme();
@@ -44,17 +42,20 @@ export default function HomeScreen() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [streakDays, setStreakDays] = useState<number>(0);
   const [adhkarProgress, setAdhkarProgress] = useState({ morning: 0, evening: 0, night: 0 });
+  const [adhkarCategories, setAdhkarCategories] = useState<CategorySummary[]>([]);
 
   useEffect(() => {
     loadPrayerData();
     loadStreakData();
     loadAdhkarProgress();
+    loadAdhkarCategories();
   }, []);
 
-  // Refresh progress when screen comes into focus (e.g., when returning from adhkar detail)
+  // Refresh progress and categories when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadAdhkarProgress();
+      loadAdhkarCategories();
     }, [])
   );
 
@@ -85,10 +86,19 @@ export default function HomeScreen() {
 
   const loadAdhkarProgress = async () => {
     try {
-      const progress = await getAllAdhkarProgressForToday(prayerTimes);
+      const progress = await getAllAdhkarProgressForToday(prayerTimes || undefined);
       setAdhkarProgress(progress);
     } catch (error) {
       console.error("Error loading adhkar progress:", error);
+    }
+  };
+
+  const loadAdhkarCategories = async () => {
+    try {
+      const categories = await getAdhkarCategories();
+      setAdhkarCategories(categories);
+    } catch (error) {
+      console.error("Error loading adhkar categories:", error);
     }
   };
 

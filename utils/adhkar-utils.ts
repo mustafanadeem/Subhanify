@@ -1,12 +1,34 @@
 import adhkarData from "@/data/adkar_dua.json";
+import { AdhkarLevel, getLevelSettings } from "@/services/level-settings-service";
 import { AdhkarData, AdhkarItem, CategorySummary } from "@/types/adhkar";
 
 const data: AdhkarData = adhkarData as AdhkarData;
 
-// Get all adhkar by category
-export const getAdhkarByCategory = (category: string): AdhkarItem[] => {
-  return data.Sheet1.filter(
+export const getAdhkarByCategory = async (category: string): Promise<AdhkarItem[]> => {
+  const levelSettings = await getLevelSettings();
+  
+  const categoryAdhkar = data.Sheet1.filter(
     (item) => item.Category.trim().toLowerCase() === category.toLowerCase()
+  );
+  
+  if (!levelSettings.enabled) {
+    return categoryAdhkar;
+  }
+  
+  return categoryAdhkar.filter((item) => {
+    const adhkarLevel = item.Level || 1;
+    return adhkarLevel <= levelSettings.currentLevel;
+  });
+};
+
+export const getAdhkarByCategoryAndLevel = (
+  category: string,
+  level: AdhkarLevel
+): AdhkarItem[] => {
+  return data.Sheet1.filter(
+    (item) =>
+      item.Category.trim().toLowerCase() === category.toLowerCase() &&
+      (item.Level || 1) <= level
   );
 };
 
@@ -16,19 +38,27 @@ export const getCategories = (): string[] => {
   return Array.from(new Set(categories));
 };
 
-// Get category count
 export const getCategoryCount = (category: string): number => {
-  return getAdhkarByCategory(category).length;
+  return data.Sheet1.filter(
+    (item) => item.Category.trim().toLowerCase() === category.toLowerCase()
+  ).length;
 };
 
-// Category mapping for display
-const categoryDisplayInfo: Record<string, CategorySummary> = {
+// Get category count filtered by level
+export const getCategoryCountByLevel = (
+  category: string,
+  level: AdhkarLevel
+): number => {
+  return getAdhkarByCategoryAndLevel(category, level).length;
+};
+
+// Category mapping for display (without level filtering)
+const baseCategoryDisplayInfo: Record<string, Omit<CategorySummary, 'count'>> = {
   morning: {
     id: "morning",
     title: "Morning",
     subtitle: "Adhkar Al-Sabah",
     icon: "sunrise.fill",
-    count: getCategoryCount("morning"),
     category: "morning",
   },
   evening: {
@@ -36,7 +66,6 @@ const categoryDisplayInfo: Record<string, CategorySummary> = {
     title: "Evening",
     subtitle: "Adhkar Al-Masaa",
     icon: "sunset.fill",
-    count: getCategoryCount("evening"),
     category: "evening",
   },
   night: {
@@ -44,14 +73,23 @@ const categoryDisplayInfo: Record<string, CategorySummary> = {
     title: "Night",
     subtitle: "Before Sleep",
     icon: "moon.stars.fill",
-    count: getCategoryCount("night"),
     category: "night",
   },
 };
 
-// Get all adhkar categories for the home screen
-export const getAdhkarCategories = (): CategorySummary[] => {
-  return Object.values(categoryDisplayInfo);
+export const getAdhkarCategories = async (): Promise<CategorySummary[]> => {
+  const levelSettings = await getLevelSettings();
+  
+  return Object.values(baseCategoryDisplayInfo).map((category) => {
+    const count = levelSettings.enabled
+      ? getCategoryCountByLevel(category.category, levelSettings.currentLevel)
+      : getCategoryCount(category.category);
+    
+    return {
+      ...category,
+      count,
+    };
+  });
 };
 
 // For duas, you can add separate logic when you have duas data

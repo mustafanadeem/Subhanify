@@ -4,12 +4,12 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import {
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface SettingItemProps {
@@ -164,6 +164,11 @@ export default function ProfileScreen() {
             title="Prayer Settings"
             icon="clock.fill"
             onPress={() => router.push("/prayer-settings")}
+          />
+          <SettingItem
+            title="Level System"
+            icon="chart.bar.fill"
+            onPress={() => router.push("/level-settings" as any)}
           />
           <SettingItem
             title="Notifications"
