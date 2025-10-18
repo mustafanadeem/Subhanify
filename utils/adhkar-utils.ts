@@ -1,7 +1,9 @@
 import adhkarData from "@/data/adkar_dua.json";
-import { AdhkarData, AdhkarItem, CategorySummary } from "@/types/adhkar";
+import duasData from "@/data/duas.json";
+import { AdhkarData, AdhkarItem, CategorySummary, DuaItem } from "@/types/adhkar";
 
 const data: AdhkarData = adhkarData as AdhkarData;
+const duas: DuaItem[] = duasData as DuaItem[];
 
 // Get all adhkar by category
 export const getAdhkarByCategory = (category: string): AdhkarItem[] => {
@@ -54,48 +56,66 @@ export const getAdhkarCategories = (): CategorySummary[] => {
   return Object.values(categoryDisplayInfo);
 };
 
-// For duas, you can add separate logic when you have duas data
-export const duasCategories: CategorySummary[] = [
-  {
-    id: "1",
-    title: "Daily Duas",
-    subtitle: "Everyday supplications",
-    icon: "sun.max.fill",
-    count: 5,
-    category: "daily",
+// === DUAS FUNCTIONS ===
+
+// Get all duas by category
+export const getDuasByCategory = (category: string): DuaItem[] => {
+  // Map category keys to dua IDs from the JSON
+  const categoryMapping: Record<string, string[]> = {
+    home: ["leaving-house", "entering-house"],
+    mosque: ["entering-mosque", "leaving-mosque"],
+    rain: ["rain", "beneficial-rain"],
+    travel: ["travel", "destination"],
+  };
+
+  const duaIds = categoryMapping[category.toLowerCase()] || [];
+  return duas.filter((dua) => duaIds.includes(dua.id));
+};
+
+// Get category count for duas
+export const getDuaCategoryCount = (category: string): number => {
+  return getDuasByCategory(category).length;
+};
+
+// Category mapping for duas display
+const duaCategoryDisplayInfo: Record<string, CategorySummary> = {
+  home: {
+    id: "home",
+    title: "Home",
+    subtitle: "Entering & leaving",
+    icon: "house.fill",
+    count: getDuaCategoryCount("home"),
+    category: "home",
   },
-  {
-    id: "2",
-    title: "Traveling",
-    subtitle: "For journeys",
-    icon: "airplane",
-    count: 3,
+  mosque: {
+    id: "mosque",
+    title: "Mosque",
+    subtitle: "Entering & leaving",
+    icon: "building.columns.fill",
+    count: getDuaCategoryCount("mosque"),
+    category: "mosque",
+  },
+  rain: {
+    id: "rain",
+    title: "Rain",
+    subtitle: "When it rains",
+    icon: "cloud.rain.fill",
+    count: getDuaCategoryCount("rain"),
+    category: "rain",
+  },
+  travel: {
+    id: "travel",
+    title: "Travel",
+    subtitle: "Journey supplications",
+    icon: "car.fill",
+    count: getDuaCategoryCount("travel"),
     category: "travel",
   },
-  {
-    id: "3",
-    title: "Health",
-    subtitle: "Healing prayers",
-    icon: "heart.fill",
-    count: 4,
-    category: "health",
-  },
-  {
-    id: "4",
-    title: "Protection",
-    subtitle: "Divine safeguarding",
-    icon: "shield.fill",
-    count: 2,
-    category: "protection",
-  },
-  {
-    id: "5",
-    title: "Gratitude",
-    subtitle: "Thanks to Allah",
-    icon: "hands.sparkles.fill",
-    count: 3,
-    category: "gratitude",
-  },
-];
+};
+
+// Get all duas categories for the home screen
+export const getDuasCategories = (): CategorySummary[] => {
+  return Object.values(duaCategoryDisplayInfo);
+};
 
 
