@@ -1,0 +1,362 @@
+import { CategoryCard } from "@/components/category-card";
+import { DuaCard } from "@/components/dua-card";
+import { PrayerTimeCard } from "@/components/prayer-time-card";
+import { StreaksCard } from "@/components/streaks-card";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+
+import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
+import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/entities";
+import { getCurrentStreak, updateStreak } from "@/services/streak-service";
+import { AdhkarPeriod, getAdhkarTimeRange, getCurrentAdhkarPeriod } from "@/utils/adhkar-time-utils";
+import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
+=======
+import { getAdhkarCategories, getDuasCategories } from "@/utils/adhkar-utils";
+
+import { useRouter } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+    Dimensions,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+type TabType = "adhkar" | "duas";
+
+// Get real data from database
+const adhkarCategories = getAdhkarCategories();
+const duasCategories = getDuasCategories();
+
+export default function HomeScreen() {
+  const [activeTab, setActiveTab] = useState<TabType>("adhkar");
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const scrollViewRef = useRef<ScrollView>(null);
+  const router = useRouter();
+
+  // Load prayer times and settings
+  const repo = useMemo(() => new PrayerTimesRepository(), []);
+  const [prayerTimes, setPrayerTimes] = useState<TodayPrayerTimes | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [streakDays, setStreakDays] = useState<number>(0);
+
+  useEffect(() => {
+    loadPrayerData();
+    loadStreakData();
+  }, []);
+
+  const loadPrayerData = async () => {
+    try {
+      const loadedSettings = repo.loadSettings();
+      setSettings(loadedSettings);
+      
+      const times = await repo.getToday();
+      setPrayerTimes(times);
+    } catch (error) {
+      console.error("Failed to load prayer data:", error);
+    }
+  };
+
+  const loadStreakData = async () => {
+    try {
+      // Update streak when app loads
+      await updateStreak();
+      
+      // Get current streak
+      const currentStreak = await getCurrentStreak();
+      setStreakDays(currentStreak);
+    } catch (error) {
+      console.error("Failed to load streak data:", error);
+    }
+  };
+
+  // Determine current Adhkar period based on real prayer times
+  const currentPeriod: AdhkarPeriod = getCurrentAdhkarPeriod(prayerTimes, settings);
+
+  const handleTabPress = (tab: TabType) => {
+    setActiveTab(tab);
+    const pageIndex = tab === "adhkar" ? 0 : 1;
+    scrollViewRef.current?.scrollTo({
+      x: pageIndex * SCREEN_WIDTH,
+      animated: true,
+    });
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const page = Math.round(offsetX / SCREEN_WIDTH);
+    const newTab = page === 0 ? "adhkar" : "duas";
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  };
+
+  const handleCardPress = (
+    title: string,
+    categoryKey: string,
+    isDua: boolean = false
+  ) => {
+    router.push({
+      pathname: isDua ? "/duas-detail" : "/adhkar-detail",
+      params: { category: categoryKey, title },
+    });
+  };
+
+  return (
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
+      ]}
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent
+      />
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
+        ]}
+      >
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
+        >
+          Subhanify
+        </Text>
+      </View>
+
+      {/* Prayer Time and Streaks Cards - Side by Side */}
+      <View style={styles.cardsRow}>
+        <PrayerTimeCard />
+        <View style={styles.cardSpacer} />
+        <StreaksCard streakDays={streakDays} />
+      </View>
+
+      {/* Tabs - Fixed */}
+      <View
+        style={[
+          styles.tabsContainer,
+          { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+        ]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            activeTab === "adhkar" && styles.tabActive,
+            activeTab === "adhkar" && {
+              backgroundColor: Colors[colorScheme ?? "light"].main,
+            },
+          ]}
+          onPress={() => handleTabPress("adhkar")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: Colors[colorScheme ?? "light"].text },
+              activeTab === "adhkar" && styles.tabTextActive,
+              activeTab === "adhkar" && {
+                color: "#FFFFFF",
+              },
+            ]}
+          >
+            Adhkar
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            activeTab === "duas" && styles.tabActive,
+            activeTab === "duas" && {
+              backgroundColor: Colors[colorScheme ?? "light"].main,
+            },
+          ]}
+          onPress={() => handleTabPress("duas")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: Colors[colorScheme ?? "light"].text },
+              activeTab === "duas" && styles.tabTextActive,
+              activeTab === "duas" && {
+                color: "#FFFFFF",
+              },
+            ]}
+          >
+            Duas
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable Content */}
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.pagerView}
+      >
+        {/* Adhkar Page */}
+        <View style={styles.page}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.cardsContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {adhkarCategories.map((category) => {
+              // Determine if this card should be highlighted
+              // @ts-ignore - TypeScript incorrectly infers literal types here
+              const isHighlighted = currentPeriod !== 'none' && category.category === currentPeriod;
+              
+              // Determine category type for gradient
+              const categoryType = 
+                category.category === "morning" ? "morning" :
+                category.category === "evening" ? "evening" :
+                category.category === "night" ? "night" :
+                "other";
+
+              // Get time range for this adhkar
+              const timeRange = getAdhkarTimeRange(category.category, prayerTimes, settings);
+
+              return (
+                <CategoryCard
+                  key={category.id}
+                  title={category.title}
+                  subtitle={category.subtitle}
+                  icon={category.icon}
+                  count={category.count}
+                  onPress={() =>
+                    handleCardPress(category.title, category.category)
+                  }
+                  isHighlighted={isHighlighted}
+                  categoryType={categoryType as "morning" | "evening" | "night" | "other"}
+                  timeRange={timeRange}
+                />
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Duas Page */}
+        <View style={styles.page}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.gridContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.grid}>
+              {duasCategories.map((category) => (
+                <View key={category.id} style={styles.gridItem}>
+                  <DuaCard
+                    title={category.title}
+                    subtitle={category.subtitle}
+                    icon={category.icon}
+                    count={category.count}
+                    onPress={() =>
+                      handleCardPress(category.title, category.category, true)
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+  cardsRow: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  cardSpacer: {
+    width: 12,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    padding: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    marginTop: 0,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  tabActive: {
+    // backgroundColor applied inline based on theme
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: "500",
+    opacity: 0.6,
+  },
+  tabTextActive: {
+    fontWeight: "600",
+    opacity: 1,
+  },
+  pagerView: {
+    flex: 1,
+  },
+  page: {
+    width: SCREEN_WIDTH,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  cardsContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  gridContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -6,
+  },
+  gridItem: {
+    width: "50%",
+    paddingHorizontal: 6,
+    marginBottom: 12,
+  },
+});
