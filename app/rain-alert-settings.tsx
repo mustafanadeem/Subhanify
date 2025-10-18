@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import { RainAlertStorage } from '../services/rain-alert-storage';
 import { RainAlertService } from '../services/rain-alert-service';
@@ -84,7 +84,7 @@ export default function RainAlertSettingsScreen() {
         return;
       }
 
-      const payload = await RainAlertService['simulateRainAlert']?.() || {
+      const payload = {
         type: 'RAIN_START' as const,
         leadMinutes: 0,
         intensity: 'moderate' as const,
@@ -115,14 +115,16 @@ export default function RainAlertSettingsScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: 'Rain Alerts',
-          headerBackTitle: 'Back',
-        }}
-      />
-      <ScrollView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: '#000000' }]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: '#1C1C1E' }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Rain Alerts</Text>
+      </View>
+
+      <ScrollView style={styles.content}>
         <View style={styles.section}>
           <View style={styles.row}>
             <View style={styles.labelContainer}>
@@ -275,31 +277,56 @@ export default function RainAlertSettingsScreen() {
           </>
         )}
       </ScrollView>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#000000',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#000000',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#1C1C1E',
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: '#FFFFFF',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1C1C1E',
     marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderRadius: 12,
+    marginHorizontal: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: '#FFFFFF',
     marginBottom: 12,
   },
   row: {
@@ -315,11 +342,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   description: {
     fontSize: 13,
-    color: '#6B7280',
+    color: '#8E8E93',
     marginTop: 2,
   },
   sliderContainer: {
@@ -355,8 +382,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#fff',
+    borderColor: '#3A3A3C',
+    backgroundColor: '#2C2C2E',
     alignItems: 'center',
   },
   buttonActive: {
@@ -366,7 +393,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#8E8E93',
   },
   buttonTextActive: {
     color: '#fff',
@@ -385,13 +412,13 @@ const styles = StyleSheet.create({
   timeRange: {
     marginTop: 12,
     padding: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#2C2C2E',
     borderRadius: 8,
   },
   timeText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   testButton: {
     backgroundColor: '#3B82F6',
@@ -406,22 +433,22 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   infoSection: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#1C1C1E',
     marginTop: 16,
     marginBottom: 32,
     padding: 16,
     marginHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   infoTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1E40AF',
+    color: '#3B82F6',
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: '#1E3A8A',
+    color: '#8E8E93',
     lineHeight: 22,
   },
 });
