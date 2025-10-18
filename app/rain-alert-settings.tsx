@@ -1,6 +1,21 @@
+<<<<<<< HEAD
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
+=======
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  Text,
+  Switch,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+>>>>>>> log-1
 import Slider from '@react-native-community/slider';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -90,7 +105,7 @@ export default function RainAlertSettingsScreen() {
         return;
       }
 
-      const payload = await RainAlertService['simulateRainAlert']?.() || {
+      const payload = {
         type: 'RAIN_START' as const,
         leadMinutes: 0,
         intensity: 'moderate' as const,
@@ -121,6 +136,7 @@ export default function RainAlertSettingsScreen() {
   }
 
   return (
+<<<<<<< HEAD
     <View style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
@@ -140,6 +156,19 @@ export default function RainAlertSettingsScreen() {
 
       <ScrollView style={styles.scrollView}>
         <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#fff' }]}>
+=======
+    <View style={[styles.container, { backgroundColor: '#000000' }]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: '#1C1C1E' }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Rain Alerts</Text>
+      </View>
+
+      <ScrollView style={styles.content}>
+        <View style={styles.section}>
+>>>>>>> log-1
           <View style={styles.row}>
             <View style={styles.labelContainer}>
               <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>Enable Rain Alerts</Text>
@@ -300,15 +329,24 @@ export default function RainAlertSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+<<<<<<< HEAD
+=======
+    backgroundColor: '#000000',
+>>>>>>> log-1
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+<<<<<<< HEAD
+=======
+    backgroundColor: '#000000',
+>>>>>>> log-1
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+<<<<<<< HEAD
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 60,
@@ -335,13 +373,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
+=======
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#1C1C1E',
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: '#FFFFFF',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+  },
+  section: {
+    backgroundColor: '#1C1C1E',
+>>>>>>> log-1
     marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderRadius: 12,
+    marginHorizontal: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
+<<<<<<< HEAD
+=======
+    color: '#FFFFFF',
+>>>>>>> log-1
     marginBottom: 12,
   },
   row: {
@@ -357,9 +425,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '500',
+<<<<<<< HEAD
   },
   description: {
     fontSize: 13,
+=======
+    color: '#FFFFFF',
+  },
+  description: {
+    fontSize: 13,
+    color: '#8E8E93',
+>>>>>>> log-1
     marginTop: 2,
   },
   sliderContainer: {
@@ -395,6 +471,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
+<<<<<<< HEAD
+=======
+    borderColor: '#3A3A3C',
+    backgroundColor: '#2C2C2E',
+>>>>>>> log-1
     alignItems: 'center',
   },
   buttonActive: {
@@ -404,6 +485,10 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 14,
     fontWeight: '500',
+<<<<<<< HEAD
+=======
+    color: '#8E8E93',
+>>>>>>> log-1
   },
   buttonTextActive: {
     color: '#fff',
@@ -422,11 +507,19 @@ const styles = StyleSheet.create({
   timeRange: {
     marginTop: 12,
     padding: 12,
+<<<<<<< HEAD
+=======
+    backgroundColor: '#2C2C2E',
+>>>>>>> log-1
     borderRadius: 8,
   },
   timeText: {
     fontSize: 16,
     fontWeight: '600',
+<<<<<<< HEAD
+=======
+    color: '#FFFFFF',
+>>>>>>> log-1
   },
   testButton: {
     backgroundColor: '#3B82F6',
@@ -441,19 +534,31 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   infoSection: {
+<<<<<<< HEAD
+=======
+    backgroundColor: '#1C1C1E',
+>>>>>>> log-1
     marginTop: 16,
     marginBottom: 32,
     padding: 16,
     marginHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   infoTitle: {
     fontSize: 16,
     fontWeight: '600',
+<<<<<<< HEAD
+=======
+    color: '#3B82F6',
+>>>>>>> log-1
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
+<<<<<<< HEAD
+=======
+    color: '#8E8E93',
+>>>>>>> log-1
     lineHeight: 22,
   },
 });

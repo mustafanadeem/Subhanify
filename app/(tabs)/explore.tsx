@@ -4,12 +4,12 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import {
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface SettingItemProps {
@@ -141,6 +141,11 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Settings</ThemedText>
           <SettingItem
+            title="View Onboarding"
+            icon="sparkles"
+            onPress={() => router.push("/onboarding" as any)}
+          />
+          <SettingItem
             title="Privacy & Permissions"
             icon="lock.shield.fill"
             onPress={() => router.push("/privacy-settings" as any)}
@@ -231,7 +236,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 60,
-  paddingBottom: 20,
+    paddingBottom: 20,
   },
   headerTitle: {
     fontSize: 28,
