@@ -1,11 +1,16 @@
+import { AdhkarCompletionModal } from "@/components/adhkar-completion-modal";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
+import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/entities";
+import { markAdhkarCompleted } from "@/services/adhkar-completion-service";
 import { AdhkarItem } from "@/types/adhkar";
 import { getAdhkarByCategory } from "@/utils/adhkar-utils";
 import Slider from "@react-native-community/slider";
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -21,7 +26,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -63,6 +67,27 @@ export default function AdhkarDetailScreen() {
   
   // Track which item in the group we're currently on
   const [currentGroupItemIndex, setCurrentGroupItemIndex] = useState(0);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [prayerTimes, setPrayerTimes] = useState<TodayPrayerTimes | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+
+  // Load prayer times
+  useEffect(() => {
+    const loadPrayerData = async () => {
+      try {
+        const repo = new PrayerTimesRepository();
+        const loadedSettings = repo.loadSettings();
+        setSettings(loadedSettings);
+        
+        const todayPrayerTimes = await repo.getToday();
+        setPrayerTimes(todayPrayerTimes);
+      } catch (error) {
+        console.error("Failed to load prayer data:", error);
+      }
+    };
+
+    loadPrayerData();
+  }, []);
 
   // Get all items in the current group
   const currentGroup = useMemo(() => {
@@ -154,12 +179,15 @@ export default function AdhkarDetailScreen() {
     );
   }
 
-  const handleCount = () => {
+  const handleCount = async () => {
     const isGrouped = currentAdhkar && currentAdhkar["group id"] !== 0;
     
     if (isGrouped && currentGroup.length > 1) {
       // Handle grouped adhkar
       if (currentGroupItemIndex < currentGroup.length - 1) {
+        // Light haptic for progressing through group
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        
         // Move to next item in the group with horizontal slide animation
         Animated.sequence([
           Animated.timing(groupSlideAnim, {
@@ -178,9 +206,13 @@ export default function AdhkarDetailScreen() {
       } else {
         // Completed the entire group once, now decrement the counter
         if (count > 1) {
+          // Medium haptic for completing one cycle
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setCount(count - 1);
           setCurrentGroupItemIndex(0); // Reset to first item in group
         } else if (count === 1) {
+          // Strong haptic for completing all repetitions
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
           // Last repetition - move to next adhkar OUTSIDE the group
           setCount(0);
           moveToNextAdhkarOutsideGroup();
@@ -189,8 +221,12 @@ export default function AdhkarDetailScreen() {
     } else {
       // Handle non-grouped adhkar (original behavior)
       if (count > 1) {
+        // Light haptic for regular countdown
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setCount(count - 1);
       } else if (count === 1) {
+        // Strong haptic for completing any dhikr (whether single or last of multiple)
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         setCount(0);
         moveToNextAdhkar();
       }
@@ -219,6 +255,9 @@ export default function AdhkarDetailScreen() {
         slideAnim.setValue(SCREEN_HEIGHT);
         setIsAnimating(false);
       });
+    } else {
+      // All adhkar completed - mark category as completed
+      markCategoryAsCompleted();
     }
   };
 
@@ -253,6 +292,9 @@ export default function AdhkarDetailScreen() {
         slideAnim.setValue(SCREEN_HEIGHT);
         setIsAnimating(false);
       });
+    } else {
+      // All adhkar completed - mark category as completed
+      markCategoryAsCompleted();
     }
   };
 
@@ -275,6 +317,40 @@ export default function AdhkarDetailScreen() {
     if (currentIndex > 0) {
       scrollToIndex(currentIndex - 1);
     }
+  };
+
+  const markCategoryAsCompleted = async () => {
+    try {
+      if (categoryKey && typeof categoryKey === 'string') {
+        // Map category string to the correct type
+        const adhkarCategory = categoryKey as 'morning' | 'evening' | 'night';
+        
+        // Mark completion with time validation
+        const result = await markAdhkarCompleted(adhkarCategory, prayerTimes || undefined);
+        
+        if (result.success) {
+          // Haptic feedback for completion
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          
+          // Show completion modal
+          setShowCompletionModal(true);
+          
+          console.log(`✅ ${categoryKey} adhkar completed!`);
+        } else {
+          // Show error message for wrong time
+          console.log(`❌ ${result.message}`);
+          // You could show a toast or alert here instead of console.log
+        }
+      }
+    } catch (error) {
+      console.error('Error marking adhkar as completed:', error);
+    }
+  };
+
+  const handleCompletionModalClose = () => {
+    setShowCompletionModal(false);
+    // Navigate back to home screen
+    router.back();
   };
 
   return (
@@ -310,7 +386,19 @@ export default function AdhkarDetailScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
-          <ThemedText style={styles.headerTitle}>Adhkar</ThemedText>
+          <ThemedText style={styles.headerTitle}>{categoryTitle}</ThemedText>
+          {/* Position Counter Badge - Below Title */}
+          <View style={[
+            styles.positionBadge,
+            {
+              backgroundColor: isDark ? "rgba(44, 44, 46, 0.95)" : "rgba(242, 242, 247, 0.95)",
+              borderColor: isDark ? "#3A3A3C" : "#E5E5EA"
+            }
+          ]}>
+            <ThemedText style={styles.positionText}>
+              {currentIndex + 1} of {totalCount}
+            </ThemedText>
+          </View>
         </View>
 
         <View style={styles.headerActions}>
@@ -786,14 +874,35 @@ export default function AdhkarDetailScreen() {
           {adhkarList.map((adhkar, index) => {
             // For grouped adhkar, show the current item in the group when viewing this adhkar
             const displayItem = index === currentIndex ? currentGroupItem : adhkar;
+            const currentCount = index === currentIndex ? count : adhkar.quantity;
             
             return (
-            <View key={index} style={styles.page}>
+            <TouchableOpacity 
+              key={index} 
+              style={styles.page}
+              onPress={handleCount}
+              activeOpacity={1}
+            >
               <ScrollView
                 style={styles.content}
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
               >
+                {/* Repeat Counter Badge - Top Left */}
+                {index === currentIndex && currentCount > 0 && adhkar.quantity > 1 && (
+                  <View style={[
+                    styles.repeatBadge,
+                    {
+                      backgroundColor: isDark ? "rgba(10, 132, 255, 0.2)" : "rgba(0, 122, 255, 0.15)",
+                      borderColor: isDark ? "#0A84FF" : "#007AFF"
+                    }
+                  ]}>
+                    <ThemedText style={[styles.repeatText, { color: isDark ? "#0A84FF" : "#007AFF" }]}>
+                      {currentCount}×
+                    </ThemedText>
+                  </View>
+                )}
+
                 {/* Title and Counter */}
                 <View style={styles.titleSection}>
                   <ThemedText style={styles.title}>{displayItem.Adhkar}</ThemedText>
@@ -1022,7 +1131,7 @@ export default function AdhkarDetailScreen() {
                   </View>
                 )}
               </ScrollView>
-            </View>
+            </TouchableOpacity>
           );
           })}
         </ScrollView>
@@ -1204,142 +1313,13 @@ export default function AdhkarDetailScreen() {
         )}
       </View>
 
-      {/* Bottom Actions */}
-      <View
-        style={[
-          styles.bottomBar,
-          {
-            backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
-            borderTopColor: isDark ? "#2C2C2E" : "#E5E5EA",
-            paddingBottom: 34,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handlePrevious}
-          disabled={currentIndex === 0}
-        >
-          <IconSymbol
-            name="play.fill"
-            size={24}
-            color={
-              currentIndex === 0
-                ? isDark
-                  ? "#3A3A3C"
-                  : "#C7C7CC"
-                : isDark
-                ? "#FFFFFF"
-                : "#000000"
-            }
-            style={{ transform: [{ rotate: "180deg" }] }}
-          />
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton}>
-          <IconSymbol
-            name="info.circle.fill"
-            size={24}
-            color={isDark ? "#FFFFFF" : "#000000"}
-          />
-        </TouchableOpacity>
-
-        <View style={styles.countButtonContainer}>
-          {/* Circular Progress Background */}
-          <Svg width={68} height={68} style={styles.progressCircle}>
-            {/* Background circle */}
-            <Circle
-              cx="34"
-              cy="34"
-              r="30"
-              stroke={isDark ? "#2C2C2E" : "#E5E5EA"}
-              strokeWidth="4"
-              fill="none"
-            />
-            {/* Progress circle */}
-            {currentAdhkar && currentAdhkar.quantity > 0 && (
-              <Circle
-                cx="34"
-                cy="34"
-                r="30"
-                stroke={
-                  count === 0
-                    ? isDark
-                      ? "#2C2C2E"
-                      : "#E5E5EA"
-                    : isDark
-                    ? "#0A84FF"
-                    : "#007AFF"
-                }
-                strokeWidth="4"
-                fill="none"
-                strokeDasharray={`${2 * Math.PI * 30}`}
-                strokeDashoffset={`${
-                  2 * Math.PI * 30 * (count / currentAdhkar.quantity)
-                }`}
-                strokeLinecap="round"
-                transform="rotate(-90 34 34)"
-              />
-            )}
-          </Svg>
-
-          {/* Counter Button */}
-          <TouchableOpacity
-            style={[
-              styles.countButton,
-              {
-                backgroundColor:
-                  count === 0
-                    ? isDark
-                      ? "#2C2C2E"
-                      : "#E5E5EA"
-                    : isDark
-                    ? "#0A84FF"
-                    : "#007AFF",
-              },
-            ]}
-            onPress={handleCount}
-            disabled={count === 0}
-          >
-            <ThemedText
-              style={[
-                styles.countButtonText,
-                count === 0 && { color: isDark ? "#8E8E93" : "#8E8E93" },
-              ]}
-            >
-              {count}
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.actionButton}>
-          <IconSymbol
-            name="square.and.arrow.up.fill"
-            size={24}
-            color={isDark ? "#FFFFFF" : "#000000"}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleNext}
-          disabled={currentIndex === totalCount - 1}
-        >
-          <IconSymbol
-            name="play.fill"
-            size={24}
-            color={
-              currentIndex === totalCount - 1
-                ? isDark
-                  ? "#3A3A3C"
-                  : "#C7C7CC"
-                : isDark
-                ? "#FFFFFF"
-                : "#000000"
-            }
-          />
-        </TouchableOpacity>
-      </View>
+      {/* Completion Modal */}
+      <AdhkarCompletionModal
+        visible={showCompletionModal}
+        category={categoryTitle}
+        onClose={handleCompletionModalClose}
+      />
     </View>
   );
 }
@@ -1375,6 +1355,28 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     gap: 8,
+  },
+  positionBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  positionText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  repeatBadge: {
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  repeatText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   progressContainer: {
     paddingHorizontal: 20,

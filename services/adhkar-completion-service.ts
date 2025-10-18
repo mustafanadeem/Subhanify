@@ -5,6 +5,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TodayPrayerTimes } from '@/modules/prayer-times/domain/entities';
 
 const ADHKAR_COMPLETION_KEY = '@adhkar_daily_completions';
 
@@ -59,9 +60,62 @@ async function saveAdhkarCompletionHistory(history: AdhkarCompletionHistory): Pr
 }
 
 /**
- * Mark an adhkar category as completed for today
+ * Check if it's the correct time for a specific adhkar category
  */
-export async function markAdhkarCompleted(category: AdhkarCategory): Promise<void> {
+export function isCorrectTimeForAdhkar(category: AdhkarCategory, prayerTimes: TodayPrayerTimes): boolean {
+  if (!prayerTimes) return false;
+  
+  const now = new Date();
+  
+  // Parse ISO time strings to Date objects
+  const parseIsoTime = (isoString: string): Date => {
+    return new Date(isoString);
+  };
+
+  switch (category) {
+    case 'morning':
+      // Morning adhkar: Fajr to Sunrise
+      const fajrTime = parseIsoTime(prayerTimes.fajr.timeIso);
+      const sunriseTime = parseIsoTime(prayerTimes.sunrise.timeIso);
+      return now >= fajrTime && now <= sunriseTime;
+      
+    case 'evening':
+      // Evening adhkar: Asr to Maghrib
+      const asrTime = parseIsoTime(prayerTimes.asrMithl1.timeIso);
+      const maghribTime = parseIsoTime(prayerTimes.maghrib.timeIso);
+      return now >= asrTime && now <= maghribTime;
+      
+    case 'night':
+      // Night adhkar: Maghrib to Fajr (next day)
+      const maghribTimeNight = parseIsoTime(prayerTimes.maghrib.timeIso);
+      const fajrTimeNight = parseIsoTime(prayerTimes.fajr.timeIso);
+      
+      // Handle overnight period (Maghrib to midnight, then midnight to Fajr)
+      if (maghribTimeNight < fajrTimeNight) {
+        // Normal case: Maghrib is before Fajr next day
+        return now >= maghribTimeNight || now < fajrTimeNight;
+      } else {
+        // Same day case (shouldn't happen but handle it)
+        return now >= maghribTimeNight;
+      }
+      
+    default:
+      return false;
+  }
+}
+
+/**
+ * Mark an adhkar category as completed for today (with time validation)
+ */
+export async function markAdhkarCompleted(category: AdhkarCategory, prayerTimes?: TodayPrayerTimes): Promise<{ success: boolean; message: string }> {
+  // Validate time if prayer times provided
+  if (prayerTimes && !isCorrectTimeForAdhkar(category, prayerTimes)) {
+    return {
+      success: false,
+      message: `It's not the correct time for ${category} adhkar`
+    };
+  }
+
   const today = getTodayDateString();
   const now = new Date().toISOString();
   const history = await loadAdhkarCompletionHistory();
@@ -82,6 +136,11 @@ export async function markAdhkarCompleted(category: AdhkarCategory): Promise<voi
   // Update history
   history[today] = todayEntry;
   await saveAdhkarCompletionHistory(history);
+
+  return {
+    success: true,
+    message: `${category} adhkar completed successfully!`
+  };
 }
 
 /**
@@ -190,5 +249,75 @@ export async function getCompletionStats(startDate: string, endDate: string): Pr
  */
 export async function clearAdhkarCompletionHistory(): Promise<void> {
   await AsyncStorage.removeItem(ADHKAR_COMPLETION_KEY);
+}
+
+/**
+ * Check if completion data needs to be reset (after Fajr)
+ */
+export async function checkAndResetCompletionAfterFajr(prayerTimes: TodayPrayerTimes): Promise<void> {
+  if (!prayerTimes) return;
+
+  const now = new Date();
+  const fajrTime = new Date(prayerTimes.fajr.timeIso);
+  
+  // If it's after Fajr, reset yesterday's completion data
+  if (now >= fajrTime) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    const history = await loadAdhkarCompletionHistory();
+    if (history[yesterdayStr]) {
+      // Keep yesterday's data but mark it as from previous day
+      // This way we can still show historical progress but it won't affect current day
+      console.log(`[AdhkarCompletionService] Day reset after Fajr: ${yesterdayStr}`);
+    }
+  }
+}
+
+/**
+ * Get valid completion status (only counts if done at correct time)
+ */
+export async function getValidAdhkarCompletion(category: AdhkarCategory, prayerTimes: TodayPrayerTimes): Promise<boolean> {
+  if (!prayerTimes) return false;
+
+  const today = getTodayDateString();
+  const completion = await getAdhkarCompletionForDate(today);
+  
+  if (!completion || !completion.completedCategories.includes(category)) {
+    return false;
+  }
+
+  // Check if it was completed at the correct time
+  const completedAt = completion.completedAt[category];
+  if (!completedAt) return false;
+
+  // Parse completion time
+  const completedTime = new Date(completedAt);
+
+  // Parse prayer times from API
+  const parseIsoTime = (isoString: string): Date => {
+    return new Date(isoString);
+  };
+
+  switch (category) {
+    case 'morning':
+      const fajrTime = parseIsoTime(prayerTimes.fajr.timeIso);
+      const sunriseTime = parseIsoTime(prayerTimes.sunrise.timeIso);
+      return completedTime >= fajrTime && completedTime <= sunriseTime;
+      
+    case 'evening':
+      const asrTime = parseIsoTime(prayerTimes.asrMithl1.timeIso);
+      const maghribTime = parseIsoTime(prayerTimes.maghrib.timeIso);
+      return completedTime >= asrTime && completedTime <= maghribTime;
+      
+    case 'night':
+      const maghribTimeNight = parseIsoTime(prayerTimes.maghrib.timeIso);
+      const fajrTimeNight = parseIsoTime(prayerTimes.fajr.timeIso);
+      return completedTime >= maghribTimeNight || completedTime < fajrTimeNight;
+      
+    default:
+      return false;
+  }
 }
 

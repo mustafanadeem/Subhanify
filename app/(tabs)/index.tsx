@@ -6,11 +6,12 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/entities";
+import { getAllAdhkarProgressForToday } from "@/services/adhkar-progress-service";
 import { getCurrentStreak, updateStreak } from "@/services/streak-service";
 import { AdhkarPeriod, getAdhkarTimeRange, getCurrentAdhkarPeriod } from "@/utils/adhkar-time-utils";
 import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Dimensions,
     NativeScrollEvent,
@@ -42,11 +43,20 @@ export default function HomeScreen() {
   const [prayerTimes, setPrayerTimes] = useState<TodayPrayerTimes | null>(null);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [streakDays, setStreakDays] = useState<number>(0);
+  const [adhkarProgress, setAdhkarProgress] = useState({ morning: 0, evening: 0, night: 0 });
 
   useEffect(() => {
     loadPrayerData();
     loadStreakData();
+    loadAdhkarProgress();
   }, []);
+
+  // Refresh progress when screen comes into focus (e.g., when returning from adhkar detail)
+  useFocusEffect(
+    useCallback(() => {
+      loadAdhkarProgress();
+    }, [])
+  );
 
   const loadPrayerData = async () => {
     try {
@@ -70,6 +80,15 @@ export default function HomeScreen() {
       setStreakDays(currentStreak);
     } catch (error) {
       console.error("Failed to load streak data:", error);
+    }
+  };
+
+  const loadAdhkarProgress = async () => {
+    try {
+      const progress = await getAllAdhkarProgressForToday(prayerTimes);
+      setAdhkarProgress(progress);
+    } catch (error) {
+      console.error("Error loading adhkar progress:", error);
     }
   };
 
@@ -99,6 +118,20 @@ export default function HomeScreen() {
       pathname: "/adhkar-detail",
       params: { category: categoryKey, title },
     });
+  };
+
+  // Function to get progress for adhkar categories
+  const getAdhkarProgress = (category: string) => {
+    switch (category) {
+      case "morning":
+        return adhkarProgress.morning;
+      case "evening":
+        return adhkarProgress.evening;
+      case "night":
+        return adhkarProgress.night;
+      default:
+        return 0;
+    }
   };
 
   return (
@@ -225,6 +258,9 @@ export default function HomeScreen() {
               // Get time range for this adhkar
               const timeRange = getAdhkarTimeRange(category.category, prayerTimes, settings);
 
+              // Calculate progress based on category
+              const progress = getAdhkarProgress(category.category);
+
               return (
                 <CategoryCard
                   key={category.id}
@@ -238,6 +274,7 @@ export default function HomeScreen() {
                   isHighlighted={isHighlighted}
                   categoryType={categoryType as "morning" | "evening" | "night" | "other"}
                   timeRange={timeRange}
+                  progress={progress}
                 />
               );
             })}

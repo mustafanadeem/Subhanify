@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { CircularProgress } from "./circular-progress";
 import { ThemedText } from "./themed-text";
 import { IconSymbol } from "./ui/icon-symbol";
 
@@ -14,6 +15,7 @@ interface CategoryCardProps {
   isHighlighted?: boolean;
   categoryType?: "morning" | "evening" | "night" | "other";
   timeRange?: string | null;
+  progress?: number; // Progress percentage (0-100)
 }
 
 export function CategoryCard({
@@ -25,12 +27,27 @@ export function CategoryCard({
   isHighlighted = false,
   categoryType = "other",
   timeRange = null,
+  progress = 0,
 }: CategoryCardProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   // Get the main color for gradients
   const mainColor = Colors[colorScheme ?? "light"].activeAdhkarCard;
+
+  // Get progress color based on category type
+  const getProgressColor = (category: string) => {
+    switch (category) {
+      case "morning":
+        return "#4CAF50"; // Green for morning
+      case "evening":
+        return "#00BCD4"; // Teal for evening
+      case "night":
+        return "#2196F3"; // Blue for night
+      default:
+        return Colors[colorScheme ?? "light"].tint;
+    }
+  };
   
   // Create gradient variations of the main color
   const createGradient = (baseColor: string) => {
@@ -137,20 +154,19 @@ export function CategoryCard({
       activeOpacity={0.7}
     >
       <View style={styles.content}>
-        <View
-          style={[
-            styles.iconContainer,
-            {
-              backgroundColor: Colors[colorScheme ?? "light"].background,
-            },
-          ]}
+        <CircularProgress
+          progress={progress}
+          size={56}
+          strokeWidth={4}
+          color={getProgressColor(categoryType)}
+          backgroundColor={isDark ? "#2C2C2E" : "#E0E0E0"}
         >
           <IconSymbol
             name={icon}
             size={24}
             color={Colors[colorScheme ?? "light"].text}
           />
-        </View>
+        </CircularProgress>
 
         <View style={styles.textContainer}>
           <ThemedText style={styles.title}>{title}</ThemedText>
