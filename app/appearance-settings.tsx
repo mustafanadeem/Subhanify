@@ -1,27 +1,148 @@
 import { Colors } from "@/constants/theme";
 import { ArabicFont as FontType, useFont } from "@/contexts/FontContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
-  Modal,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Modal,
+    PanResponder,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 type ArabicFontDisplay = "KFGQPC Hafs" | "PDMS Saleem Quran";
+type ThemeMode = "light" | "dark" | "auto";
+
+function DraggableThemeSelector({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: ThemeMode;
+  onChange: (mode: ThemeMode) => void;
+  isDark: boolean;
+}) {
+  const themes: ThemeMode[] = ["light", "dark", "auto"];
+  const selectedIndex = themes.indexOf(value);
+  const containerWidth = 300; // approximate width
+  const itemWidth = containerWidth / 3;
+  
+  const slideAnim = useRef(new Animated.Value(selectedIndex * itemWidth)).current;
+  const [containerWidthState, setContainerWidthState] = useState(containerWidth);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        slideAnim.setOffset(selectedIndex * (containerWidthState / 3));
+        slideAnim.setValue(0);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        slideAnim.setValue(gestureState.dx);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        slideAnim.flattenOffset();
+        
+        const currentPosition = selectedIndex * (containerWidthState / 3) + gestureState.dx;
+        const newIndex = Math.round(currentPosition / (containerWidthState / 3));
+        const clampedIndex = Math.max(0, Math.min(2, newIndex));
+        
+        Animated.spring(slideAnim, {
+          toValue: clampedIndex * (containerWidthState / 3),
+          useNativeDriver: true,
+          tension: 100,
+          friction: 10,
+        }).start();
+        
+        onChange(themes[clampedIndex]);
+      },
+    })
+  ).current;
+
+  const onLayout = (event: any) => {
+    const { width } = event.nativeEvent.layout;
+    setContainerWidthState(width);
+    slideAnim.setValue(selectedIndex * (width / 3));
+  };
+
+  const handleTap = (index: number) => {
+    const newValue = index * (containerWidthState / 3);
+    Animated.spring(slideAnim, {
+      toValue: newValue,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 10,
+    }).start();
+    onChange(themes[index]);
+  };
+
+  return (
+    <View
+      style={[
+        styles.themeSliderContainer,
+        { backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7" },
+      ]}
+      onLayout={onLayout}
+    >
+      <Animated.View
+        style={[
+          styles.themeSliderIndicator,
+          {
+            backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+            transform: [{ translateX: slideAnim }],
+            width: `${100 / 3}%`,
+          },
+        ]}
+        {...panResponder.panHandlers}
+      />
+      {themes.map((theme, index) => (
+        <TouchableOpacity
+          key={theme}
+          style={styles.themeSliderOption}
+          onPress={() => handleTap(index)}
+        >
+          <Ionicons
+            name={
+              theme === "light"
+                ? "sunny"
+                : theme === "dark"
+                ? "moon"
+                : "phone-portrait-outline"
+            }
+            size={20}
+            color={value === theme ? "#FFFFFF" : isDark ? "#8E8E93" : "#8E8E93"}
+          />
+          <Text
+            style={[
+              styles.themeSliderText,
+              {
+                color: value === theme ? "#FFFFFF" : isDark ? "#8E8E93" : "#8E8E93",
+              },
+            ]}
+          >
+            {theme === "light" ? "Light" : theme === "dark" ? "Dark" : "Auto"}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
 
 export default function AppearanceSettingsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { themeMode, setThemeMode } = useTheme();
   const {
     arabicFont,
     setArabicFont,
@@ -29,16 +150,12 @@ export default function AppearanceSettingsScreen() {
     arabicTextSize,
     setArabicTextSize,
   } = useFont();
-
-  // Settings state
-  const [theme, setTheme] = useState<"light" | "dark" | "auto">("auto");
   const [showTranslation, setShowTranslation] = useState(true);
   const [showTransliteration, setShowTransliteration] = useState(true);
   const [translationTextSize, setTranslationTextSize] = useState(17);
   const [transliterationTextSize, setTransliterationTextSize] = useState(18);
 
   // Modal state
-  const [showThemeModal, setShowThemeModal] = useState(false);
   const [showFontModal, setShowFontModal] = useState(false);
 
   // Map internal font names to display names
@@ -51,8 +168,8 @@ export default function AppearanceSettingsScreen() {
     return displayName === "KFGQPC Hafs" ? "Hafs" : "Saleen";
   };
 
-  const getThemeName = (theme: string) => {
-    switch (theme) {
+  const getThemeName = (themeMode: string) => {
+    switch (themeMode) {
       case "light":
         return "Light";
       case "dark":
@@ -121,32 +238,11 @@ export default function AppearanceSettingsScreen() {
           >
             Theme
           </Text>
-          <TouchableOpacity
-            style={[
-              styles.card,
-              {
-                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
-                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-              },
-            ]}
-            onPress={() => setShowThemeModal(true)}
-          >
-            <View style={styles.settingRow}>
-              <Text
-                style={[
-                  styles.settingLabel,
-                  { color: Colors[colorScheme ?? "light"].text },
-                ]}
-              >
-                {getThemeName(theme)}
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={Colors[colorScheme ?? "light"].textSecondary}
-              />
-            </View>
-          </TouchableOpacity>
+          <DraggableThemeSelector
+            value={themeMode}
+            onChange={setThemeMode}
+            isDark={isDark}
+          />
         </View>
 
         {/* Arabic Font Section */}
@@ -504,77 +600,6 @@ export default function AppearanceSettingsScreen() {
         </View>
       </ScrollView>
 
-      {/* Theme Selection Modal */}
-      <Modal
-        visible={showThemeModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowThemeModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowThemeModal(false)}
-        >
-          <View
-            style={[
-              styles.modalContent,
-              {
-                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              },
-            ]}
-            onStartShouldSetResponder={() => true}
-          >
-            <Text
-              style={[
-                styles.modalTitle,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Select Theme
-            </Text>
-            {["light", "dark", "auto"].map((option, index) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.modalOption,
-                  {
-                    backgroundColor:
-                      theme === option
-                        ? isDark
-                          ? "#2C5F3F"
-                          : "#E8F5E9"
-                        : "transparent",
-                    borderBottomWidth: index < 2 ? 1 : 0,
-                    borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                  },
-                ]}
-                onPress={() => {
-                  setTheme(option as any);
-                  setShowThemeModal(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.modalOptionText,
-                    { color: Colors[colorScheme ?? "light"].text },
-                  ]}
-                >
-                  {option === "light"
-                    ? "Light"
-                    : option === "dark"
-                    ? "Dark"
-                    : "System Default"}
-                </Text>
-                {theme === option && (
-                  <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
       {/* Font Selection Modal */}
       <Modal
         visible={showFontModal}
@@ -705,6 +730,33 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
+  },
+  themeSliderContainer: {
+    flexDirection: "row",
+    height: 70,
+    borderRadius: 16,
+    padding: 4,
+    position: "relative",
+    overflow: "hidden",
+  },
+  themeSliderIndicator: {
+    position: "absolute",
+    height: "100%",
+    borderRadius: 14,
+    top: 0,
+    left: 4,
+  },
+  themeSliderOption: {
+    flex: 1,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    zIndex: 1,
+  },
+  themeSliderText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   settingRow: {
     flexDirection: "row",

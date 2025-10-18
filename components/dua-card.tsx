@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "./themed-text";
@@ -26,7 +27,7 @@ export function DuaCard({
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+          backgroundColor: Colors[colorScheme ?? "light"].inactiveCard,
           borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
         },
       ]}
@@ -38,14 +39,14 @@ export function DuaCard({
           style={[
             styles.iconContainer,
             {
-              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+              backgroundColor: Colors[colorScheme ?? "light"].background,
             },
           ]}
         >
           <IconSymbol
             name={icon}
             size={28}
-            color={isDark ? "#FFFFFF" : "#000000"}
+            color={Colors[colorScheme ?? "light"].text}
           />
         </View>
 
@@ -53,7 +54,7 @@ export function DuaCard({
           style={[
             styles.badge,
             {
-              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+              backgroundColor: Colors[colorScheme ?? "light"].background,
             },
           ]}
         >

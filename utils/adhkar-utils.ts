@@ -39,6 +39,14 @@ const categoryDisplayInfo: Record<string, CategorySummary> = {
     count: getCategoryCount("evening"),
     category: "evening",
   },
+  night: {
+    id: "night",
+    title: "Night",
+    subtitle: "Before Sleep",
+    icon: "moon.stars.fill",
+    count: getCategoryCount("night"),
+    category: "night",
+  },
 };
 
 // Get all adhkar categories for the home screen

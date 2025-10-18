@@ -1,22 +1,26 @@
 import { CategoryCard } from "@/components/category-card";
 import { DuaCard } from "@/components/dua-card";
 import { PrayerTimeCard } from "@/components/prayer-time-card";
-import { ThemedText } from "@/components/themed-text";
+import { StreaksCard } from "@/components/streaks-card";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
+import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/entities";
+import { getCurrentStreak, updateStreak } from "@/services/streak-service";
+import { AdhkarPeriod, getAdhkarTimeRange, getCurrentAdhkarPeriod } from "@/utils/adhkar-time-utils";
 import { duasCategories, getAdhkarCategories } from "@/utils/adhkar-utils";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -32,6 +36,45 @@ export default function HomeScreen() {
   const isDark = colorScheme === "dark";
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
+
+  // Load prayer times and settings
+  const repo = useMemo(() => new PrayerTimesRepository(), []);
+  const [prayerTimes, setPrayerTimes] = useState<TodayPrayerTimes | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [streakDays, setStreakDays] = useState<number>(0);
+
+  useEffect(() => {
+    loadPrayerData();
+    loadStreakData();
+  }, []);
+
+  const loadPrayerData = async () => {
+    try {
+      const loadedSettings = repo.loadSettings();
+      setSettings(loadedSettings);
+      
+      const times = await repo.getToday();
+      setPrayerTimes(times);
+    } catch (error) {
+      console.error("Failed to load prayer data:", error);
+    }
+  };
+
+  const loadStreakData = async () => {
+    try {
+      // Update streak when app loads
+      await updateStreak();
+      
+      // Get current streak
+      const currentStreak = await getCurrentStreak();
+      setStreakDays(currentStreak);
+    } catch (error) {
+      console.error("Failed to load streak data:", error);
+    }
+  };
+
+  // Determine current Adhkar period based on real prayer times
+  const currentPeriod: AdhkarPeriod = getCurrentAdhkarPeriod(prayerTimes, settings);
 
   const handleTabPress = (tab: TabType) => {
     setActiveTab(tab);
@@ -87,14 +130,18 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Prayer Time Card - Fixed */}
-      <PrayerTimeCard />
+      {/* Prayer Time and Streaks Cards - Side by Side */}
+      <View style={styles.cardsRow}>
+        <PrayerTimeCard />
+        <View style={styles.cardSpacer} />
+        <StreaksCard streakDays={streakDays} />
+      </View>
 
       {/* Tabs - Fixed */}
       <View
         style={[
           styles.tabsContainer,
-          { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
+          { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
         ]}
       >
         <TouchableOpacity
@@ -102,19 +149,23 @@ export default function HomeScreen() {
             styles.tab,
             activeTab === "adhkar" && styles.tabActive,
             activeTab === "adhkar" && {
-              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+              backgroundColor: Colors[colorScheme ?? "light"].main,
             },
           ]}
           onPress={() => handleTabPress("adhkar")}
         >
-          <ThemedText
+          <Text
             style={[
               styles.tabText,
+              { color: Colors[colorScheme ?? "light"].text },
               activeTab === "adhkar" && styles.tabTextActive,
+              activeTab === "adhkar" && {
+                color: "#FFFFFF",
+              },
             ]}
           >
             Adhkar
-          </ThemedText>
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -122,19 +173,23 @@ export default function HomeScreen() {
             styles.tab,
             activeTab === "duas" && styles.tabActive,
             activeTab === "duas" && {
-              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+              backgroundColor: Colors[colorScheme ?? "light"].main,
             },
           ]}
           onPress={() => handleTabPress("duas")}
         >
-          <ThemedText
+          <Text
             style={[
               styles.tabText,
+              { color: Colors[colorScheme ?? "light"].text },
               activeTab === "duas" && styles.tabTextActive,
+              activeTab === "duas" && {
+                color: "#FFFFFF",
+              },
             ]}
           >
             Duas
-          </ThemedText>
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -155,18 +210,37 @@ export default function HomeScreen() {
             contentContainerStyle={styles.cardsContainer}
             showsVerticalScrollIndicator={false}
           >
-            {adhkarCategories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                title={category.title}
-                subtitle={category.subtitle}
-                icon={category.icon}
-                count={category.count}
-                onPress={() =>
-                  handleCardPress(category.title, category.category)
-                }
-              />
-            ))}
+            {adhkarCategories.map((category) => {
+              // Determine if this card should be highlighted
+              // @ts-ignore - TypeScript incorrectly infers literal types here
+              const isHighlighted = currentPeriod !== 'none' && category.category === currentPeriod;
+              
+              // Determine category type for gradient
+              const categoryType = 
+                category.category === "morning" ? "morning" :
+                category.category === "evening" ? "evening" :
+                category.category === "night" ? "night" :
+                "other";
+
+              // Get time range for this adhkar
+              const timeRange = getAdhkarTimeRange(category.category, prayerTimes, settings);
+
+              return (
+                <CategoryCard
+                  key={category.id}
+                  title={category.title}
+                  subtitle={category.subtitle}
+                  icon={category.icon}
+                  count={category.count}
+                  onPress={() =>
+                    handleCardPress(category.title, category.category)
+                  }
+                  isHighlighted={isHighlighted}
+                  categoryType={categoryType as "morning" | "evening" | "night" | "other"}
+                  timeRange={timeRange}
+                />
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -214,6 +288,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
+  },
+  cardsRow: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  cardSpacer: {
+    width: 12,
   },
   tabsContainer: {
     flexDirection: "row",

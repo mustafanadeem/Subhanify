@@ -1,7 +1,7 @@
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { FontProvider } from "@/contexts/FontContext";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { RainAlertNotificationHandler } from "@/services/rain-alert-notification-handler";
 
 export const unstable_settings = {
@@ -21,9 +21,52 @@ export const unstable_settings = {
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function RootNavigator() {
+  const { colorScheme } = useTheme();
 
+  return (
+    <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="adhkar-detail" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="location-detail"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="prayer-settings"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="calculation-method"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="asr-method" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="latitude-adjustment"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="appearance-settings"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="rain-alert-settings"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="rain-dua"
+          options={{ headerShown: false, presentation: "modal" }}
+        />
+        <Stack.Screen name="support" options={{ headerShown: false }} />
+        <Stack.Screen name="view-feedback" options={{ headerShown: false }} />
+      </Stack>
+      <StatusBar style="auto" />
+    </NavigationThemeProvider>
+  );
+}
+
+export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     "Hafs-Regular": require("../assets/fonts/Hafs-Regular.otf"),
     "Saleen-Regular": require("../assets/fonts/Saleen-Regular.ttf"),
@@ -44,45 +87,10 @@ export default function RootLayout() {
   }
 
   return (
-    <FontProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="adhkar-detail" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="location-detail"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="prayer-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="calculation-method"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="asr-method" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="latitude-adjustment"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="appearance-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="rain-alert-settings"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="rain-dua"
-            options={{ headerShown: false, presentation: "modal" }}
-          />
-          <Stack.Screen name="support" options={{ headerShown: false }} />
-          <Stack.Screen name="view-feedback" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </FontProvider>
+    <ThemeProvider>
+      <FontProvider>
+        <RootNavigator />
+      </FontProvider>
+    </ThemeProvider>
   );
 }

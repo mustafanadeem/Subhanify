@@ -1,3 +1,4 @@
+import { QiblaCompass } from "@/components/qibla-compass";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
@@ -54,10 +55,13 @@ const categoryColors: Record<LocationCategory, string> = {
   other: "#757575",
 };
 
+type ViewMode = "locations" | "qibla";
+
 export default function LocationsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
+  const [viewMode, setViewMode] = useState<ViewMode>("locations");
   const [locations, setLocations] = useState<SavedLocation[]>([]);
   const [mosques, setMosques] = useState<Mosque[]>([]);
   const [showMosques, setShowMosques] = useState(true);
@@ -374,18 +378,117 @@ export default function LocationsScreen() {
             { color: Colors[colorScheme ?? "light"].text },
           ]}
         >
-          Location Adhkar
+          {viewMode === "locations" ? "Location Adhkar" : "Qibla Direction"}
         </Text>
-        <TouchableOpacity onPress={handleAddLocation} style={styles.addButton}>
-          <Ionicons
-            name="add-circle"
-            size={32}
-            color={Colors[colorScheme ?? "light"].tint}
-          />
+        <TouchableOpacity
+          onPress={viewMode === "locations" ? handleAddLocation : undefined}
+          style={styles.addButton}
+          disabled={viewMode === "qibla"}
+        >
+          {viewMode === "locations" ? (
+            <Ionicons
+              name="add-circle"
+              size={32}
+              color={Colors[colorScheme ?? "light"].tint}
+            />
+          ) : (
+            <View style={{ width: 32 }} />
+          )}
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollContent}>
+      {/* View Mode Tabs */}
+      <View
+        style={[
+          styles.tabsContainer,
+          { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
+        ]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            viewMode === "locations" && styles.tabActive,
+            viewMode === "locations" && {
+              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+            },
+          ]}
+          onPress={() => setViewMode("locations")}
+        >
+          <Ionicons
+            name="location"
+            size={20}
+            color={
+              viewMode === "locations"
+                ? Colors[colorScheme ?? "light"].tint
+                : Colors[colorScheme ?? "light"].textSecondary
+            }
+          />
+          <Text
+            style={[
+              styles.tabText,
+              {
+                color:
+                  viewMode === "locations"
+                    ? Colors[colorScheme ?? "light"].text
+                    : Colors[colorScheme ?? "light"].textSecondary,
+              },
+              viewMode === "locations" && styles.tabTextActive,
+            ]}
+          >
+            Locations
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            viewMode === "qibla" && styles.tabActive,
+            viewMode === "qibla" && {
+              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+            },
+          ]}
+          onPress={() => setViewMode("qibla")}
+        >
+          <Ionicons
+            name="compass"
+            size={20}
+            color={
+              viewMode === "qibla"
+                ? Colors[colorScheme ?? "light"].tint
+                : Colors[colorScheme ?? "light"].textSecondary
+            }
+          />
+          <Text
+            style={[
+              styles.tabText,
+              {
+                color:
+                  viewMode === "qibla"
+                    ? Colors[colorScheme ?? "light"].text
+                    : Colors[colorScheme ?? "light"].textSecondary,
+              },
+              viewMode === "qibla" && styles.tabTextActive,
+            ]}
+          >
+            Qibla
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content based on view mode */}
+      {viewMode === "qibla" ? (
+        <QiblaCompass
+          userLocation={
+            currentLocation
+              ? {
+                  latitude: currentLocation.coords.latitude,
+                  longitude: currentLocation.coords.longitude,
+                }
+              : null
+          }
+        />
+      ) : (
+        <ScrollView style={styles.scrollContent}>
         {/* Map */}
         <View style={styles.mapContainer}>
           <MapView
@@ -687,6 +790,7 @@ export default function LocationsScreen() {
           ))
         )}
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -712,6 +816,33 @@ const styles = StyleSheet.create({
   },
   addButton: {
     padding: 4,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    padding: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  tabActive: {
+    // backgroundColor applied inline based on theme
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  tabTextActive: {
+    fontWeight: "600",
   },
   mapContainer: {
     height: 300,

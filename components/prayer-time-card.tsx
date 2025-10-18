@@ -1,18 +1,19 @@
+import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { PrayerTimesRepository } from "../modules/prayer-times/data/repository";
 import {
-  TodayPrayerTimes,
-  UserSettings,
+    TodayPrayerTimes,
+    UserSettings,
 } from "../modules/prayer-times/domain/entities";
 
 const repo = new PrayerTimesRepository();
@@ -190,10 +191,10 @@ export function PrayerTimeCard() {
       <View
         style={[
           styles.card,
-          { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
+          { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
         ]}
       >
-        <ActivityIndicator />
+        <ActivityIndicator color={Colors[colorScheme ?? "light"].tint} />
       </View>
     );
   }
@@ -212,7 +213,7 @@ export function PrayerTimeCard() {
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? "#2D5F3F" : "#7CB342",
+          backgroundColor: Colors[colorScheme ?? "light"].prayerCard,
         },
       ]}
       onPress={handlePress}
@@ -234,20 +235,15 @@ export function PrayerTimeCard() {
           <Text style={styles.nextPrayer}>
             {next.name} at {next.time}
           </Text>
+          
+          <View style={styles.tapIndicator}>
+            <Text style={styles.tapText}>Tap to view all prayer times</Text>
+          </View>
         </View>
 
         <View style={styles.rightContent}>
-          <Ionicons name="moon" size={80} color="rgba(255,255,255,0.3)" />
+          <Ionicons name="moon" size={70} color="rgba(255,255,255,0.3)" />
         </View>
-      </View>
-
-      <View style={styles.tapIndicator}>
-        <Text style={styles.tapText}>Tap to view all prayer times</Text>
-        <Ionicons
-          name="chevron-forward"
-          size={16}
-          color="rgba(255,255,255,0.7)"
-        />
       </View>
     </TouchableOpacity>
   );
@@ -255,8 +251,7 @@ export function PrayerTimeCard() {
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 20,
-    marginBottom: 20,
+    flex: 1,
     borderRadius: 16,
     padding: 20,
     overflow: "hidden",
@@ -265,14 +260,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    minHeight: 140,
   },
   cardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
+    flex: 1,
   },
   leftContent: {
     flex: 1,
+    justifyContent: "center",
   },
   rightContent: {
     justifyContent: "center",
@@ -280,39 +278,35 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   hijriDate: {
-    fontSize: 13,
+    fontSize: 11,
     color: "rgba(255,255,255,0.9)",
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: "500",
   },
   currentTime: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   currentPrayerName: {
-    fontSize: 16,
+    fontSize: 14,
     color: "rgba(255,255,255,0.95)",
-    marginBottom: 12,
+    marginBottom: 8,
     fontWeight: "500",
   },
   nextPrayer: {
-    fontSize: 14,
+    fontSize: 12,
     color: "rgba(255,255,255,0.85)",
     fontWeight: "500",
+    marginBottom: 8,
   },
   tapIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.2)",
   },
   tapText: {
-    fontSize: 12,
+    fontSize: 10,
     color: "rgba(255,255,255,0.7)",
-    marginRight: 4,
   },
 });

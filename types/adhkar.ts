@@ -8,6 +8,7 @@ export interface AdhkarItem {
   reference: string;
   quantity: number;
   Level: number;
+  "group id": number;
 }
 
 export interface AdhkarData {

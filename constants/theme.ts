@@ -1,35 +1,90 @@
 /**
  * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * 
+ * LIGHT MODE COLOR PALETTE - Change these colors to update the entire app theme:
+ * Main: #002685 (Deep Royal Blue) - Primary cards, active states, selected tabs
+ * Accent: #A6B1E1 (Lavender Blue) - Streaks card, interactive elements
+ * Background: #F5F6FA (Pale Mist) - Main background
+ * Text: #101820 (Dark Charcoal) - All text
+ * Secondary: #DADCE0 (Soft Gray) - Inactive elements, icons
+ * Highlight: #FFC6C6 (Soft Rose) - "Active Now" badges, special highlights
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// ========================================
+// 🎨 LIGHT MODE PALETTE - EDIT THESE 5 COLORS
+// ========================================
+const LIGHT_MAIN = '#002685';        // Deep Royal Blue
+const LIGHT_ACCENT = '#A6B1E1';      // Lavender Blue
+const LIGHT_BACKGROUND = '#F5F6FA';  // Pale Mist
+const LIGHT_TEXT = '#101820';        // Dark Charcoal
+const LIGHT_SECONDARY = '#DADCE0';   // Soft Gray
+const LIGHT_HIGHLIGHT = '#FFC6C6';   // Soft Rose
 
+// ========================================
+// 🌙 DARK MODE PALETTE - EDIT THESE 5 COLORS
+// ========================================
+const DARK_MAIN = '#C44D00';         // Dark Orange
+const DARK_ACCENT = '#FFD166';       // Warm Gold
+const DARK_BACKGROUND = '#151718';   // Almost Black
+const DARK_TEXT = '#ECEDEE';         // Off White
+const DARK_SECONDARY = '#9BA1A6';    // Gray
+const DARK_HIGHLIGHT = '#E1B12C';    // Golden Sand
+
+// ========================================
+// 📦 EXPORTED COLORS (Don't edit this section)
+// ========================================
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-    textSecondary: '#687076',
-    cardBackground: '#F5F5F5',
-    headerBackground: '#fff',
+    // Core colors
+    main: LIGHT_MAIN,
+    accent: LIGHT_ACCENT,
+    background: LIGHT_BACKGROUND,
+    text: LIGHT_TEXT,
+    secondary: LIGHT_SECONDARY,
+    highlight: LIGHT_HIGHLIGHT,
+    
+    // Derived colors (automatically use core colors)
+    tint: LIGHT_ACCENT,
+    icon: LIGHT_SECONDARY,
+    tabIconDefault: LIGHT_SECONDARY,
+    tabIconSelected: LIGHT_MAIN,
+    textSecondary: LIGHT_SECONDARY,
+    cardBackground: '#FFFFFF',
+    headerBackground: LIGHT_BACKGROUND,
+    
+    // Component-specific colors (uses core palette)
+    prayerCard: LIGHT_MAIN,
+    streaksCard: LIGHT_ACCENT,
+    activeAdhkarCard: LIGHT_MAIN,
+    inactiveCard: '#FFFFFF',
+    activeBadge: LIGHT_HIGHLIGHT,  // Using Golden Sand for "Active Now" badge
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-    textSecondary: '#9BA1A6',
+    // Core colors
+    main: DARK_MAIN,
+    accent: DARK_ACCENT,
+    background: DARK_BACKGROUND,
+    text: DARK_TEXT,
+    secondary: DARK_SECONDARY,
+    highlight: DARK_HIGHLIGHT,
+    
+    // Derived colors (automatically use core colors)
+    tint: DARK_ACCENT,
+    icon: DARK_SECONDARY,
+    tabIconDefault: DARK_SECONDARY,
+    tabIconSelected: DARK_TEXT,
+    textSecondary: DARK_SECONDARY,
     cardBackground: '#1C1C1E',
-    headerBackground: '#151718',
+    headerBackground: DARK_BACKGROUND,
+    
+    // Component-specific colors (uses core palette)
+    prayerCard: '#2D5F3F',
+    streaksCard: DARK_MAIN,
+    activeAdhkarCard: DARK_MAIN,
+    inactiveCard: '#1C1C1E',
+    activeBadge: DARK_HIGHLIGHT,  // Using Golden Sand for "Active Now" badge
   },
 };
 

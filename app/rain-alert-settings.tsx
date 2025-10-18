@@ -1,27 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  Switch,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import { RainAlertStorage } from '../services/rain-alert-storage';
-import { RainAlertService } from '../services/rain-alert-service';
-import { RainAlertCooldown } from '../services/rain-alert-cooldown';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-  RainAlertSettings,
-  MIN_LEAD_TIME_MINUTES,
-  MAX_LEAD_TIME_MINUTES,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { RainAlertCooldown } from '../services/rain-alert-cooldown';
+import { RainAlertService } from '../services/rain-alert-service';
+import { RainAlertStorage } from '../services/rain-alert-storage';
+import {
+    MAX_LEAD_TIME_MINUTES,
+    MIN_LEAD_TIME_MINUTES,
+    RainAlertSettings,
 } from '../types/rain-alerts';
 
 export default function RainAlertSettingsScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<RainAlertSettings | null>(null);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
@@ -108,26 +114,36 @@ export default function RainAlertSettingsScreen() {
 
   if (loading || !settings) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: 'Rain Alerts',
-          headerBackTitle: 'Back',
-        }}
+    <View style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor="transparent"
+        translucent
       />
-      <ScrollView style={styles.container}>
-        <View style={styles.section}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: Colors[colorScheme ?? 'light'].headerBackground }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors[colorScheme ?? 'light'].text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: Colors[colorScheme ?? 'light'].text }]}>
+          Rain Alerts
+        </Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <ScrollView style={styles.scrollView}>
+        <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#fff' }]}>
           <View style={styles.row}>
             <View style={styles.labelContainer}>
-              <Text style={styles.label}>Enable Rain Alerts</Text>
-              <Text style={styles.description}>
+              <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>Enable Rain Alerts</Text>
+              <Text style={[styles.description, { color: Colors[colorScheme ?? 'light'].textSecondary }]}>
                 Get notified when rain starts with a dua reminder
               </Text>
             </View>
@@ -142,15 +158,15 @@ export default function RainAlertSettingsScreen() {
 
         {settings.enabled && (
           <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Alert Settings</Text>
+            <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#fff' }]}>
+              <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? 'light'].text }]}>Alert Settings</Text>
 
               <View style={styles.sliderContainer}>
                 <View style={styles.sliderHeader}>
-                  <Text style={styles.label}>Lead Time</Text>
+                  <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>Lead Time</Text>
                   <Text style={styles.value}>{settings.leadTimeMinutes} min</Text>
                 </View>
-                <Text style={styles.description}>
+                <Text style={[styles.description, { color: Colors[colorScheme ?? 'light'].textSecondary }]}>
                   Get notified before rain starts (0 = when it starts)
                 </Text>
                 <Slider
@@ -166,14 +182,15 @@ export default function RainAlertSettingsScreen() {
               </View>
 
               <View style={styles.pickerContainer}>
-                <Text style={styles.label}>Intensity Threshold</Text>
-                <Text style={styles.description}>Minimum rain intensity for alerts</Text>
+                <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>Intensity Threshold</Text>
+                <Text style={[styles.description, { color: Colors[colorScheme ?? 'light'].textSecondary }]}>Minimum rain intensity for alerts</Text>
                 <View style={styles.buttonGroup}>
                   {['any', 'light+', 'moderate+'].map((threshold) => (
                     <TouchableOpacity
                       key={threshold}
                       style={[
                         styles.button,
+                        { backgroundColor: isDark ? '#2C2C2E' : '#fff', borderColor: isDark ? '#3A3A3C' : '#D1D5DB' },
                         settings.intensityThreshold === threshold && styles.buttonActive,
                       ]}
                       onPress={() =>
@@ -183,6 +200,7 @@ export default function RainAlertSettingsScreen() {
                       <Text
                         style={[
                           styles.buttonText,
+                          { color: isDark ? '#FFFFFF' : '#6B7280' },
                           settings.intensityThreshold === threshold &&
                             styles.buttonTextActive,
                         ]}
@@ -199,13 +217,13 @@ export default function RainAlertSettingsScreen() {
               </View>
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Rate Limiting</Text>
+            <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#fff' }]}>
+              <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? 'light'].text }]}>Rate Limiting</Text>
 
               <View style={styles.row}>
                 <View style={styles.labelContainer}>
-                  <Text style={styles.label}>One Alert per Hour</Text>
-                  <Text style={styles.description}>
+                  <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>One Alert per Hour</Text>
+                  <Text style={[styles.description, { color: Colors[colorScheme ?? 'light'].textSecondary }]}>
                     Limit to at most one notification every 60 minutes
                   </Text>
                 </View>
@@ -226,13 +244,13 @@ export default function RainAlertSettingsScreen() {
               )}
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Quiet Hours</Text>
+            <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#fff' }]}>
+              <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? 'light'].text }]}>Quiet Hours</Text>
 
               <View style={styles.row}>
                 <View style={styles.labelContainer}>
-                  <Text style={styles.label}>Enable Quiet Hours</Text>
-                  <Text style={styles.description}>
+                  <Text style={[styles.label, { color: Colors[colorScheme ?? 'light'].text }]}>Enable Quiet Hours</Text>
+                  <Text style={[styles.description, { color: Colors[colorScheme ?? 'light'].textSecondary }]}>
                     Suppress alerts during nighttime hours
                   </Text>
                 </View>
@@ -245,26 +263,26 @@ export default function RainAlertSettingsScreen() {
               </View>
 
               {settings.quietHoursEnabled && (
-                <View style={styles.timeRange}>
-                  <Text style={styles.timeText}>
+                <View style={[styles.timeRange, { backgroundColor: isDark ? '#2C2C2E' : '#F3F4F6' }]}>
+                  <Text style={[styles.timeText, { color: Colors[colorScheme ?? 'light'].text }]}>
                     {settings.quietHoursStart} - {settings.quietHoursEnd}
                   </Text>
-                  <Text style={styles.description}>
+                  <Text style={[styles.description, { color: Colors[colorScheme ?? 'light'].textSecondary }]}>
                     Alerts will be silently queued during these hours
                   </Text>
                 </View>
               )}
             </View>
 
-            <View style={styles.section}>
+            <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#fff' }]}>
               <TouchableOpacity style={styles.testButton} onPress={testNotification}>
                 <Text style={styles.testButtonText}>Send Test Notification</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.infoSection}>
-              <Text style={styles.infoTitle}>How it Works</Text>
-              <Text style={styles.infoText}>
+            <View style={[styles.infoSection, { backgroundColor: isDark ? '#1E3A5F' : '#EFF6FF' }]}>
+              <Text style={[styles.infoTitle, { color: isDark ? '#60A5FA' : '#1E40AF' }]}>How it Works</Text>
+              <Text style={[styles.infoText, { color: isDark ? '#93C5FD' : '#1E3A8A' }]}>
                 • Uses coarse location tiles (~1 km) for privacy{'\n'}
                 • Minimal battery impact with smart updates{'\n'}
                 • Backend monitors weather conditions{'\n'}
@@ -275,23 +293,48 @@ export default function RainAlertSettingsScreen() {
           </>
         )}
       </ScrollView>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: -0.4,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 40,
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  scrollView: {
+    flex: 1,
   },
   section: {
-    backgroundColor: '#fff',
     marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -299,7 +342,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
     marginBottom: 12,
   },
   row: {
@@ -315,11 +357,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
   },
   description: {
     fontSize: 13,
-    color: '#6B7280',
     marginTop: 2,
   },
   sliderContainer: {
@@ -355,8 +395,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#fff',
     alignItems: 'center',
   },
   buttonActive: {
@@ -366,7 +404,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
   },
   buttonTextActive: {
     color: '#fff',
@@ -385,13 +422,11 @@ const styles = StyleSheet.create({
   timeRange: {
     marginTop: 12,
     padding: 12,
-    backgroundColor: '#F3F4F6',
     borderRadius: 8,
   },
   timeText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
   },
   testButton: {
     backgroundColor: '#3B82F6',
@@ -406,7 +441,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   infoSection: {
-    backgroundColor: '#EFF6FF',
     marginTop: 16,
     marginBottom: 32,
     padding: 16,
@@ -416,12 +450,10 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1E40AF',
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: '#1E3A8A',
     lineHeight: 22,
   },
 });

@@ -48,6 +48,7 @@ export default function AdhkarDetailScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const [isAnimating, setIsAnimating] = useState(false);
+  const groupSlideAnim = useRef(new Animated.Value(0)).current;
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const [textSize, setTextSize] = useState(17);
   const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "auto">("auto");
@@ -59,11 +60,29 @@ export default function AdhkarDetailScreen() {
 
   // Initialize countdown from quantity
   const [count, setCount] = useState(currentAdhkar?.quantity || 0);
+  
+  // Track which item in the group we're currently on
+  const [currentGroupItemIndex, setCurrentGroupItemIndex] = useState(0);
 
-  // Reset count when adhkar changes
+  // Get all items in the current group
+  const currentGroup = useMemo(() => {
+    if (!currentAdhkar || currentAdhkar["group id"] === 0) {
+      return [currentAdhkar];
+    }
+    // Find all adhkar with the same group id
+    return adhkarList.filter(
+      (item) => item["group id"] === currentAdhkar["group id"] && item["group id"] !== 0
+    );
+  }, [currentAdhkar, adhkarList]);
+
+  // Get the current item within the group
+  const currentGroupItem = currentGroup[currentGroupItemIndex] || currentAdhkar;
+
+  // Reset count and group item when adhkar changes
   useEffect(() => {
     if (currentAdhkar) {
       setCount(currentAdhkar.quantity);
+      setCurrentGroupItemIndex(0);
     }
   }, [currentIndex, currentAdhkar]);
 
@@ -136,34 +155,104 @@ export default function AdhkarDetailScreen() {
   }
 
   const handleCount = () => {
-    if (count > 1) {
-      // Just decrement normally
-      setCount(count - 1);
-    } else if (count === 1) {
-      // Last click - trigger vertical animation
-      setCount(0);
-      if (currentIndex < totalCount - 1) {
-        setIsAnimating(true);
-
-        // Slide up animation
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }).start(() => {
-          // After animation, update index and scroll
-          const nextIndex = currentIndex + 1;
-          setCurrentIndex(nextIndex);
-          scrollViewRef.current?.scrollTo({
-            x: nextIndex * SCREEN_WIDTH,
-            animated: false,
-          });
-
-          // Reset animation and hide overlay
-          slideAnim.setValue(SCREEN_HEIGHT);
-          setIsAnimating(false);
-        });
+    const isGrouped = currentAdhkar && currentAdhkar["group id"] !== 0;
+    
+    if (isGrouped && currentGroup.length > 1) {
+      // Handle grouped adhkar
+      if (currentGroupItemIndex < currentGroup.length - 1) {
+        // Move to next item in the group with horizontal slide animation
+        Animated.sequence([
+          Animated.timing(groupSlideAnim, {
+            toValue: -SCREEN_WIDTH,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(groupSlideAnim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        
+        setCurrentGroupItemIndex(currentGroupItemIndex + 1);
+      } else {
+        // Completed the entire group once, now decrement the counter
+        if (count > 1) {
+          setCount(count - 1);
+          setCurrentGroupItemIndex(0); // Reset to first item in group
+        } else if (count === 1) {
+          // Last repetition - move to next adhkar OUTSIDE the group
+          setCount(0);
+          moveToNextAdhkarOutsideGroup();
+        }
       }
+    } else {
+      // Handle non-grouped adhkar (original behavior)
+      if (count > 1) {
+        setCount(count - 1);
+      } else if (count === 1) {
+        setCount(0);
+        moveToNextAdhkar();
+      }
+    }
+  };
+
+  const moveToNextAdhkar = () => {
+    if (currentIndex < totalCount - 1) {
+      setIsAnimating(true);
+
+      // Slide up animation
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        // After animation, update index and scroll
+        const nextIndex = currentIndex + 1;
+        setCurrentIndex(nextIndex);
+        scrollViewRef.current?.scrollTo({
+          x: nextIndex * SCREEN_WIDTH,
+          animated: false,
+        });
+
+        // Reset animation and hide overlay
+        slideAnim.setValue(SCREEN_HEIGHT);
+        setIsAnimating(false);
+      });
+    }
+  };
+
+  const moveToNextAdhkarOutsideGroup = () => {
+    // Find the next adhkar that is NOT in the current group
+    const currentGroupId = currentAdhkar?.["group id"];
+    let nextIndex = currentIndex + 1;
+    
+    // Skip all adhkar with the same group id
+    while (nextIndex < totalCount && adhkarList[nextIndex]["group id"] === currentGroupId) {
+      nextIndex++;
+    }
+    
+    // Move to the next adhkar outside the group
+    if (nextIndex < totalCount) {
+      setIsAnimating(true);
+
+      // Slide up animation
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        // After animation, update index and scroll
+        setCurrentIndex(nextIndex);
+        scrollViewRef.current?.scrollTo({
+          x: nextIndex * SCREEN_WIDTH,
+          animated: false,
+        });
+
+        // Reset animation and hide overlay
+        slideAnim.setValue(SCREEN_HEIGHT);
+        setIsAnimating(false);
+      });
     }
   };
 
@@ -694,7 +783,11 @@ export default function AdhkarDetailScreen() {
           scrollEventThrottle={16}
           style={styles.horizontalScroll}
         >
-          {adhkarList.map((adhkar, index) => (
+          {adhkarList.map((adhkar, index) => {
+            // For grouped adhkar, show the current item in the group when viewing this adhkar
+            const displayItem = index === currentIndex ? currentGroupItem : adhkar;
+            
+            return (
             <View key={index} style={styles.page}>
               <ScrollView
                 style={styles.content}
@@ -703,7 +796,81 @@ export default function AdhkarDetailScreen() {
               >
                 {/* Title and Counter */}
                 <View style={styles.titleSection}>
-                  <ThemedText style={styles.title}>{adhkar.Adhkar}</ThemedText>
+                  <ThemedText style={styles.title}>{displayItem.Adhkar}</ThemedText>
+                  
+                  {/* Group Indicator - only show when viewing this adhkar and it's grouped */}
+                  {index === currentIndex && adhkar["group id"] !== 0 && currentGroup.length > 1 && (
+                    <View style={styles.groupIndicatorContainer}>
+                      <View style={[
+                        styles.groupBadge,
+                        {
+                          backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
+                          borderColor: isDark ? "#3B82F6" : "#007AFF",
+                        }
+                      ]}>
+                        <IconSymbol name="link" size={12} color={isDark ? "#0A84FF" : "#007AFF"} />
+                        <Text style={[
+                          styles.groupBadgeText,
+                          { color: isDark ? "#0A84FF" : "#007AFF" }
+                        ]}>
+                          Grouped Dhikr
+                        </Text>
+                      </View>
+                      
+                      {/* Group Progress Bar - Segmented by Quantity */}
+                      <View style={styles.groupProgressContainer}>
+                        <View style={styles.groupProgressBar}>
+                          {/* Render segments based on quantity */}
+                          {Array.from({ length: Math.floor(adhkar.quantity) }).map((_, segmentIndex) => {
+                            const segmentWidth = 100 / Math.floor(adhkar.quantity);
+                            const currentCycle = Math.floor(adhkar.quantity) - count; // Which cycle we're on (0-indexed)
+                            const isCurrentSegment = segmentIndex === currentCycle;
+                            const isCompletedSegment = segmentIndex < currentCycle;
+                            
+                            // Calculate fill percentage for current segment
+                            let fillPercentage = 0;
+                            if (isCompletedSegment) {
+                              fillPercentage = 100; // Fully filled
+                            } else if (isCurrentSegment) {
+                              fillPercentage = ((currentGroupItemIndex + 1) / currentGroup.length) * 100;
+                            }
+                            
+                            return (
+                              <View
+                                key={segmentIndex}
+                                style={[
+                                  styles.groupProgressSegment,
+                                  {
+                                    width: `${segmentWidth}%`,
+                                    backgroundColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                                    borderRightWidth: segmentIndex < Math.floor(adhkar.quantity) - 1 ? 3 : 0,
+                                    borderRightColor: isDark ? "#1C1C1E" : "#D1D5DB",
+                                  }
+                                ]}
+                              >
+                                <Animated.View
+                                  style={[
+                                    styles.groupProgressSegmentFill,
+                                    {
+                                      width: `${fillPercentage}%`,
+                                      backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+                                    },
+                                  ]}
+                                />
+                              </View>
+                            );
+                          })}
+                        </View>
+                        <Text style={[
+                          styles.groupProgressText,
+                          { color: isDark ? "#8E8E93" : "#8E8E93" }
+                        ]}>
+                          {currentGroupItemIndex + 1}/{currentGroup.length}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                  
                   <View style={styles.badgeRow}>
                     <View
                       style={[
@@ -718,7 +885,7 @@ export default function AdhkarDetailScreen() {
                         {index + 1}/{totalCount}
                       </ThemedText>
                     </View>
-                    {adhkar.quantity > 1 && (
+                    {displayItem.quantity > 1 && (
                       <View
                         style={[
                           styles.quantityBadge,
@@ -728,54 +895,23 @@ export default function AdhkarDetailScreen() {
                         ]}
                       >
                         <ThemedText style={styles.quantityText}>
-                          {adhkar.quantity}x
+                          {displayItem.quantity}x
                         </ThemedText>
                       </View>
                     )}
                   </View>
                 </View>
 
-                {/* Arabic Text */}
-                <View
+                {/* Animated Content Wrapper for Group Transitions */}
+                <Animated.View
                   style={[
-                    styles.card,
-                    {
-                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                      borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                    },
+                    styles.animatedContentWrapper,
+                    index === currentIndex && adhkar["group id"] !== 0 && currentGroup.length > 1 && {
+                      transform: [{ translateX: groupSlideAnim }],
+                    }
                   ]}
                 >
-                  <ThemedText
-                    style={[
-                      styles.arabicText,
-                      {
-                        fontFamily: getFontFamily(),
-                        fontSize: arabicTextSize,
-                        lineHeight: arabicTextSize * 2,
-                      },
-                    ]}
-                  >
-                    {adhkar.Arabic}
-                  </ThemedText>
-                </View>
-
-                {/* Transliteration */}
-                <View
-                  style={[
-                    styles.card,
-                    {
-                      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                      borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                    },
-                  ]}
-                >
-                  <ThemedText style={[styles.transliteration, { fontSize: textSize }]}>
-                    {adhkar.transliteration}
-                  </ThemedText>
-                </View>
-
-                {/* Translation */}
-                {typeof adhkar.translation === "string" && (
+                  {/* Arabic Text */}
                   <View
                     style={[
                       styles.card,
@@ -785,14 +921,55 @@ export default function AdhkarDetailScreen() {
                       },
                     ]}
                   >
-                    <ThemedText style={[styles.translation, { fontSize: textSize }]}>
-                      {adhkar.translation}
+                    <ThemedText
+                      style={[
+                        styles.arabicText,
+                        {
+                          fontFamily: getFontFamily(),
+                          fontSize: arabicTextSize,
+                          lineHeight: arabicTextSize * 2,
+                        },
+                      ]}
+                    >
+                      {displayItem.Arabic}
                     </ThemedText>
                   </View>
-                )}
+
+                  {/* Transliteration */}
+                  <View
+                    style={[
+                      styles.card,
+                      {
+                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                      },
+                    ]}
+                  >
+                    <ThemedText style={[styles.transliteration, { fontSize: textSize }]}>
+                      {displayItem.transliteration}
+                    </ThemedText>
+                  </View>
+
+                  {/* Translation */}
+                  {typeof displayItem.translation === "string" && (
+                    <View
+                      style={[
+                        styles.card,
+                        {
+                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                        },
+                      ]}
+                    >
+                      <ThemedText style={[styles.translation, { fontSize: textSize }]}>
+                        {displayItem.translation}
+                      </ThemedText>
+                    </View>
+                  )}
+                </Animated.View>
 
                 {/* Virtue */}
-                {adhkar.virtue && (
+                {displayItem.virtue && (
                   <View
                     style={[
                       styles.virtueCard,
@@ -813,13 +990,13 @@ export default function AdhkarDetailScreen() {
                       </ThemedText>
                     </View>
                     <ThemedText style={styles.referenceText}>
-                      {adhkar.virtue}
+                      {displayItem.virtue}
                     </ThemedText>
                   </View>
                 )}
 
                 {/* Reference */}
-                {adhkar.reference && (
+                {displayItem.reference && (
                   <View
                     style={[
                       styles.referenceCard,
@@ -840,13 +1017,14 @@ export default function AdhkarDetailScreen() {
                       </ThemedText>
                     </View>
                     <ThemedText style={styles.referenceText}>
-                      {adhkar.reference}
+                      {displayItem.reference}
                     </ThemedText>
                   </View>
                 )}
               </ScrollView>
             </View>
-          ))}
+          );
+          })}
         </ScrollView>
 
         {/* Vertical Slide Animation Overlay - Content Only */}
@@ -1559,5 +1737,55 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     lineHeight: 20,
+  },
+  groupIndicatorContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+    gap: 8,
+  },
+  groupBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 6,
+  },
+  groupBadgeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: -0.2,
+  },
+  groupProgressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  groupProgressBar: {
+    flex: 1,
+    height: 8,
+    borderRadius: 4,
+    flexDirection: "row",
+    overflow: "hidden",
+    backgroundColor: "transparent", // Remove background since segments have their own
+  },
+  groupProgressSegment: {
+    height: "100%",
+    overflow: "hidden",
+    borderRadius: 3,
+  },
+  groupProgressSegmentFill: {
+    height: "100%",
+  },
+  groupProgressText: {
+    fontSize: 12,
+    fontWeight: "600",
+    minWidth: 35,
+    textAlign: "right",
+  },
+  animatedContentWrapper: {
+    width: "100%",
   },
 });
