@@ -1,7 +1,7 @@
 import {
   DarkTheme,
   DefaultTheme,
-  ThemeProvider,
+  ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { FontProvider } from "@/contexts/FontContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { RainAlertNotificationHandler } from "@/services/rain-alert-notification-handler";
 
@@ -21,7 +22,7 @@ export const unstable_settings = {
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutContent() {
   const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
@@ -46,7 +47,7 @@ export default function RootLayout() {
 
   return (
     <FontProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
@@ -85,7 +86,15 @@ export default function RootLayout() {
           <Stack.Screen name="view-feedback" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
-      </ThemeProvider>
+      </NavigationThemeProvider>
     </FontProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
   );
 }
