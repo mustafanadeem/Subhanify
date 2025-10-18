@@ -3,6 +3,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -11,6 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PrayerTimesRepository } from "../data/repository";
 import { UserSettings } from "../domain/entities";
 
@@ -33,6 +35,36 @@ export default function SettingsScreen() {
     const next = { ...settings, ...partial };
     setSettings(next);
     repo.saveSettings(next);
+  }
+
+  async function resetOnboarding() {
+    Alert.alert(
+      "Reset Onboarding",
+      "This will clear your onboarding status and difficulty selection. The app will show the onboarding screens again on next launch.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem("@onboarding_completed");
+              await AsyncStorage.removeItem("@difficulty_level");
+              Alert.alert(
+                "Success",
+                "Onboarding reset! Restart the app to see the onboarding screens."
+              );
+            } catch (error) {
+              Alert.alert("Error", "Failed to reset onboarding");
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  async function testOnboarding() {
+    router.push("/onboarding");
   }
 
   return (
@@ -326,6 +358,80 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
+          </Pressable>
+        </View>
+
+        {/* Developer Section */}
+        <View
+          style={{
+            marginTop: 24,
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: Colors[cs ?? "light"].text + "20",
+          }}
+        >
+          <Text
+            style={[
+              { fontSize: 18, fontWeight: "600", marginBottom: 12 },
+              text,
+            ]}
+          >
+            Developer
+          </Text>
+          
+          <Pressable
+            onPress={testOnboarding}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: Colors[cs ?? "light"].text + "08",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: Colors[cs ?? "light"].text + "20",
+              marginBottom: 8,
+            }}
+          >
+            <Text style={{ fontSize: 24, marginRight: 12 }}>🎨</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>
+                Test Onboarding
+              </Text>
+              <Text
+                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}
+              >
+                Preview the onboarding screens
+              </Text>
+            </View>
+            <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={resetOnboarding}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: "#FF453A" + "15",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "#FF453A" + "40",
+            }}
+          >
+            <Text style={{ fontSize: 24, marginRight: 12 }}>🔄</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[{ fontSize: 16, fontWeight: "500", color: "#FF453A" }]}>
+                Reset Onboarding
+              </Text>
+              <Text
+                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2, color: "#FF453A" }]}
+              >
+                Clear onboarding status and difficulty (requires restart)
+              </Text>
+            </View>
+            <Text style={[{ fontSize: 18, opacity: 0.5, color: "#FF453A" }]}>›</Text>
           </Pressable>
         </View>
       </ScrollView>
