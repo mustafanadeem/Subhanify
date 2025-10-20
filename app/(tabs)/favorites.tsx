@@ -7,12 +7,11 @@ import { FavoriteAdhkar, getFavoritesByCategory } from "@/services/favorites-ser
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 
 export default function FavoritesScreen() {
@@ -101,8 +100,8 @@ export default function FavoritesScreen() {
             }
             onPress={() => {
               router.push({
-                pathname: "/adhkar-detail",
-                params: { category: categoryKey, title: title },
+                pathname: "/favorite-detail",
+                params: { adhkar: JSON.stringify(fav.adhkar) },
               });
             }}
           />

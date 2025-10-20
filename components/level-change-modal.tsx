@@ -3,15 +3,15 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AdhkarLevel, getLevelIcon, getLevelLabel } from "@/services/level-settings-service";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
