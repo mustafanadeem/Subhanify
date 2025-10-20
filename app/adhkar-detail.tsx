@@ -1,4 +1,5 @@
 import { AdhkarCompletionModal } from "@/components/adhkar-completion-modal";
+import { LevelChangeModal } from "@/components/level-change-modal";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
@@ -7,6 +8,8 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import { TodayPrayerTimes, UserSettings } from "@/modules/prayer-times/domain/entities";
 import { markAdhkarCompleted } from "@/services/adhkar-completion-service";
+import { AdhkarLevel, getLevelSettings, LevelChangeResult } from "@/services/level-settings-service";
+import { isFavorite, toggleFavorite } from "@/services/favorites-service";
 import { AdhkarItem } from "@/types/adhkar";
 import { getAdhkarByCategory } from "@/utils/adhkar-utils";
 import Slider from "@react-native-community/slider";
@@ -81,8 +84,11 @@ export default function AdhkarDetailScreen() {
   // Track which item in the group we're currently on
   const [currentGroupItemIndex, setCurrentGroupItemIndex] = useState(0);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showLevelChangeModal, setShowLevelChangeModal] = useState(false);
+  const [levelChangeInfo, setLevelChangeInfo] = useState<LevelChangeResult | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<TodayPrayerTimes | null>(null);
   const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   // Load prayer times
   useEffect(() => {
@@ -121,8 +127,24 @@ export default function AdhkarDetailScreen() {
     if (currentAdhkar) {
       setCount(currentAdhkar.quantity);
       setCurrentGroupItemIndex(0);
+      checkFavoriteStatus();
     }
   }, [currentIndex, currentAdhkar]);
+
+  const checkFavoriteStatus = async () => {
+    if (currentAdhkar) {
+      const favStatus = await isFavorite(currentAdhkar);
+      setIsFavorited(favStatus);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!currentAdhkar) return;
+    
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const newStatus = await toggleFavorite(currentAdhkar);
+    setIsFavorited(newStatus);
+  };
 
   // Quick settings slide animation
   useEffect(() => {
@@ -374,24 +396,22 @@ export default function AdhkarDetailScreen() {
   const markCategoryAsCompleted = async () => {
     try {
       if (categoryKey && typeof categoryKey === 'string') {
-        // Map category string to the correct type
         const adhkarCategory = categoryKey as 'morning' | 'evening' | 'night';
         
-        // Mark completion with time validation
         const result = await markAdhkarCompleted(adhkarCategory, prayerTimes || undefined);
         
         if (result.success) {
-          // Haptic feedback for completion
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           
-          // Show completion modal
           setShowCompletionModal(true);
+          
+          if (result.levelChange && result.levelChange.changed) {
+            setLevelChangeInfo(result.levelChange);
+          }
           
           console.log(`✅ ${categoryKey} adhkar completed!`);
         } else {
-          // Show error message for wrong time
           console.log(`❌ ${result.message}`);
-          // You could show a toast or alert here instead of console.log
         }
       }
     } catch (error) {
@@ -401,7 +421,17 @@ export default function AdhkarDetailScreen() {
 
   const handleCompletionModalClose = () => {
     setShowCompletionModal(false);
-    // Navigate back to home screen
+    
+    if (levelChangeInfo && levelChangeInfo.changed) {
+      setShowLevelChangeModal(true);
+    } else {
+      router.back();
+    }
+  };
+
+  const handleLevelChangeModalClose = () => {
+    setShowLevelChangeModal(false);
+    setLevelChangeInfo(null);
     router.back();
   };
 
@@ -454,6 +484,13 @@ export default function AdhkarDetailScreen() {
         </View>
 
         <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleToggleFavorite}>
+            <IconSymbol
+              name={isFavorited ? "heart.fill" : "heart"}
+              size={22}
+              color={isFavorited ? "#FF375F" : Colors[colorScheme ?? "light"].text}
+            />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/(tabs)')}>
             <IconSymbol
               name="house.fill"
@@ -1366,12 +1403,21 @@ export default function AdhkarDetailScreen() {
       </View>
 
 
-      {/* Completion Modal */}
       <AdhkarCompletionModal
         visible={showCompletionModal}
         category={categoryTitle}
         onClose={handleCompletionModalClose}
       />
+
+      {levelChangeInfo && (
+        <LevelChangeModal
+          visible={showLevelChangeModal}
+          oldLevel={levelChangeInfo.oldLevel}
+          newLevel={levelChangeInfo.newLevel}
+          isLevelUp={levelChangeInfo.reason === 'level_up'}
+          onClose={handleLevelChangeModalClose}
+        />
+      )}
     </View>
   );
 }

@@ -31,6 +31,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="favorites"
+        options={{
+          title: "Favorites",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="heart.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="locations"
         options={{
           title: "Locations",
@@ -42,14 +51,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="prayer-times"
         options={{
-          href: null, // Hide from tab bar, accessible only via navigation
-          tabBarStyle: { display: "none" }, // Hide bottom nav on this screen
+          href: null,
+          tabBarStyle: { display: "none" },
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          href: null, // Hide from tab bar, prayer settings now in explore
+          href: null,
         }}
       />
       <Tabs.Screen

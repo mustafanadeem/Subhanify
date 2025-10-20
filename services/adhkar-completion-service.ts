@@ -4,8 +4,9 @@
  * Tracks which adhkar categories (morning, evening, night) are completed each day.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TodayPrayerTimes } from '@/modules/prayer-times/domain/entities';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { checkAndUpdateLevel, LevelChangeResult } from './level-settings-service';
 
 const ADHKAR_COMPLETION_KEY = '@adhkar_daily_completions';
 
@@ -107,12 +108,14 @@ export function isCorrectTimeForAdhkar(category: AdhkarCategory, prayerTimes: To
 /**
  * Mark an adhkar category as completed for today (with time validation)
  */
-export async function markAdhkarCompleted(category: AdhkarCategory, prayerTimes?: TodayPrayerTimes): Promise<{ success: boolean; message: string }> {
-  // Validate time if prayer times provided
+export async function markAdhkarCompleted(
+  category: AdhkarCategory,
+  prayerTimes?: TodayPrayerTimes
+): Promise<{ success: boolean; message: string; levelChange?: LevelChangeResult }> {
   if (prayerTimes && !isCorrectTimeForAdhkar(category, prayerTimes)) {
     return {
       success: false,
-      message: `It's not the correct time for ${category} adhkar`
+      message: `It's not the correct time for ${category} adhkar`,
     };
   }
 
@@ -120,26 +123,27 @@ export async function markAdhkarCompleted(category: AdhkarCategory, prayerTimes?
   const now = new Date().toISOString();
   const history = await loadAdhkarCompletionHistory();
 
-  // Get or create today's entry
   const todayEntry: DailyAdhkarCompletion = history[today] || {
     date: today,
     completedCategories: [],
     completedAt: {},
   };
 
-  // Add category if not already completed
   if (!todayEntry.completedCategories.includes(category)) {
     todayEntry.completedCategories.push(category);
     todayEntry.completedAt[category] = now;
   }
 
-  // Update history
   history[today] = todayEntry;
   await saveAdhkarCompletionHistory(history);
 
+  const completedAll = todayEntry.completedCategories.length === 3;
+  const levelChange = await checkAndUpdateLevel(completedAll);
+
   return {
     success: true,
-    message: `${category} adhkar completed successfully!`
+    message: `${category} adhkar completed successfully!`,
+    levelChange,
   };
 }
 
@@ -260,7 +264,6 @@ export async function checkAndResetCompletionAfterFajr(prayerTimes: TodayPrayerT
   const now = new Date();
   const fajrTime = new Date(prayerTimes.fajr.timeIso);
   
-  // If it's after Fajr, reset yesterday's completion data
   if (now >= fajrTime) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -268,11 +271,23 @@ export async function checkAndResetCompletionAfterFajr(prayerTimes: TodayPrayerT
     
     const history = await loadAdhkarCompletionHistory();
     if (history[yesterdayStr]) {
-      // Keep yesterday's data but mark it as from previous day
-      // This way we can still show historical progress but it won't affect current day
       console.log(`[AdhkarCompletionService] Day reset after Fajr: ${yesterdayStr}`);
     }
   }
+}
+
+/**
+ * Check daily level progression (call this once per day, e.g., on app open)
+ */
+export async function checkDailyLevelProgression(): Promise<LevelChangeResult> {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  const completion = await getAdhkarCompletionForDate(yesterdayStr);
+  const completedAll = completion && completion.completedCategories.length === 3;
+  
+  return await checkAndUpdateLevel(completedAll);
 }
 
 /**
