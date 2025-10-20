@@ -1,3 +1,4 @@
+import { LevelChangeModal } from "@/components/level-change-modal";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -29,6 +30,8 @@ export default function LevelSettingsScreen() {
   const isDark = colorScheme === "dark";
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<LevelSettings | null>(null);
+  const [showLevelUpPreview, setShowLevelUpPreview] = useState(false);
+  const [showLevelDownPreview, setShowLevelDownPreview] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -292,6 +295,70 @@ export default function LevelSettingsScreen() {
           </>
         )}
 
+        {/* Preview Celebrations */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
+        >
+          Preview Celebrations
+        </Text>
+
+        <View style={styles.previewButtons}>
+          <TouchableOpacity
+            style={[
+              styles.previewButton,
+              {
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                borderColor: isDark ? "#34C759" : "#34C759",
+                borderWidth: 1.5,
+              },
+            ]}
+            onPress={() => setShowLevelUpPreview(true)}
+          >
+            <IconSymbol
+              name="arrow.up.circle.fill"
+              size={24}
+              color="#34C759"
+            />
+            <Text
+              style={[
+                styles.previewButtonText,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Level Up
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.previewButton,
+              {
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                borderColor: isDark ? "#FF9500" : "#FF9500",
+                borderWidth: 1.5,
+              },
+            ]}
+            onPress={() => setShowLevelDownPreview(true)}
+          >
+            <IconSymbol
+              name="arrow.down.circle.fill"
+              size={24}
+              color="#FF9500"
+            />
+            <Text
+              style={[
+                styles.previewButtonText,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Level Down
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Help Section */}
         <View
           style={[
@@ -351,6 +418,23 @@ export default function LevelSettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Preview Modals */}
+      <LevelChangeModal
+        visible={showLevelUpPreview}
+        oldLevel={1}
+        newLevel={2}
+        isLevelUp={true}
+        onClose={() => setShowLevelUpPreview(false)}
+      />
+
+      <LevelChangeModal
+        visible={showLevelDownPreview}
+        oldLevel={2}
+        newLevel={1}
+        isLevelUp={false}
+        onClose={() => setShowLevelDownPreview(false)}
+      />
     </View>
   );
 }
@@ -487,5 +571,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
+  },
+  previewButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  previewButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    borderRadius: 16,
+    gap: 8,
+  },
+  previewButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
