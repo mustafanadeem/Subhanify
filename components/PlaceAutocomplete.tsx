@@ -254,10 +254,14 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
           style={[styles.input, { color: colors.text }]}
           value={searchText}
           onChangeText={handleTextChange}
-          onFocus={() => setIsFocused(true)}
+          onFocus={() => {
+            console.log('[PlaceAutocomplete] Input focused');
+            setIsFocused(true);
+          }}
           onBlur={() => {
+            console.log('[PlaceAutocomplete] Input blurred, hiding suggestions in 500ms');
             // Delay to allow tap on suggestion
-            setTimeout(() => setIsFocused(false), 200);
+            setTimeout(() => setIsFocused(false), 500);
           }}
           placeholder={placeholder}
           placeholderTextColor={colors.placeholder}
@@ -299,7 +303,8 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
         >
           <ScrollView
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
+            nestedScrollEnabled={false}
           >
             {results.map((item, index) => {
               const { main, secondary } = formatAddress(item);
@@ -314,7 +319,10 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
                       borderBottomWidth: index < results.length - 1 ? 0.5 : 0,
                     },
                   ]}
-                  onPress={() => handleSuggestionPress(item)}
+                  onPress={() => {
+                    console.log('[PlaceAutocomplete] TouchableOpacity pressed for:', item.display_name);
+                    handleSuggestionPress(item);
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={styles.iconContainer}>
