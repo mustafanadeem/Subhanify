@@ -12,9 +12,10 @@ import { getLocationById, saveLocation } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Alert,
+    Animated,
     Modal,
     Platform,
     ScrollView,
@@ -68,6 +69,9 @@ export default function LocationDetailScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
   const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
+  const [isMapDragging, setIsMapDragging] = useState(false);
+  const pinBounceAnim = useRef(new Animated.Value(0)).current;
+  const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const allAdhkar = adhkarData.Sheet1 as AdhkarItem[];
 
@@ -124,11 +128,39 @@ export default function LocationDetailScreen() {
     }
   };
 
-  const handleMapPress = (event: MapPressEvent) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    setLatitude(latitude);
-    setLongitude(longitude);
-    setHasSelectedLocation(true); // Show map preview after selecting on map
+  // Handle map region changes (dragging)
+  const handleRegionChange = () => {
+    setIsMapDragging(true);
+    // Clear any existing timeout
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+    }
+  };
+
+  // Handle when map dragging stops
+  const handleRegionChangeComplete = (region: { latitude: number; longitude: number }) => {
+    console.log('[MapModal] Map dragging stopped at:', region);
+    setIsMapDragging(false);
+    
+    // Update the location to the center of the map
+    setLatitude(region.latitude);
+    setLongitude(region.longitude);
+    setHasSelectedLocation(true);
+
+    // Animate pin bounce to confirm location locked
+    Animated.sequence([
+      Animated.timing(pinBounceAnim, {
+        toValue: -20,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(pinBounceAnim, {
+        toValue: 0,
+        friction: 3,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   // Handle place selection from autocomplete
@@ -662,17 +694,17 @@ export default function LocationDetailScreen() {
           <MapView
             style={styles.fullMap}
             provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-            region={{
+            initialRegion={{
               latitude,
               longitude,
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             }}
-            onPress={handleMapPress}
+            onRegionChange={handleRegionChange}
+            onRegionChangeComplete={handleRegionChangeComplete}
             showsUserLocation
             showsMyLocationButton
           >
-            <Marker coordinate={{ latitude, longitude }} />
             <Circle
               center={{ latitude, longitude }}
               radius={radius}
@@ -681,6 +713,26 @@ export default function LocationDetailScreen() {
               strokeWidth={2}
             />
           </MapView>
+
+          {/* Centered Pin Overlay */}
+          <Animated.View
+            style={[
+              styles.centerMarker,
+              {
+                transform: [
+                  { translateY: pinBounceAnim },
+                  { scale: isMapDragging ? 1.2 : 1 },
+                ],
+              },
+            ]}
+          >
+            <Ionicons
+              name="location"
+              size={50}
+              color={categoryColors[category]}
+              style={styles.centerMarkerIcon}
+            />
+          </Animated.View>
 
           {/* Radius Slider Overlay */}
           <View
@@ -854,6 +906,19 @@ const styles = StyleSheet.create({
   },
   fullMap: {
     flex: 1,
+  },
+  centerMarker: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    marginLeft: -25, // Half of icon size (50/2)
+    marginTop: -50, // Full icon size to position tip at center
+    zIndex: 1000,
+  },
+  centerMarkerIcon: {
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   radiusOverlay: {
     position: "absolute",
