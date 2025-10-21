@@ -184,8 +184,20 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   }, [showSuggestions, results.length]);
 
   // Show suggestions when we have results and input is focused
+  // BUT keep them visible for a bit after blur to allow tap
   useEffect(() => {
-    setShowSuggestions(results.length > 0 && isFocused);
+    if (results.length > 0 && isFocused) {
+      setShowSuggestions(true);
+    } else if (!isFocused && results.length > 0) {
+      // Don't hide immediately - the blur delay will handle this
+      // This allows the tap to register before hiding
+      const timer = setTimeout(() => {
+        setShowSuggestions(false);
+      }, 600); // Slightly longer than blur delay
+      return () => clearTimeout(timer);
+    } else {
+      setShowSuggestions(false);
+    }
   }, [results.length, isFocused]);
 
   const handleTextChange = useCallback((text: string) => {
