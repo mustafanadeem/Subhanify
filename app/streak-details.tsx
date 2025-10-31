@@ -2,19 +2,21 @@ import { DailyAdhkarModal } from "@/components/daily-adhkar-modal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    DailyAdhkarCompletion,
-    getAdhkarCompletionForDate,
+  DailyAdhkarCompletion,
+  getAdhkarCompletionForDate,
 } from "@/services/adhkar-completion-service";
 import { loadStreakData } from "@/services/streak-service";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router, Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface StreakData {
@@ -31,10 +33,14 @@ export default function StreakDetailsScreen() {
   const [streakData, setStreakData] = useState<StreakData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
+  const [activeTab, setActiveTab] = useState<"overview" | "progress">(
+    "overview"
+  );
+
   // Modal state
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedDateCompletion, setSelectedDateCompletion] = useState<DailyAdhkarCompletion | null>(null);
+  const [selectedDateCompletion, setSelectedDateCompletion] =
+    useState<DailyAdhkarCompletion | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
@@ -58,6 +64,19 @@ export default function StreakDetailsScreen() {
 
   const getFirstDayOfMonth = (date: Date): number => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const getAppInstallDate = (): Date => {
+    if (!streakData) return new Date();
+
+    // Calculate the earliest date the app could have been used
+    // This is: lastOpenDate - (totalDaysOpened - 1) days
+    const lastOpen = new Date(streakData.lastOpenDate);
+    const daysBack = streakData.totalDaysOpened - 1;
+    const installDate = new Date(lastOpen);
+    installDate.setDate(installDate.getDate() - daysBack);
+
+    return installDate;
   };
 
   const isDateCompleted = (day: number): boolean => {
@@ -88,6 +107,21 @@ export default function StreakDetailsScreen() {
     return daysDiff >= 0 && daysDiff < streakData.currentStreak;
   };
 
+  const wasAppInstalled = (day: number): boolean => {
+    if (!streakData) return false;
+
+    const dayDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+
+    const installDate = getAppInstallDate();
+
+    // Return true if the day is on or after the install date
+    return dayDate >= installDate;
+  };
+
   const previousMonth = () => {
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
@@ -111,7 +145,9 @@ export default function StreakDetailsScreen() {
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
       day
-    ).toISOString().split("T")[0];
+    )
+      .toISOString()
+      .split("T")[0];
 
     // Don't allow tapping future dates
     const today = new Date();
@@ -121,10 +157,10 @@ export default function StreakDetailsScreen() {
     }
 
     // Load adhkar completion for this date
-    const completion = await getAdhkarCompletionForDate(dateStr);
-    setSelectedDate(dateStr);
-    setSelectedDateCompletion(completion);
-    setModalVisible(true);
+    // const completion = await getAdhkarCompletionForDate(dateStr);
+    // setSelectedDate(dateStr);
+    // setSelectedDateCompletion(completion);
+    // setModalVisible(true);
   };
 
   const closeModal = () => {
@@ -150,6 +186,7 @@ export default function StreakDetailsScreen() {
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const isCompleted = isDateCompleted(day);
+      const appWasInstalled = wasAppInstalled(day);
       const isToday =
         day === new Date().getDate() &&
         currentMonth.getMonth() === new Date().getMonth() &&
@@ -163,14 +200,21 @@ export default function StreakDetailsScreen() {
       );
       const isPast = dayDate <= new Date();
 
+      // Only show as missed if app was installed AND day is in past AND not completed
+      const isMissed = isPast && !isCompleted && !isToday && appWasInstalled;
+
       days.push(
         <View key={day} style={styles.dayCell}>
           <TouchableOpacity
             style={[
               styles.day,
               isCompleted && styles.completedDay,
-              isToday && styles.todayDay,
-              isToday && !isCompleted && styles.todayIncomplete,
+              isToday && isCompleted && styles.todayDay,
+              isToday &&
+                !isCompleted &&
+                appWasInstalled &&
+                styles.todayIncomplete,
+              isMissed && styles.missedDay,
             ]}
             onPress={() => handleDayPress(day)}
             disabled={!isPast}
@@ -180,7 +224,8 @@ export default function StreakDetailsScreen() {
               style={[
                 styles.dayText,
                 isCompleted && styles.completedDayText,
-                isToday && !isCompleted && styles.todayText,
+                isToday && !isCompleted && appWasInstalled && styles.todayText,
+                isMissed && styles.missedDayText,
               ]}
             >
               {day}
@@ -209,7 +254,11 @@ export default function StreakDetailsScreen() {
   ];
 
   const daysToNextLevel = streakData
-    ? Math.max(0, Math.ceil((streakData.currentStreak + 1) / 7) * 7 - streakData.currentStreak)
+    ? Math.max(
+        0,
+        Math.ceil((streakData.currentStreak + 1) / 7) * 7 -
+          streakData.currentStreak
+      )
     : 0;
 
   if (isLoading) {
@@ -232,7 +281,7 @@ export default function StreakDetailsScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       {/* Daily Adhkar Modal */}
       <DailyAdhkarModal
         visible={modalVisible}
@@ -240,18 +289,18 @@ export default function StreakDetailsScreen() {
         completion={selectedDateCompletion}
         onClose={closeModal}
       />
-      
+
       <View
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
       >
-        {/* Header */}
+        {/* Header - Fixed */}
         <View
           style={[
             styles.header,
-            { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
+            { backgroundColor: Colors[colorScheme ?? "light"].background },
           ]}
         >
           <TouchableOpacity
@@ -270,175 +319,486 @@ export default function StreakDetailsScreen() {
               { color: Colors[colorScheme ?? "light"].text },
             ]}
           >
-            Streak Calendar
+            Progress
           </Text>
-          <View style={{ width: 24 }} />
         </View>
 
-        {/* Stats Cards Row */}
-        <View style={styles.statsRow}>
-          {/* Current Streak Card */}
-          <View
-            style={[
-              styles.statCard,
-              { backgroundColor: isDark ? "#C44D00" : "#FF8C42" },
-            ]}
-          >
-            <View style={styles.statCardContent}>
-              <Text style={styles.statCardLabel}>Current Streak</Text>
-              <View style={styles.statValueRow}>
-                <Text style={styles.statCardValue}>
-                  {streakData?.currentStreak || 0}
-                </Text>
-                <Text style={styles.fireEmoji}>🔥</Text>
-              </View>
-              <Text style={styles.statCardSubtext}>
-                {streakData?.currentStreak === 1 ? "day" : "days"} in a row
-              </Text>
-            </View>
-          </View>
-
-          {/* Longest Streak Card */}
-          <View
-            style={[
-              styles.statCard,
-              { backgroundColor: isDark ? "#8B6914" : "#FFA500" },
-            ]}
-          >
-            <View style={styles.statCardContent}>
-              <Text style={styles.statCardLabel}>Best Streak</Text>
-              <View style={styles.statValueRow}>
-                <Text style={styles.statCardValue}>
-                  {streakData?.longestStreak || 0}
-                </Text>
-                <Text style={styles.trophyEmoji}>🏆</Text>
-              </View>
-              <Text style={styles.statCardSubtext}>personal record</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Calendar Card */}
+        {/* Tab Buttons */}
         <View
           style={[
-            styles.calendarCard,
-            {
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-            },
+            styles.tabContainer,
+            { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
           ]}
         >
-          {/* Month Navigation */}
-          <View style={styles.monthNavigation}>
-            <TouchableOpacity onPress={previousMonth} style={styles.navButton}>
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color={Colors[colorScheme ?? "light"].text}
-              />
-            </TouchableOpacity>
-
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === "overview" && styles.activeTab,
+              {
+                backgroundColor:
+                  activeTab === "overview"
+                    ? isDark
+                      ? "#2C2C2E"
+                      : "#FFFFFF"
+                    : "transparent",
+              },
+            ]}
+            onPress={() => setActiveTab("overview")}
+          >
             <Text
               style={[
-                styles.monthTitle,
-                { color: Colors[colorScheme ?? "light"].text },
+                styles.tabText,
+                activeTab === "overview" && styles.activeTabText,
+                { color: isDark ? "#FFFFFF" : "#000000" },
               ]}
             >
-              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              Overview
             </Text>
-
-            <TouchableOpacity
-              onPress={nextMonth}
-              style={styles.navButton}
-              disabled={
-                currentMonth.getMonth() === new Date().getMonth() &&
-                currentMonth.getFullYear() === new Date().getFullYear()
-              }
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={24}
-                color={
-                  currentMonth.getMonth() === new Date().getMonth() &&
-                  currentMonth.getFullYear() === new Date().getFullYear()
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === "progress" && styles.activeTab,
+              {
+                backgroundColor:
+                  activeTab === "progress"
                     ? isDark
-                      ? "#666"
-                      : "#CCC"
-                    : Colors[colorScheme ?? "light"].text
-                }
-              />
-            </TouchableOpacity>
-          </View>
+                      ? "#2C2C2E"
+                      : "#FFFFFF"
+                    : "transparent",
+              },
+            ]}
+            onPress={() => setActiveTab("progress")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "progress" && styles.activeTabText,
+                { color: isDark ? "#FFFFFF" : "#000000" },
+              ]}
+            >
+              Progress
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-          {/* Day Labels */}
-          <View style={styles.dayLabels}>
-            {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
-              <View key={index} style={styles.dayLabelCell}>
-                <Text
-                  style={[
-                    styles.dayLabel,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
-                  ]}
-                >
-                  {day}
-                </Text>
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {activeTab === "overview" ? (
+            <>
+              {/* Calendar Section */}
+              <View style={styles.calendarSection}>
+                {/* Month Navigation */}
+                <View style={styles.monthNavigation}>
+                  <TouchableOpacity
+                    onPress={previousMonth}
+                    style={styles.navButton}
+                  >
+                    <Ionicons
+                      name="chevron-back"
+                      size={24}
+                      color={Colors[colorScheme ?? "light"].text}
+                    />
+                  </TouchableOpacity>
+
+                  <Text
+                    style={[
+                      styles.monthTitle,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    {monthNames[currentMonth.getMonth()]}{" "}
+                    {currentMonth.getFullYear()}
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={nextMonth}
+                    style={styles.navButton}
+                    disabled={
+                      currentMonth.getMonth() === new Date().getMonth() &&
+                      currentMonth.getFullYear() === new Date().getFullYear()
+                    }
+                  >
+                    <Ionicons
+                      name="chevron-forward"
+                      size={24}
+                      color={
+                        currentMonth.getMonth() === new Date().getMonth() &&
+                        currentMonth.getFullYear() === new Date().getFullYear()
+                          ? isDark
+                            ? "#666"
+                            : "#CCC"
+                          : Colors[colorScheme ?? "light"].text
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Day Labels */}
+                <View style={styles.dayLabels}>
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sun"].map(
+                    (day, index) => (
+                      <View key={index} style={styles.dayLabelCell}>
+                        <Text
+                          style={[
+                            styles.dayLabel,
+                            { color: isDark ? "#888" : "#666" },
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </View>
+                    )
+                  )}
+                </View>
+
+                {/* Calendar Grid */}
+                <View style={styles.calendarGrid}>{renderCalendar()}</View>
               </View>
-            ))}
-          </View>
 
-          {/* Calendar Grid */}
-          <View style={styles.calendarGrid}>{renderCalendar()}</View>
-
-          {/* Progress to Next Level */}
-          <View style={styles.progressSection}>
-            <View style={styles.progressHeader}>
-              <Ionicons
-                name="trophy"
-                size={20}
-                color={Colors[colorScheme ?? "light"].tint}
-              />
+              {/* General Section */}
               <Text
                 style={[
-                  styles.progressText,
+                  styles.sectionTitle,
                   { color: Colors[colorScheme ?? "light"].text },
                 ]}
               >
-                {daysToNextLevel === 0
-                  ? "Level Complete! 🎉"
-                  : `${daysToNextLevel} ${daysToNextLevel === 1 ? "day" : "days"} to next level`}
+                General
               </Text>
-            </View>
-            <View
-              style={[
-                styles.progressBarContainer,
-                { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" },
-              ]}
-            >
+
+              {/* Stats Cards Row */}
+              <View style={styles.statsRow}>
+                {/* Your Streak Card */}
+                <View
+                  style={[
+                    styles.statCard,
+                    { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statCardLabel,
+                      { color: isDark ? "#888" : "#666" },
+                    ]}
+                  >
+                    Your Streak
+                  </Text>
+                  <Text
+                    style={[
+                      styles.statCardValue,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    {streakData?.currentStreak || 0}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.statCardSubtext,
+                      { color: isDark ? "#888" : "#666" },
+                    ]}
+                  >
+                    days
+                  </Text>
+                </View>
+
+                {/* Record Streak Card */}
+                <View
+                  style={[
+                    styles.statCard,
+                    { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statCardLabel,
+                      { color: isDark ? "#888" : "#666" },
+                    ]}
+                  >
+                    Record Streak
+                  </Text>
+                  <Text
+                    style={[
+                      styles.statCardValue,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    {streakData?.longestStreak || 0}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.statCardSubtext,
+                      { color: isDark ? "#888" : "#666" },
+                    ]}
+                  >
+                    days
+                  </Text>
+                </View>
+              </View>
+
+              {/* Your Week Card */}
               <View
                 style={[
-                  styles.progressBar,
-                  { backgroundColor: isDark ? "#FF8C42" : "#FFA500" },
-                  {
-                    width: `${
-                      ((streakData?.currentStreak || 0) /
-                        (Math.ceil(((streakData?.currentStreak || 0) + 1) / 7) * 7)) *
-                      100
-                    }%`,
-                  },
+                  styles.weekCard,
+                  { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
                 ]}
-              />
-            </View>
-            <Text
-              style={[
-                styles.progressSubtext,
-                { color: Colors[colorScheme ?? "light"].textSecondary },
-              ]}
-            >
-              Level {Math.floor((streakData?.currentStreak || 0) / 7) + 1} •{" "}
-              {streakData?.totalDaysOpened || 0} total days
-            </Text>
-          </View>
-        </View>
+              >
+                <Text
+                  style={[
+                    styles.weekCardTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Your Week
+                </Text>
+
+                {/* Week Days Chart */}
+                <View style={styles.weekChart}>
+                  {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => {
+                    // Sample data - you can replace with actual data
+                    const isCompleted = index >= 3; // Last 4 days completed
+                    const isPartial = index === 2; // Wednesday partial
+                    const isMissed = index < 2; // Monday and Tuesday missed
+
+                    return (
+                      <View key={index} style={styles.weekDayContainer}>
+                        <View
+                          style={[
+                            styles.weekDayBar,
+                            {
+                              height: isCompleted ? 80 : isPartial ? 40 : 20,
+                              backgroundColor: isCompleted
+                                ? "#2BD157"
+                                : isPartial
+                                ? "#FF9800"
+                                : "#E74C3C",
+                            },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.weekDayLabel,
+                            { color: isDark ? "#888" : "#666" },
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
+              {/* Level Progress Content */}
+              <Text
+                style={[
+                  styles.levelProgressTitle,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Level Progress
+              </Text>
+
+              {/* Level Cards Container */}
+              <View
+                style={[
+                  styles.levelCardsContainer,
+                  { backgroundColor: isDark ? "#0F1E2E" : "#E3F2FD" },
+                ]}
+              >
+                {/* Advanced Level */}
+                <View style={styles.levelItem}>
+                  <View style={styles.levelIconWrapper}>
+                    <View style={styles.levelIconCircle}>
+                      <Image
+                        source={require("@/assets/images/streaks/advanced.svg")}
+                        style={styles.levelSvgIcon}
+                        contentFit="contain"
+                      />
+                    </View>
+                    <View style={styles.levelBadge}>
+                      <Text style={styles.levelBadgeText}>LEVEL 3</Text>
+                    </View>
+                  </View>
+                  <View style={styles.levelInfo}>
+                    <Text
+                      style={[
+                        styles.levelTitleLarge,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
+                      Advanced
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelDescriptionText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      Comprehensive adhkar,
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelDescriptionText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      Complete spiritual practice.
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelRequirementText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      Complete 30 days streak in Level 2
+                    </Text>
+                    {/* Progress bar with ticks */}
+                    <View style={styles.progressContainer}>
+                      <View style={styles.progressTrack}>
+                        <View style={[styles.progressFill, { width: "30%" }]} />
+                      </View>
+                      <View style={styles.progressTicks}>
+                        {[...Array(10)].map((_, i) => (
+                          <View
+                            key={i}
+                            style={[
+                              styles.progressTick,
+                              {
+                                backgroundColor: i < 3 ? "#2196F3" : "#2C3E50",
+                              },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Intermediate Level */}
+                <View style={styles.levelItem}>
+                  <View style={styles.levelIconWrapper}>
+                    <View style={styles.levelIconCircle}>
+                      <Image
+                        source={require("@/assets/images/streaks/intermediate.svg")}
+                        style={styles.levelSvgIcon}
+                        contentFit="contain"
+                      />
+                    </View>
+                    <View style={styles.levelBadge}>
+                      <Text style={styles.levelBadgeText}>LEVEL 2</Text>
+                    </View>
+                  </View>
+                  <View style={styles.levelInfo}>
+                    <Text
+                      style={[
+                        styles.levelTitleLarge,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
+                      Intermediate
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelDescriptionText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      Core daily adhkar,
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelDescriptionText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      Building consistent habits.
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelRequirementText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      Complete 15 days streak in Level 1
+                    </Text>
+                    {/* Completed checkmark */}
+                    <View style={styles.completedCheck}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={40}
+                        color="#2BD157"
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Beginner Level */}
+                <View style={styles.levelItem}>
+                  <View style={styles.levelIconWrapper}>
+                    <View style={styles.levelIconCircle}>
+                      <Image
+                        source={require("@/assets/images/streaks/beginner.svg")}
+                        style={styles.levelSvgIcon}
+                        contentFit="contain"
+                      />
+                    </View>
+                    <View style={styles.levelBadge}>
+                      <Text style={styles.levelBadgeText}>LEVEL 1</Text>
+                    </View>
+                  </View>
+                  <View style={styles.levelInfo}>
+                    <Text
+                      style={[
+                        styles.levelTitleLarge,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
+                      Beginner
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelDescriptionText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      Essential adhkar - Perfect for
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelDescriptionText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      starting your journey
+                    </Text>
+                    <Text
+                      style={[
+                        styles.levelRequirementText,
+                        { color: isDark ? "#8E9BAE" : "#666666" },
+                      ]}
+                    >
+                      -
+                    </Text>
+                    {/* Completed checkmark */}
+                    <View style={styles.completedCheck}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={40}
+                        color="#2BD157"
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </>
+          )}
+        </ScrollView>
       </View>
     </>
   );
@@ -450,80 +810,96 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 20,
+    gap: 12,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  calendarSection: {
+    paddingHorizontal: 16,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  tabContainer: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 4,
+    borderRadius: 30,
+    gap: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 26,
+  },
+  activeTab: {
+    // Active tab has background color applied inline
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  activeTabText: {
+    fontWeight: "600",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+    marginTop: 32,
+    paddingHorizontal: 16,
   },
   statsRow: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 12,
+    paddingHorizontal: 16,
     gap: 12,
   },
   statCard: {
     flex: 1,
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     minHeight: 120,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statCardContent: {
-    flex: 1,
     justifyContent: "space-between",
   },
   statCardLabel: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "500",
     marginBottom: 8,
   },
-  statValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   statCardValue: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  fireEmoji: {
-    fontSize: 28,
-  },
-  trophyEmoji: {
-    fontSize: 28,
+    fontSize: 48,
+    fontWeight: "700",
+    marginVertical: 4,
   },
   statCardSubtext: {
     fontSize: 13,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.85)",
-    marginTop: 4,
   },
-  calendarCard: {
-    flex: 1,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 16,
+  weekCard: {
+    marginHorizontal: 16,
+    marginBottom: 40,
+    borderRadius: 20,
     padding: 20,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+  },
+  weekCardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 20,
   },
   monthNavigation: {
     flexDirection: "row",
@@ -570,26 +946,62 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   completedDay: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#2BD157",
+    borderWidth: 2,
+    borderColor: "#2BD157",
   },
   todayDay: {
-    borderWidth: 3,
-    borderColor: "#FF8C42",
+    borderWidth: 2,
+    borderColor: "#2BD157",
+    backgroundColor: "#2BD157",
   },
   todayIncomplete: {
     backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: "#E74C3C",
+  },
+  missedDay: {
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: "#E74C3C",
   },
   dayText: {
     fontSize: 14,
     fontWeight: "600",
+    color: "#444444",
   },
   completedDayText: {
     color: "#FFFFFF",
     fontWeight: "700",
   },
   todayText: {
-    color: "#FF8C42",
+    color: "#E74C3C",
     fontWeight: "700",
+  },
+  missedDayText: {
+    color: "#E74C3C",
+    fontWeight: "600",
+  },
+  weekChart: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    height: 120,
+  },
+  weekDayContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  weekDayBar: {
+    width: 32,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  weekDayLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 8,
   },
   progressSection: {
     padding: 16,
@@ -616,10 +1028,161 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     overflow: "hidden",
+    backgroundColor: "#E0E0E0",
+    marginTop: 12,
   },
   progressBar: {
     height: "100%",
     borderRadius: 5,
   },
+  levelProgressTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 8,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  levelCardsContainer: {
+    marginHorizontal: 16,
+    borderRadius: 20,
+    padding: 20,
+    gap: 20,
+    marginBottom: 40,
+  },
+  levelItem: {
+    flexDirection: "row",
+    gap: 16,
+    paddingVertical: 8,
+  },
+  levelIconWrapper: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+  levelIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#2196F3",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  levelSvgIcon: {
+    width: 48,
+    height: 48,
+  },
+  levelBadge: {
+    backgroundColor: "#2196F3",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  levelBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+  levelInfo: {
+    flex: 1,
+    justifyContent: "flex-start",
+    paddingTop: 4,
+  },
+  levelTitleLarge: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  levelDescriptionText: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  levelRequirementText: {
+    fontSize: 14,
+    fontStyle: "italic",
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  progressContainer: {
+    marginTop: 8,
+  },
+  progressTrack: {
+    height: 8,
+    backgroundColor: "#2C3E50",
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 4,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#2196F3",
+    borderRadius: 4,
+  },
+  progressTicks: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 2,
+  },
+  progressTick: {
+    width: 4,
+    height: 12,
+    borderRadius: 2,
+  },
+  completedCheck: {
+    marginTop: 8,
+  },
+  levelIconContainer: {
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+  levelIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  levelIconImage: {
+    width: 32,
+    height: 32,
+  },
+  levelNumber: {
+    position: "absolute",
+    bottom: -12,
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    backgroundColor: "#1565C0",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  levelContent: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  levelTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  levelDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  levelRequirement: {
+    fontSize: 12,
+    fontStyle: "italic",
+    marginBottom: 8,
+  },
+  completedBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "flex-start",
+  },
 });
-

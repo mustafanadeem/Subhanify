@@ -1,6 +1,5 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { CircularProgress } from "./circular-progress";
 import { ThemedText } from "./themed-text";
@@ -39,16 +38,16 @@ export function CategoryCard({
   const getProgressColor = (category: string) => {
     switch (category) {
       case "morning":
-        return "#4CAF50"; // Green for morning
+        return "#FFF371"; // Yellow for morning
       case "evening":
-        return "#00BCD4"; // Teal for evening
+        return "#FF9C71"; // Orange for evening
       case "night":
-        return "#2196F3"; // Blue for night
+        return "#316FFF"; // Blue for night
       default:
         return Colors[colorScheme ?? "light"].tint;
     }
   };
-  
+
   // Create gradient variations of the main color
   const createGradient = (baseColor: string) => {
     // For light mode, create a gradient from the base color
@@ -73,8 +72,8 @@ export function CategoryCard({
     : createGradient(mainColor); // Use main color
 
   const gradientColors =
-    categoryType === "morning" 
-      ? sunriseGradient 
+    categoryType === "morning"
+      ? sunriseGradient
       : categoryType === "evening"
       ? sunsetGradient
       : categoryType === "night"
@@ -82,60 +81,46 @@ export function CategoryCard({
       : sunsetGradient;
 
   if (isHighlighted) {
-    // Highlighted card with gradient background
+    // Highlighted card with stroke style and Active Now badge
     return (
       <TouchableOpacity
-        style={[styles.card, styles.highlightedCard]}
+        style={[
+          styles.card,
+          {
+            backgroundColor: isDark ? "transparent" : "#FFFFFF",
+            borderColor: isDark ? "#181818" : "#E5E5E5",
+            borderWidth: isDark ? 3 : 1,
+          },
+        ]}
         onPress={onPress}
         activeOpacity={0.7}
       >
-        <LinearGradient
-          colors={gradientColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.gradientBackground}
-        >
-          <View style={[styles.highlightBadge, { backgroundColor: Colors[colorScheme ?? "light"].activeBadge }]}>
-            <ThemedText style={styles.highlightText}>Active Now</ThemedText>
+        <View style={styles.highlightBadge}>
+          <ThemedText style={[styles.highlightText, { color: "#000000" }]}>
+            Active Now
+          </ThemedText>
+        </View>
+
+        <View style={styles.content}>
+          <CircularProgress
+            progress={progress}
+            size={57}
+            strokeWidth={4}
+            color={getProgressColor(categoryType)}
+            backgroundColor={isDark ? "#2C2C2E" : "#F5F5F5"}
+          >
+            <IconSymbol
+              name={icon}
+              size={28}
+              color={Colors[colorScheme ?? "light"].text}
+            />
+          </CircularProgress>
+
+          <View style={styles.textContainer}>
+            <ThemedText style={styles.title}>{title}</ThemedText>
+            <ThemedText style={styles.subtitle}>{subtitle}</ThemedText>
           </View>
-
-          <View style={styles.highlightedContent}>
-            <View style={styles.iconContainerHighlighted}>
-              <IconSymbol
-                name={icon}
-                size={32}
-                color="#FFFFFF"
-              />
-            </View>
-
-            <View style={styles.textContainer}>
-              <ThemedText style={styles.titleHighlighted}>
-                {title}
-              </ThemedText>
-              <ThemedText style={styles.subtitleHighlighted}>
-                {subtitle}
-              </ThemedText>
-              {timeRange && (
-                <View style={styles.timeRangeContainerHighlighted}>
-                  <IconSymbol
-                    name="clock.fill"
-                    size={14}
-                    color="rgba(255, 255, 255, 0.9)"
-                  />
-                  <ThemedText style={styles.timeRangeTextHighlighted}>
-                    {timeRange}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.badgeHighlighted}>
-              <ThemedText style={styles.badgeTextHighlighted}>
-                {count}
-              </ThemedText>
-            </View>
-          </View>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     );
   }
@@ -146,8 +131,9 @@ export function CategoryCard({
       style={[
         styles.card,
         {
-          backgroundColor: Colors[colorScheme ?? "light"].inactiveCard,
-          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+          backgroundColor: isDark ? "transparent" : "#FFFFFF",
+          borderColor: isDark ? "#181818" : "#E5E5E5",
+          borderWidth: isDark ? 3 : 1,
         },
       ]}
       onPress={onPress}
@@ -156,14 +142,14 @@ export function CategoryCard({
       <View style={styles.content}>
         <CircularProgress
           progress={progress}
-          size={56}
+          size={57}
           strokeWidth={4}
           color={getProgressColor(categoryType)}
-          backgroundColor={isDark ? "#2C2C2E" : "#E0E0E0"}
+          backgroundColor={isDark ? "#2C2C2E" : "#F5F5F5"}
         >
           <IconSymbol
             name={icon}
-            size={24}
+            size={28}
             color={Colors[colorScheme ?? "light"].text}
           />
         </CircularProgress>
@@ -171,29 +157,6 @@ export function CategoryCard({
         <View style={styles.textContainer}>
           <ThemedText style={styles.title}>{title}</ThemedText>
           <ThemedText style={styles.subtitle}>{subtitle}</ThemedText>
-          {timeRange && (
-            <View style={styles.timeRangeContainer}>
-              <IconSymbol
-                name="clock.fill"
-                size={12}
-                color={Colors[colorScheme ?? "light"].textSecondary}
-              />
-              <ThemedText style={styles.timeRangeText}>
-                {timeRange}
-              </ThemedText>
-            </View>
-          )}
-        </View>
-
-        <View
-          style={[
-            styles.badge,
-            {
-              backgroundColor: Colors[colorScheme ?? "light"].background,
-            },
-          ]}
-        >
-          <ThemedText style={styles.badgeText}>{count}</ThemedText>
         </View>
       </View>
     </TouchableOpacity>
@@ -202,10 +165,9 @@ export function CategoryCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    marginBottom: 12,
+    borderRadius: 30,
+    marginBottom: 16,
     overflow: "hidden",
-    borderWidth: 1,
   },
   highlightedCard: {
     marginBottom: 20,
@@ -233,21 +195,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    // backgroundColor handled inline with Colors.activeBadge
+    backgroundColor: "#FFF371",
     zIndex: 1,
   },
   highlightText: {
-    color: "#FFFFFF",
+    color: "#000000",
     fontSize: 13,
     fontWeight: "700",
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
     padding: 20,
+    gap: 16,
   },
   highlightedContent: {
     flexDirection: "row",
@@ -274,11 +234,11 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
   title: {
     fontSize: 17,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: -0.4,
   },
   titleHighlighted: {
@@ -292,8 +252,9 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    opacity: 0.6,
+    opacity: 0.5,
     letterSpacing: -0.2,
+    fontWeight: "400",
   },
   subtitleHighlighted: {
     fontSize: 16,

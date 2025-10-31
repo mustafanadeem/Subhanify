@@ -4,13 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { PrayerTimesRepository } from "../modules/prayer-times/data/repository";
 import { UserSettings } from "../modules/prayer-times/domain/entities";
@@ -156,7 +156,11 @@ export default function PrayerSettingsScreen() {
                   <Text
                     style={[
                       styles.settingSubtext,
-                      { color: Colors[colorScheme ?? "light"].textSecondary },
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
                     ]}
                   >
                     {METHODS.find((m) => m.id === settings.method)?.name ||
@@ -166,7 +170,11 @@ export default function PrayerSettingsScreen() {
                 <Ionicons
                   name="chevron-forward"
                   size={20}
-                  color={Colors[colorScheme ?? "light"].textSecondary}
+                  color={
+                    isDark
+                      ? Colors[colorScheme ?? "light"].textSecondary
+                      : "#8E8E93"
+                  }
                 />
               </TouchableOpacity>
             </View>
@@ -200,7 +208,11 @@ export default function PrayerSettingsScreen() {
                 <Text
                   style={[
                     styles.settingSubtext,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
                   ]}
                 >
                   {settings.schoolPrimary === 0
@@ -211,7 +223,11 @@ export default function PrayerSettingsScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={Colors[colorScheme ?? "light"].textSecondary}
+                color={
+                  isDark
+                    ? Colors[colorScheme ?? "light"].textSecondary
+                    : "#8E8E93"
+                }
               />
             </TouchableOpacity>
           </View>
@@ -243,7 +259,11 @@ export default function PrayerSettingsScreen() {
                   <Text
                     style={[
                       styles.settingSubtext,
-                      { color: Colors[colorScheme ?? "light"].textSecondary },
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
                     ]}
                   >
                     Fajr: {settings.tune.fajr > 0 ? "+" : ""}
@@ -368,7 +388,11 @@ export default function PrayerSettingsScreen() {
                   <Text
                     style={[
                       styles.settingSubtext,
-                      { color: Colors[colorScheme ?? "light"].textSecondary },
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
                     ]}
                   >
                     {settings.lam === 3
@@ -381,7 +405,11 @@ export default function PrayerSettingsScreen() {
                 <Ionicons
                   name="chevron-forward"
                   size={20}
-                  color={Colors[colorScheme ?? "light"].textSecondary}
+                  color={
+                    isDark
+                      ? Colors[colorScheme ?? "light"].textSecondary
+                      : "#8E8E93"
+                  }
                 />
               </TouchableOpacity>
             </View>
@@ -414,7 +442,11 @@ export default function PrayerSettingsScreen() {
                   <Text
                     style={[
                       styles.settingSubtext,
-                      { color: Colors[colorScheme ?? "light"].textSecondary },
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
                     ]}
                   >
                     Display both calculation methods
@@ -437,8 +469,7 @@ export default function PrayerSettingsScreen() {
             style={[
               styles.card,
               {
-                backgroundColor:
-                  Colors[colorScheme ?? "light"].cardBackground,
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
                 borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
               },
             ]}
@@ -456,7 +487,11 @@ export default function PrayerSettingsScreen() {
                 <Text
                   style={[
                     styles.settingSubtext,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
                   ]}
                 >
                   Midpoint between Maghrib and Fajr
@@ -470,7 +505,15 @@ export default function PrayerSettingsScreen() {
               />
             </View>
 
-            <View style={[styles.settingRow, { borderTopWidth: 1, borderTopColor: isDark ? "#2C2C2E" : "#E5E5EA" }]}>
+            <View
+              style={[
+                styles.settingRow,
+                {
+                  borderTopWidth: 1,
+                  borderTopColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                },
+              ]}
+            >
               <View style={styles.settingInfo}>
                 <Text
                   style={[
@@ -483,7 +526,11 @@ export default function PrayerSettingsScreen() {
                 <Text
                   style={[
                     styles.settingSubtext,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
                   ]}
                 >
                   Best time for Tahajjud prayer
@@ -613,6 +660,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
+  },
+  backgroundImage: {
+    width: "100%",
+    minHeight: 140,
   },
   tuneValue: {
     fontSize: 16,

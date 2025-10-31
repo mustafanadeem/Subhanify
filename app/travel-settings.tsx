@@ -1,6 +1,6 @@
 /**
  * Travel Settings Screen
- * 
+ *
  * Comprehensive settings for travel detection including:
  * - Detection on/off
  * - Vehicle types to monitor
@@ -12,38 +12,38 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    clearAllLogs,
-    exportLogsForDebugging,
-    getAnalyticsSummary,
+  clearAllLogs,
+  exportLogsForDebugging,
+  getAnalyticsSummary,
 } from "@/services/travel-analytics-service";
 import { sendTestTravelNotification } from "@/services/travel-notification-service";
 import {
-    getReminderFrequencyDisplayName,
-    getTravelSettings,
-    getVehicleTypeDisplayName,
-    isValidTimeFormat,
-    saveTravelSettings,
-    type ReminderFrequency,
-    type TravelSettings,
-    type VehicleType,
+  getReminderFrequencyDisplayName,
+  getTravelSettings,
+  isValidTimeFormat,
+  saveTravelSettings,
+  type ReminderFrequency,
+  type TravelSettings,
+  type VehicleType,
 } from "@/services/travel-settings-service";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function TravelSettingsScreen() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [settings, setSettings] = useState<TravelSettings | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
 
@@ -74,11 +74,11 @@ export default function TravelSettingsScreen() {
 
   const toggleVehicleType = async (vehicleType: VehicleType) => {
     if (!settings) return;
-    
+
     const vehicleTypes = settings.vehicleTypes.includes(vehicleType)
-      ? settings.vehicleTypes.filter(v => v !== vehicleType)
+      ? settings.vehicleTypes.filter((v) => v !== vehicleType)
       : [...settings.vehicleTypes, vehicleType];
-    
+
     await saveSettings({ ...settings, vehicleTypes });
   };
 
@@ -91,28 +91,31 @@ export default function TravelSettingsScreen() {
     if (!settings) return;
     await saveSettings({
       ...settings,
-      quietHours: { ...settings.quietHours, enabled }
+      quietHours: { ...settings.quietHours, enabled },
     });
   };
 
-  const updateQuietHourTime = async (type: 'start' | 'end', time: string) => {
+  const updateQuietHourTime = async (type: "start" | "end", time: string) => {
     if (!settings || !isValidTimeFormat(time)) return;
-    
+
     const quietHours = { ...settings.quietHours };
-    if (type === 'start') {
+    if (type === "start") {
       quietHours.startTime = time;
     } else {
       quietHours.endTime = time;
     }
-    
+
     await saveSettings({ ...settings, quietHours });
   };
 
-  const togglePrivacySetting = async (key: keyof TravelSettings['privacySettings'], value: boolean) => {
+  const togglePrivacySetting = async (
+    key: keyof TravelSettings["privacySettings"],
+    value: boolean
+  ) => {
     if (!settings) return;
     await saveSettings({
       ...settings,
-      privacySettings: { ...settings.privacySettings, [key]: value }
+      privacySettings: { ...settings.privacySettings, [key]: value },
     });
   };
 
@@ -138,26 +141,26 @@ export default function TravelSettingsScreen() {
       const logs = await exportLogsForDebugging();
       await Share.share({
         message: logs,
-        title: 'Travel Detection Debug Logs',
+        title: "Travel Detection Debug Logs",
       });
     } catch (error) {
-      Alert.alert('Error', 'Failed to export logs');
+      Alert.alert("Error", "Failed to export logs");
     }
   };
 
   const handleClearLogs = async () => {
     Alert.alert(
-      'Clear Debug Logs',
-      'This will permanently delete all debug logs. Continue?',
+      "Clear Debug Logs",
+      "This will permanently delete all debug logs. Continue?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Clear',
-          style: 'destructive',
+          text: "Clear",
+          style: "destructive",
           onPress: async () => {
             await clearAllLogs();
             await loadAnalytics();
-            Alert.alert('Success', 'Debug logs cleared');
+            Alert.alert("Success", "Debug logs cleared");
           },
         },
       ]
@@ -166,20 +169,47 @@ export default function TravelSettingsScreen() {
 
   if (!settings) {
     return (
-      <View style={[styles.container, { backgroundColor: Colors[colorScheme ?? "light"].background }]}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
+        ]}
+      >
         <Text>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors[colorScheme ?? "light"].background }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
+      ]}
+    >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: Colors[colorScheme ?? "light"].headerBackground }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors[colorScheme ?? "light"].text} />
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={Colors[colorScheme ?? "light"].text}
+          />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
+        >
           Travel Settings
         </Text>
       </View>
@@ -187,46 +217,133 @@ export default function TravelSettingsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Main Toggle */}
         <View style={styles.section}>
-          <View style={[styles.card, { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
+            ]}
+          >
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
                 <View style={styles.settingHeader}>
-                  <Ionicons name="car" size={24} color={Colors[colorScheme ?? "light"].tint} />
-                  <Text style={[styles.settingTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+                  <Ionicons
+                    name="car"
+                    size={24}
+                    color={Colors[colorScheme ?? "light"].tint}
+                  />
+                  <Text
+                    style={[
+                      styles.settingTitle,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
                     Travel Detection
                   </Text>
                 </View>
-                <Text style={[styles.settingDescription, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                  Automatically detect when you start traveling and send travel duas.
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
+                  ]}
+                >
+                  Automatically detect when you start traveling and send travel
+                  duas.
                 </Text>
               </View>
-              <Switch value={settings.enabled} onValueChange={toggleDetection} />
+              <Switch
+                value={settings.enabled}
+                onValueChange={toggleDetection}
+              />
             </View>
           </View>
         </View>
 
         {/* How It Works */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: isDark
+                  ? Colors[colorScheme ?? "light"].textSecondary
+                  : "#8E8E93",
+              },
+            ]}
+          >
             HOW IT WORKS
           </Text>
-          <View style={[styles.card, { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
+            ]}
+          >
             <View style={styles.infoRow}>
-              <Ionicons name="location" size={20} color={Colors[colorScheme ?? "light"].tint} />
-              <Text style={[styles.infoText, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                Uses your location and motion sensors to detect when you start traveling
+              <Ionicons
+                name="location"
+                size={20}
+                color={Colors[colorScheme ?? "light"].tint}
+              />
+              <Text
+                style={[
+                  styles.infoText,
+                  {
+                    color: isDark
+                      ? Colors[colorScheme ?? "light"].textSecondary
+                      : "#8E8E93",
+                  },
+                ]}
+              >
+                Uses your location and motion sensors to detect when you start
+                traveling
               </Text>
             </View>
             <View style={styles.infoRow}>
-              <Ionicons name="shield-checkmark" size={20} color={Colors[colorScheme ?? "light"].tint} />
-              <Text style={[styles.infoText, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                All processing happens locally on your device - no data is shared
+              <Ionicons
+                name="shield-checkmark"
+                size={20}
+                color={Colors[colorScheme ?? "light"].tint}
+              />
+              <Text
+                style={[
+                  styles.infoText,
+                  {
+                    color: isDark
+                      ? Colors[colorScheme ?? "light"].textSecondary
+                      : "#8E8E93",
+                  },
+                ]}
+              >
+                All processing happens locally on your device - no data is
+                shared
               </Text>
             </View>
             <View style={styles.infoRow}>
-              <Ionicons name="notifications" size={20} color={Colors[colorScheme ?? "light"].tint} />
-              <Text style={[styles.infoText, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                Sends a one-time notification with travel duas when a journey begins
+              <Ionicons
+                name="notifications"
+                size={20}
+                color={Colors[colorScheme ?? "light"].tint}
+              />
+              <Text
+                style={[
+                  styles.infoText,
+                  {
+                    color: isDark
+                      ? Colors[colorScheme ?? "light"].textSecondary
+                      : "#8E8E93",
+                  },
+                ]}
+              >
+                Sends a one-time notification with travel duas when a journey
+                begins
               </Text>
             </View>
           </View>
@@ -235,27 +352,63 @@ export default function TravelSettingsScreen() {
         {/* Vehicle Detection */}
         {settings.enabled && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: isDark
+                    ? Colors[colorScheme ?? "light"].textSecondary
+                    : "#8E8E93",
+                },
+              ]}
+            >
               VEHICLE DETECTION
             </Text>
-            <View style={[styles.card, { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
+                },
+              ]}
+            >
               <View style={styles.settingRow}>
                 <View style={styles.settingInfo}>
                   <View style={styles.settingHeader}>
-                    <Ionicons name="car" size={24} color={Colors[colorScheme ?? "light"].tint} />
-                    <Text style={[styles.settingTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+                    <Ionicons
+                      name="car"
+                      size={24}
+                      color={Colors[colorScheme ?? "light"].tint}
+                    />
+                    <Text
+                      style={[
+                        styles.settingTitle,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
                       Vehicle Travel
                     </Text>
                   </View>
-                  <Text style={[styles.settingDescription, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                    Detect when traveling by any vehicle (car, bus, train, etc.) based on speed and motion patterns.
+                  <Text
+                    style={[
+                      styles.settingDescription,
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
+                    ]}
+                  >
+                    Detect when traveling by any vehicle (car, bus, train, etc.)
+                    based on speed and motion patterns.
                   </Text>
                 </View>
-                <Switch 
-                  value={settings.vehicleTypes.includes('vehicle')} 
+                <Switch
+                  value={settings.vehicleTypes.includes("vehicle")}
                   onValueChange={(enabled) => {
                     if (enabled) {
-                      toggleVehicleType('vehicle');
+                      toggleVehicleType("vehicle");
                     } else {
                       // Keep at least one type enabled, so don't allow disabling the only option
                     }
@@ -269,23 +422,56 @@ export default function TravelSettingsScreen() {
         {/* Reminder Frequency */}
         {settings.enabled && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: isDark
+                    ? Colors[colorScheme ?? "light"].textSecondary
+                    : "#8E8E93",
+                },
+              ]}
+            >
               REMINDER FREQUENCY
             </Text>
-            <View style={[styles.card, { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }]}>
-              {(['every_trip', 'once_daily', 'twice_daily', 'custom'] as ReminderFrequency[]).map((frequency, index) => (
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
+                },
+              ]}
+            >
+              {(
+                [
+                  "every_trip",
+                  "once_daily",
+                  "twice_daily",
+                  "custom",
+                ] as ReminderFrequency[]
+              ).map((frequency, index) => (
                 <View key={frequency}>
                   <TouchableOpacity
                     style={styles.frequencyRow}
                     onPress={() => updateReminderFrequency(frequency)}
                   >
-                    <Text style={[styles.frequencyText, { color: Colors[colorScheme ?? "light"].text }]}>
+                    <Text
+                      style={[
+                        styles.frequencyText,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
                       {getReminderFrequencyDisplayName(frequency)}
                     </Text>
-                    <View style={[
-                      styles.radio,
-                      settings.reminderFrequency === frequency && { backgroundColor: Colors[colorScheme ?? "light"].tint }
-                    ]}>
+                    <View
+                      style={[
+                        styles.radio,
+                        settings.reminderFrequency === frequency && {
+                          backgroundColor: Colors[colorScheme ?? "light"].tint,
+                        },
+                      ]}
+                    >
                       {settings.reminderFrequency === frequency && (
                         <View style={styles.radioInner} />
                       )}
@@ -301,42 +487,95 @@ export default function TravelSettingsScreen() {
         {/* Quiet Hours */}
         {settings.enabled && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: isDark
+                    ? Colors[colorScheme ?? "light"].textSecondary
+                    : "#8E8E93",
+                },
+              ]}
+            >
               QUIET HOURS
             </Text>
-            <View style={[styles.card, { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
+                },
+              ]}
+            >
               <View style={styles.settingRow}>
-                <Text style={[styles.settingTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+                <Text
+                  style={[
+                    styles.settingTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
                   Enable Quiet Hours
                 </Text>
-                <Switch value={settings.quietHours.enabled} onValueChange={toggleQuietHours} />
+                <Switch
+                  value={settings.quietHours.enabled}
+                  onValueChange={toggleQuietHours}
+                />
               </View>
-              
+
               {settings.quietHours.enabled && (
                 <>
                   <View style={styles.divider} />
                   <View style={styles.timeRow}>
-                    <Text style={[styles.timeLabel, { color: Colors[colorScheme ?? "light"].text }]}>From</Text>
+                    <Text
+                      style={[
+                        styles.timeLabel,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
+                      From
+                    </Text>
                     <TextInput
-                      style={[styles.timeInput, { 
-                        color: Colors[colorScheme ?? "light"].text,
-                        borderColor: Colors[colorScheme ?? "light"].textSecondary 
-                      }]}
+                      style={[
+                        styles.timeInput,
+                        {
+                          color: Colors[colorScheme ?? "light"].text,
+                          borderColor:
+                            Colors[colorScheme ?? "light"].textSecondary,
+                        },
+                      ]}
                       value={settings.quietHours.startTime}
-                      onChangeText={(text) => updateQuietHourTime('start', text)}
+                      onChangeText={(text) =>
+                        updateQuietHourTime("start", text)
+                      }
                       placeholder="22:00"
-                      placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
+                      placeholderTextColor={
+                        Colors[colorScheme ?? "light"].textSecondary
+                      }
                     />
-                    <Text style={[styles.timeLabel, { color: Colors[colorScheme ?? "light"].text }]}>To</Text>
+                    <Text
+                      style={[
+                        styles.timeLabel,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
+                      To
+                    </Text>
                     <TextInput
-                      style={[styles.timeInput, { 
-                        color: Colors[colorScheme ?? "light"].text,
-                        borderColor: Colors[colorScheme ?? "light"].textSecondary 
-                      }]}
+                      style={[
+                        styles.timeInput,
+                        {
+                          color: Colors[colorScheme ?? "light"].text,
+                          borderColor:
+                            Colors[colorScheme ?? "light"].textSecondary,
+                        },
+                      ]}
                       value={settings.quietHours.endTime}
-                      onChangeText={(text) => updateQuietHourTime('end', text)}
+                      onChangeText={(text) => updateQuietHourTime("end", text)}
                       placeholder="07:00"
-                      placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
+                      placeholderTextColor={
+                        Colors[colorScheme ?? "light"].textSecondary
+                      }
                     />
                   </View>
                 </>
@@ -347,39 +586,89 @@ export default function TravelSettingsScreen() {
 
         {/* Privacy & Analytics */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: isDark
+                  ? Colors[colorScheme ?? "light"].textSecondary
+                  : "#8E8E93",
+              },
+            ]}
+          >
             PRIVACY & ANALYTICS
           </Text>
-          <View style={[styles.card, { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
+            ]}
+          >
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+                <Text
+                  style={[
+                    styles.settingTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
                   Allow Error Logging
                 </Text>
-                <Text style={[styles.settingDescription, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                  Help improve travel detection by logging errors locally for debugging
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
+                  ]}
+                >
+                  Help improve travel detection by logging errors locally for
+                  debugging
                 </Text>
               </View>
-              <Switch 
-                value={settings.privacySettings.allowErrorLogging} 
-                onValueChange={(value) => togglePrivacySetting('allowErrorLogging', value)} 
+              <Switch
+                value={settings.privacySettings.allowErrorLogging}
+                onValueChange={(value) =>
+                  togglePrivacySetting("allowErrorLogging", value)
+                }
               />
             </View>
-            
+
             <View style={styles.divider} />
-            
+
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+                <Text
+                  style={[
+                    styles.settingTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
                   Allow Analytics
                 </Text>
-                <Text style={[styles.settingDescription, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                  Track detection accuracy to improve the system (anonymous data only)
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
+                  ]}
+                >
+                  Track detection accuracy to improve the system (anonymous data
+                  only)
                 </Text>
               </View>
-              <Switch 
-                value={settings.privacySettings.allowAnalytics} 
-                onValueChange={(value) => togglePrivacySetting('allowAnalytics', value)} 
+              <Switch
+                value={settings.privacySettings.allowAnalytics}
+                onValueChange={(value) =>
+                  togglePrivacySetting("allowAnalytics", value)
+                }
               />
             </View>
           </View>
@@ -388,42 +677,119 @@ export default function TravelSettingsScreen() {
         {/* Debug & Testing */}
         {settings.privacySettings.allowErrorLogging && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: isDark
+                    ? Colors[colorScheme ?? "light"].textSecondary
+                    : "#8E8E93",
+                },
+              ]}
+            >
               DEBUG & TESTING
             </Text>
-            <View style={[styles.card, { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
+                },
+              ]}
+            >
               {analytics && (
                 <View style={styles.analyticsContainer}>
-                  <Text style={[styles.analyticsTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+                  <Text
+                    style={[
+                      styles.analyticsTitle,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
                     Detection Statistics
                   </Text>
-                  <Text style={[styles.analyticsText, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+                  <Text
+                    style={[
+                      styles.analyticsText,
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
+                    ]}
+                  >
                     State Transitions: {analytics.totalTransitions}
                   </Text>
-                  <Text style={[styles.analyticsText, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+                  <Text
+                    style={[
+                      styles.analyticsText,
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
+                    ]}
+                  >
                     Errors Logged: {analytics.totalErrors}
                   </Text>
-                  <Text style={[styles.analyticsText, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
-                    False Positive Rate: {(analytics.falsePositiveRate * 100).toFixed(1)}%
+                  <Text
+                    style={[
+                      styles.analyticsText,
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
+                    ]}
+                  >
+                    False Positive Rate:{" "}
+                    {(analytics.falsePositiveRate * 100).toFixed(1)}%
                   </Text>
                 </View>
               )}
-              
-              <TouchableOpacity style={styles.debugButton} onPress={handleTestNotification}>
-                <Ionicons name="notifications-outline" size={20} color={Colors[colorScheme ?? "light"].tint} />
-                <Text style={[styles.debugButtonText, { color: Colors[colorScheme ?? "light"].tint }]}>
+
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={handleTestNotification}
+              >
+                <Ionicons
+                  name="notifications-outline"
+                  size={20}
+                  color={Colors[colorScheme ?? "light"].tint}
+                />
+                <Text
+                  style={[
+                    styles.debugButtonText,
+                    { color: Colors[colorScheme ?? "light"].tint },
+                  ]}
+                >
                   Test Notification
                 </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.debugButton} onPress={handleExportLogs}>
-                <Ionicons name="share-outline" size={20} color={Colors[colorScheme ?? "light"].tint} />
-                <Text style={[styles.debugButtonText, { color: Colors[colorScheme ?? "light"].tint }]}>
+
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={handleExportLogs}
+              >
+                <Ionicons
+                  name="share-outline"
+                  size={20}
+                  color={Colors[colorScheme ?? "light"].tint}
+                />
+                <Text
+                  style={[
+                    styles.debugButtonText,
+                    { color: Colors[colorScheme ?? "light"].tint },
+                  ]}
+                >
                   Export Debug Logs
                 </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.debugButton} onPress={handleClearLogs}>
+
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={handleClearLogs}
+              >
                 <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                 <Text style={[styles.debugButtonText, { color: "#FF3B30" }]}>
                   Clear Debug Logs

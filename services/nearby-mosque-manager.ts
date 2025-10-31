@@ -102,13 +102,22 @@ export async function updateNearbyMosqueGeofencing(
       entryAdhkarIds: ['0', '1'],
       exitAdhkarIds: ['2'],
       enabled: true,
+      createdAt: Date.now(),
     }));
 
     const allLocations = [...userLocations, ...mosqueLocations];
     
-    await startGeofencingMonitoring(allLocations);
-
-    console.log(`[NearbyMosqueManager] ✅ Monitoring ${selectedMosques.length} nearby mosques`);
+    try {
+      await startGeofencingMonitoring(allLocations);
+      console.log(`[NearbyMosqueManager] ✅ Monitoring ${selectedMosques.length} nearby mosques`);
+    } catch (geofenceError: any) {
+      if (geofenceError.message?.includes('Background location permission')) {
+        console.warn('[NearbyMosqueManager] ⚠️ Background location permission required. Geofencing disabled.');
+        // Don't throw - just return 0 to indicate no mosques are being monitored
+        return 0;
+      }
+      throw geofenceError;
+    }
     
     return selectedMosques.length;
   } catch (error) {

@@ -100,8 +100,14 @@ TaskManager.defineTask(GEOFENCING_TASK_NAME, async ({ data, error }: any) => {
  */
 export async function startGeofencingMonitoring(locations: SavedLocation[]): Promise<void> {
   const permissions = await checkLocationPermissions();
-  if (!permissions.granted || !permissions.background) {
-    throw new Error('Background location permissions not granted. Use permissions-manager to request permissions first.');
+  if (!permissions.granted) {
+    console.warn('[GeofenceService] Location permissions not granted. Cannot start geofencing.');
+    return;
+  }
+  
+  if (!permissions.background) {
+    console.warn('[GeofenceService] Background location permissions not granted. Geofencing may not work properly in the background.');
+    // Continue anyway - some functionality may still work with foreground permissions
   }
   
   // Stop existing geofencing
@@ -126,8 +132,16 @@ export async function startGeofencingMonitoring(locations: SavedLocation[]): Pro
   }));
   
   // Start geofencing
-  await Location.startGeofencingAsync(GEOFENCING_TASK_NAME, regions);
-  console.log(`Started geofencing for ${regions.length} locations`);
+  try {
+    await Location.startGeofencingAsync(GEOFENCING_TASK_NAME, regions);
+    console.log(`Started geofencing for ${regions.length} locations`);
+  } catch (error: any) {
+    if (error.message?.includes('Background location permission')) {
+      console.warn('[GeofenceService] Background location permission is required for geofencing. Please grant background location access in app settings.');
+      throw new Error('Background location permission is required. Please enable "Always Allow" location access in Settings.');
+    }
+    throw error;
+  }
 }
 
 /**

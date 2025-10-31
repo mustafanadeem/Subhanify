@@ -1,10 +1,12 @@
-import { ThemedText } from "@/components/themed-text";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import {
+  Alert,
   ScrollView,
+  Share,
   StatusBar,
   StyleSheet,
   Text,
@@ -16,54 +18,40 @@ interface SettingItemProps {
   title: string;
   icon: string;
   onPress?: () => void;
-  showChevron?: boolean;
 }
 
-function SettingItem({
-  title,
-  icon,
-  onPress,
-  showChevron = true,
-}: SettingItemProps) {
+function SettingItem({ title, icon, onPress }: SettingItemProps) {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
 
   return (
     <TouchableOpacity
       style={[
         styles.settingItem,
-        {
-          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-        },
+        { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
       ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View style={styles.settingContent}>
-        <View
-          style={[
-            styles.settingIconContainer,
-            {
-              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-            },
-          ]}
-        >
-          <IconSymbol
-            name={icon as any}
-            size={22}
-            color={isDark ? "#FFFFFF" : "#000000"}
-          />
-        </View>
-        <ThemedText style={styles.settingTitle}>{title}</ThemedText>
-      </View>
-      {showChevron && (
-        <IconSymbol
-          name="chevron.right"
-          size={20}
-          color={isDark ? "#8E8E93" : "#C7C7CC"}
+      <View style={styles.settingIconContainer}>
+        <Ionicons
+          name={icon as any}
+          size={24}
+          color={Colors[colorScheme ?? "light"].text}
         />
-      )}
+      </View>
+      <Text
+        style={[
+          styles.settingTitle,
+          { color: Colors[colorScheme ?? "light"].text },
+        ]}
+      >
+        {title}
+      </Text>
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color={Colors[colorScheme ?? "light"].textSecondary}
+      />
     </TouchableOpacity>
   );
 }
@@ -72,6 +60,28 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
+
+  const handleRateApp = () => {
+    Alert.alert("Rate App", "Would you like to rate our app?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Rate Now",
+        onPress: () => {
+          Alert.alert("Thank you!", "We appreciate your feedback!");
+        },
+      },
+    ]);
+  };
+
+  const handleShareApp = async () => {
+    try {
+      await Share.share({
+        message: "Check out this amazing prayer app!",
+      });
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
+  };
 
   return (
     <View
@@ -86,12 +96,7 @@ export default function ProfileScreen() {
         translucent
       />
       {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
-        ]}
-      >
+      <View style={styles.header}>
         <Text
           style={[
             styles.headerTitle,
@@ -107,118 +112,156 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Section */}
-        <View style={styles.section}>
+        {/* General Section */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color: isDark
+                ? Colors[colorScheme ?? "light"].textSecondary
+                : "#8E8E93",
+            },
+          ]}
+        >
+          General
+        </Text>
+        <View
+          style={[
+            styles.sectionContainer,
+            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+          ]}
+        >
+          <SettingItem
+            title="Appearance"
+            icon="color-palette"
+            onPress={() => router.push("/appearance-settings")}
+          />
           <View
             style={[
-              styles.profileCard,
-              {
-                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-              },
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
             ]}
-          >
-            <View
-              style={[
-                styles.avatar,
-                {
-                  backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                },
-              ]}
-            >
-              <IconSymbol
-                name="person.fill"
-                size={32}
-                color={isDark ? "#FFFFFF" : "#000000"}
-              />
-            </View>
-            <ThemedText style={styles.userName}>User</ThemedText>
-            <ThemedText style={styles.userEmail}>user@example.com</ThemedText>
-          </View>
-        </View>
-
-        {/* Settings Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Settings</ThemedText>
-          <SettingItem
-            title="Privacy & Permissions"
-            icon="lock.shield.fill"
-            onPress={() => router.push("/privacy-settings" as any)}
-          />
-          <SettingItem
-            title="Travel Settings"
-            icon="car.fill"
-            onPress={() => router.push("/travel-settings" as any)}
           />
           <SettingItem
             title="Rain Alerts"
-            icon="cloud.rain.fill"
+            icon="rainy"
             onPress={() => router.push("/rain-alert-settings" as any)}
           />
-          <SettingItem
-            title="Appearance"
-            icon="paintbrush.fill"
-            onPress={() => router.push("/appearance-settings")}
-          />
+        </View>
+
+        {/* App Experience Section */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color: isDark
+                ? Colors[colorScheme ?? "light"].textSecondary
+                : "#8E8E93",
+            },
+          ]}
+        >
+          App Experience
+        </Text>
+        <View
+          style={[
+            styles.sectionContainer,
+            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+          ]}
+        >
           <SettingItem
             title="Prayer Settings"
-            icon="clock.fill"
+            icon="moon"
             onPress={() => router.push("/prayer-settings")}
           />
-          <SettingItem
-            title="Level System"
-            icon="chart.bar.fill"
-            onPress={() => router.push("/level-settings" as any)}
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
           />
           <SettingItem
-            title="Notifications"
-            icon="bell.fill"
-            onPress={() => console.log("Notifications pressed")}
+            title="Travel Settings"
+            icon="car"
+            onPress={() => router.push("/travel-settings" as any)}
+          />
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
           />
           <SettingItem
-            title="Language"
-            icon="globe"
-            onPress={() => console.log("Language pressed")}
+            title="Permissions"
+            icon="key"
+            onPress={() => {
+              Linking.openSettings();
+            }}
           />
         </View>
 
-        {/* Support Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Support</ThemedText>
+        {/* Support & Info Section */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color: isDark
+                ? Colors[colorScheme ?? "light"].textSecondary
+                : "#8E8E93",
+            },
+          ]}
+        >
+          Support & Info
+        </Text>
+        <View
+          style={[
+            styles.sectionContainer,
+            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+          ]}
+        >
           <SettingItem
             title="Send Feedback"
-            icon="bubble.left.and.bubble.right.fill"
+            icon="chatbox"
             onPress={() => router.push("/support")}
           />
-          <SettingItem
-            title="View Feedback"
-            icon="list.bullet.clipboard.fill"
-            onPress={() => router.push("/view-feedback")}
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
           />
-        </View>
-
-        {/* About Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>About</ThemedText>
-          <SettingItem
-            title="Rate App"
-            icon="star.fill"
-            onPress={() => console.log("Rate App pressed")}
+          <SettingItem title="Rate App" icon="star" onPress={handleRateApp} />
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
           />
           <SettingItem
             title="Share App"
-            icon="square.and.arrow.up"
-            onPress={() => console.log("Share App pressed")}
+            icon="share-social"
+            onPress={handleShareApp}
+          />
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
           />
           <SettingItem
             title="Privacy Policy"
-            icon="lock.fill"
-            onPress={() => console.log("Privacy Policy pressed")}
+            icon="shield-checkmark"
+            onPress={() => router.push("/privacy-settings" as any)}
+          />
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
           />
           <SettingItem
             title="Terms of Service"
-            icon="doc.text.fill"
-            onPress={() => console.log("Terms of Service pressed")}
+            icon="document-text"
+            onPress={() => router.push("/terms-of-service" as any)}
           />
         </View>
       </ScrollView>
@@ -231,12 +274,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 60,
-  paddingBottom: 20,
+    paddingBottom: 20,
   },
   headerTitle: {
     fontSize: 28,
@@ -246,69 +286,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  section: {
-    marginBottom: 32,
+    paddingTop: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 100,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: "600",
     textTransform: "uppercase",
-    opacity: 0.6,
-    marginBottom: 12,
-    marginLeft: 4,
     letterSpacing: 0.5,
+    marginTop: 24,
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
-  profileCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 32,
-    alignItems: "center",
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
+  sectionContainer: {
+    borderRadius: 12,
+    overflow: "hidden",
     marginBottom: 16,
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 15,
-    opacity: 0.6,
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
-  settingContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
+  separator: {
+    height: 0.5,
+    marginLeft: 60,
+    opacity: 0.3,
   },
   settingIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 32,
+    height: 32,
     marginRight: 12,
+    justifyContent: "center",
+    alignItems: "flex-start",
   },
   settingTitle: {
+    flex: 1,
     fontSize: 17,
-    fontWeight: "500",
-    letterSpacing: -0.4,
+    fontWeight: "400",
   },
 });

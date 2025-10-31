@@ -1,19 +1,19 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ImageBackground,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { PrayerTimesRepository } from "../modules/prayer-times/data/repository";
 import {
-    TodayPrayerTimes,
-    UserSettings,
+  TodayPrayerTimes,
+  UserSettings,
 } from "../modules/prayer-times/domain/entities";
 
 const repo = new PrayerTimesRepository();
@@ -208,52 +208,64 @@ export function PrayerTimeCard() {
 
   if (!current || !next) return null;
 
+  // Get background image based on next prayer
+  const getPrayerBackground = (prayerName: string) => {
+    const name = prayerName.toLowerCase();
+    switch (name) {
+      case "fajr":
+        return require("@/assets/images/prayer-bg/fajr.png");
+      case "dhuhr":
+        return require("@/assets/images/prayer-bg/dhuhr.png");
+      case "asr":
+        return require("@/assets/images/prayer-bg/asr.png");
+      case "maghrib":
+        return require("@/assets/images/prayer-bg/maghreb.png");
+      case "isha":
+        return require("@/assets/images/prayer-bg/isha.png");
+      default:
+        return require("@/assets/images/prayer-bg/fajr.png");
+    }
+  };
+
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          backgroundColor: Colors[colorScheme ?? "light"].prayerCard,
-        },
-      ]}
+      style={styles.card}
       onPress={handlePress}
       activeOpacity={0.8}
     >
-      <View style={styles.cardContent}>
-        <View style={styles.leftContent}>
-          {data.info.hijri?.date && (
-            <Text style={styles.hijriDate}>
-              {formatHijriDate(data.info.hijri.date)}
+      <ImageBackground
+        source={getPrayerBackground(next.name)}
+        style={styles.backgroundImage}
+        imageStyle={styles.backgroundImageStyle}
+        resizeMode="cover"
+      >
+        {/* 25% Black Overlay */}
+        <View style={styles.overlay} />
+
+        <View style={styles.cardContent}>
+          <View style={styles.leftContent}>
+            <Text style={styles.nextPrayerLabel}>Next Prayer in 1:35:12</Text>
+
+            <Text style={styles.currentTime}>
+              {next.time} {next.name}
             </Text>
-          )}
 
-          <Text style={styles.currentTime}>{current.time}</Text>
-          <Text style={styles.currentPrayerName}>
-            {current.name} Prayer Time
-          </Text>
-
-          <Text style={styles.nextPrayer}>
-            {next.name} at {next.time}
-          </Text>
-          
-          <View style={styles.tapIndicator}>
-            <Text style={styles.tapText}>Tap to view all prayer times</Text>
+            {data.info.hijri?.date && (
+              <Text style={styles.hijriDate}>
+                {formatHijriDate(data.info.hijri.date)}
+              </Text>
+            )}
           </View>
         </View>
-
-        <View style={styles.rightContent}>
-          <Ionicons name="moon" size={70} color="rgba(255,255,255,0.3)" />
-        </View>
-      </View>
+      </ImageBackground>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
+    width: "100%",
     borderRadius: 16,
-    padding: 20,
     overflow: "hidden",
     elevation: 3,
     shadowColor: "#000",
@@ -262,51 +274,50 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     minHeight: 140,
   },
+  backgroundImage: {
+    width: "100%",
+    minHeight: 140,
+    justifyContent: "center",
+  },
+  backgroundImageStyle: {
+    borderRadius: 16,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderRadius: 16,
+  },
   cardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     flex: 1,
+    padding: 20,
   },
   leftContent: {
     flex: 1,
     justifyContent: "center",
   },
-  rightContent: {
-    justifyContent: "center",
-    alignItems: "center",
-    opacity: 0.5,
+  nextPrayerLabel: {
+    fontSize: 14,
+    color: "#FFFFFF",
+    marginBottom: 12,
+    fontWeight: "600",
+    opacity: 0.9,
   },
   hijriDate: {
     fontSize: 11,
     color: "rgba(255,255,255,0.9)",
-    marginBottom: 6,
+    marginTop: 6,
     fontWeight: "500",
   },
   currentTime: {
     fontSize: 32,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 2,
-  },
-  currentPrayerName: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.95)",
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  nextPrayer: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
-    marginBottom: 8,
-  },
-  tapIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  tapText: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.7)",
   },
 });

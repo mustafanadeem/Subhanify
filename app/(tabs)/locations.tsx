@@ -1,41 +1,39 @@
-import { QiblaCompass } from "@/components/qibla-compass";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    getGeofencingStatus,
-    restartGeofencing,
-    stopGeofencingMonitoring,
+  getGeofencingStatus,
+  restartGeofencing,
+  stopGeofencingMonitoring,
 } from "@/services/geofence-service";
 import { loadMosques } from "@/services/mosque-data-service";
 import {
-    getMosqueMonitoringStats,
-    shouldUpdateMosqueMonitoring,
-    updateNearbyMosqueGeofencing,
+  getMosqueMonitoringStats,
+  shouldUpdateMosqueMonitoring,
+  updateNearbyMosqueGeofencing,
 } from "@/services/nearby-mosque-manager";
 import { LocationCategory, SavedLocation } from "@/types/location";
 import { Mosque } from "@/types/mosque";
 import {
-    deleteLocation,
-    getAllLocations,
-    initDatabase,
-    toggleLocationEnabled,
+  deleteLocation,
+  getAllLocations,
+  initDatabase,
+  toggleLocationEnabled,
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 const categoryIcons: Record<LocationCategory, string> = {
   mosque: "moon",
@@ -55,13 +53,10 @@ const categoryColors: Record<LocationCategory, string> = {
   other: "#757575",
 };
 
-type ViewMode = "locations" | "qibla";
-
 export default function LocationsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const [viewMode, setViewMode] = useState<ViewMode>("locations");
   const [locations, setLocations] = useState<SavedLocation[]>([]);
   const [mosques, setMosques] = useState<Mosque[]>([]);
   const [showMosques, setShowMosques] = useState(true);
@@ -111,16 +106,17 @@ export default function LocationsScreen() {
 
       try {
         console.log("Checking location permissions...");
-        const foregroundPerm = await Location.requestForegroundPermissionsAsync();
-        
-        if (foregroundPerm.status !== 'granted') {
+        const foregroundPerm =
+          await Location.requestForegroundPermissionsAsync();
+
+        if (foregroundPerm.status !== "granted") {
           console.warn("Location permissions not granted");
           Alert.alert(
             "Location Permission Required",
             "This app needs location access to show your current position and add location-based adhkar reminders.",
             [
               { text: "Cancel", style: "cancel" },
-              { text: "Try Again", onPress: () => initialize() }
+              { text: "Try Again", onPress: () => initialize() },
             ]
           );
           setIsLoading(false);
@@ -148,7 +144,6 @@ export default function LocationsScreen() {
 
         const status = await getGeofencingStatus();
         setGeofencingActive(status.isMonitoring);
-
       } catch (permError: any) {
         console.error("Location error:", permError);
         Alert.alert(
@@ -173,7 +168,7 @@ export default function LocationsScreen() {
       const mosquesData = await loadMosques();
       setMosques(mosquesData);
       console.log("Loaded mosques:", mosquesData.length);
-      
+
       const stats = await getMosqueMonitoringStats();
       setNearbyMosquesCount(stats.monitored);
     } catch (error) {
@@ -208,7 +203,7 @@ export default function LocationsScreen() {
 
   const handleToggleAutoMosqueMonitoring = async (value: boolean) => {
     setAutoMosqueMonitoring(value);
-    
+
     if (value && currentLocation) {
       const count = await updateNearbyMosqueGeofencing(
         currentLocation.coords.latitude,
@@ -366,342 +361,66 @@ export default function LocationsScreen() {
       ]}
     >
       {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
-        ]}
-      >
+      <View style={styles.header}>
         <Text
           style={[
             styles.headerTitle,
             { color: Colors[colorScheme ?? "light"].text },
           ]}
         >
-          {viewMode === "locations" ? "Location Adhkar" : "Qibla Direction"}
+          Location
         </Text>
-        <TouchableOpacity
-          onPress={viewMode === "locations" ? handleAddLocation : undefined}
-          style={styles.addButton}
-          disabled={viewMode === "qibla"}
-        >
-          {viewMode === "locations" ? (
-            <Ionicons
-              name="add-circle"
-              size={32}
-              color={Colors[colorScheme ?? "light"].tint}
-            />
-          ) : (
-            <View style={{ width: 32 }} />
-          )}
+        <TouchableOpacity onPress={handleAddLocation} style={styles.addButton}>
+          <Ionicons
+            name="add-circle"
+            size={32}
+            color={isDark ? "#0A84FF" : "#007AFF"}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* View Mode Tabs */}
-      <View
-        style={[
-          styles.tabsContainer,
-          { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
-        ]}
-      >
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            viewMode === "locations" && styles.tabActive,
-            viewMode === "locations" && {
-              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-            },
-          ]}
-          onPress={() => setViewMode("locations")}
-        >
-          <Ionicons
-            name="location"
-            size={20}
-            color={
-              viewMode === "locations"
-                ? Colors[colorScheme ?? "light"].tint
-                : Colors[colorScheme ?? "light"].textSecondary
-            }
-          />
-          <Text
-            style={[
-              styles.tabText,
-              {
-                color:
-                  viewMode === "locations"
-                    ? Colors[colorScheme ?? "light"].text
-                    : Colors[colorScheme ?? "light"].textSecondary,
-              },
-              viewMode === "locations" && styles.tabTextActive,
-            ]}
-          >
-            Locations
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            viewMode === "qibla" && styles.tabActive,
-            viewMode === "qibla" && {
-              backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-            },
-          ]}
-          onPress={() => setViewMode("qibla")}
-        >
-          <Ionicons
-            name="compass"
-            size={20}
-            color={
-              viewMode === "qibla"
-                ? Colors[colorScheme ?? "light"].tint
-                : Colors[colorScheme ?? "light"].textSecondary
-            }
-          />
-          <Text
-            style={[
-              styles.tabText,
-              {
-                color:
-                  viewMode === "qibla"
-                    ? Colors[colorScheme ?? "light"].text
-                    : Colors[colorScheme ?? "light"].textSecondary,
-              },
-              viewMode === "qibla" && styles.tabTextActive,
-            ]}
-          >
-            Qibla
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Content based on view mode */}
-      {viewMode === "qibla" ? (
-        <QiblaCompass
-          userLocation={
-            currentLocation
-              ? {
-                  latitude: currentLocation.coords.latitude,
-                  longitude: currentLocation.coords.longitude,
-                }
-              : null
-          }
-        />
-      ) : (
-        <ScrollView style={styles.scrollContent}>
+      <ScrollView style={styles.scrollContent}>
         {/* Map */}
         <View style={styles.mapContainer}>
           <MapView
             style={styles.map}
             provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
             region={mapRegion}
-            showsUserLocation
-            showsMyLocationButton
+            showsUserLocation={false}
+            showsMyLocationButton={false}
+            showsPointsOfInterest={false}
+            showsBuildings={false}
+            showsTraffic={false}
+            showsIndoors={false}
+            showsCompass={false}
           >
-            {locations.map((location) => (
-              <React.Fragment key={location.id}>
-                <Marker
-                  coordinate={{
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                  }}
-                  onPress={() => handleMarkerPress(location)}
-                >
-                  <View
-                    style={[
-                      styles.markerContainer,
-                      { backgroundColor: categoryColors[location.category] },
-                    ]}
-                  >
-                    <Ionicons
-                      name={categoryIcons[location.category] as any}
-                      size={24}
-                      color="white"
-                    />
-                  </View>
-                </Marker>
-                <Circle
-                  center={{
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                  }}
-                  radius={location.radius}
-                  strokeColor={categoryColors[location.category]}
-                  fillColor={`${categoryColors[location.category]}20`}
-                  strokeWidth={2}
-                />
-              </React.Fragment>
-            ))}
-
-            {showMosques && mosques.map((mosque, index) => (
-              <React.Fragment key={`mosque-${mosque.latitude}-${mosque.longitude}-${index}`}>
-                <Marker
-                  coordinate={{
-                    latitude: mosque.latitude,
-                    longitude: mosque.longitude,
-                  }}
-                  onPress={() => {
-                    Alert.alert(
-                      mosque.name,
-                      [
-                        mosque.address && `Address: ${mosque.address}`,
-                        mosque.postcode && `Postcode: ${mosque.postcode}`,
-                        `Radius: ${mosque.radius}m`,
-                      ]
-                        .filter(Boolean)
-                        .join("\n"),
-                      [{ text: "OK" }]
-                    );
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.markerContainer,
-                      { backgroundColor: categoryColors.mosque },
-                    ]}
-                  >
-                    <Ionicons
-                      name="moon"
-                      size={20}
-                      color="white"
-                    />
-                  </View>
-                </Marker>
-                <Circle
-                  center={{
-                    latitude: mosque.latitude,
-                    longitude: mosque.longitude,
-                  }}
-                  radius={mosque.radius}
-                  strokeColor={`${categoryColors.mosque}60`}
-                  fillColor={`${categoryColors.mosque}15`}
-                  strokeWidth={1}
-                />
-              </React.Fragment>
-            ))}
+            {/* Home location marker */}
+            {locations.length > 0 && locations[0] && (
+              <Marker
+                coordinate={{
+                  latitude: locations[0].latitude,
+                  longitude: locations[0].longitude,
+                }}
+              >
+                <View style={styles.mapLocationIcon}>
+                  <Ionicons name="home" size={28} color="#FFFFFF" />
+                </View>
+              </Marker>
+            )}
           </MapView>
         </View>
 
-        {/* Auto Mosque Monitoring Toggle */}
-        <View
+        {/* Manage Places Button */}
+        <TouchableOpacity
           style={[
-            styles.toggleContainer,
-            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+            styles.managePlacesButton,
+            { backgroundColor: isDark ? "#0A84FF" : "#007AFF" },
           ]}
+          onPress={() => router.push("/manage-places")}
         >
-          <View style={styles.toggleInfo}>
-            <Ionicons
-              name="moon"
-              size={24}
-              color={categoryColors.mosque}
-            />
-            <View style={styles.toggleText}>
-              <Text
-                style={[
-                  styles.toggleTitle,
-                  { color: Colors[colorScheme ?? "light"].text },
-                ]}
-              >
-                Auto Mosque Monitoring
-              </Text>
-              <Text
-                style={[
-                  styles.toggleSubtitle,
-                  { color: Colors[colorScheme ?? "light"].textSecondary },
-                ]}
-              >
-                {autoMosqueMonitoring
-                  ? `Monitoring ${nearbyMosquesCount} nearby mosques`
-                  : "Disabled - only saved locations"}
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={autoMosqueMonitoring}
-            onValueChange={handleToggleAutoMosqueMonitoring}
-          />
-        </View>
-
-        {/* Show Mosques Toggle */}
-        <View
-          style={[
-            styles.toggleContainer,
-            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
-          ]}
-        >
-          <View style={styles.toggleInfo}>
-            <Ionicons
-              name="eye"
-              size={24}
-              color={Colors[colorScheme ?? "light"].textSecondary}
-            />
-            <View style={styles.toggleText}>
-              <Text
-                style={[
-                  styles.toggleTitle,
-                  { color: Colors[colorScheme ?? "light"].text },
-                ]}
-              >
-                Show All Mosques on Map
-              </Text>
-              <Text
-                style={[
-                  styles.toggleSubtitle,
-                  { color: Colors[colorScheme ?? "light"].textSecondary },
-                ]}
-              >
-                {showMosques ? `${mosques.length} mosques visible` : "Hidden"}
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={showMosques}
-            onValueChange={setShowMosques}
-          />
-        </View>
-
-        {/* Geofencing Toggle */}
-        <View
-          style={[
-            styles.toggleContainer,
-            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
-          ]}
-        >
-          <View style={styles.toggleInfo}>
-            <Ionicons
-              name="location"
-              size={24}
-              color={Colors[colorScheme ?? "light"].tint}
-            />
-            <View style={styles.toggleText}>
-              <Text
-                style={[
-                  styles.toggleTitle,
-                  { color: Colors[colorScheme ?? "light"].text },
-                ]}
-              >
-                Location Monitoring
-              </Text>
-              <Text
-                style={[
-                  styles.toggleSubtitle,
-                  { color: Colors[colorScheme ?? "light"].textSecondary },
-                ]}
-              >
-                {geofencingActive
-                  ? `Monitoring ${
-                      locations.filter((l) => l.enabled).length
-                    } locations`
-                  : "Disabled"}
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={geofencingActive}
-            onValueChange={handleToggleGeofencing}
-            disabled={locations.length === 0}
-          />
-        </View>
+          <Ionicons name="location" size={24} color="#FFFFFF" />
+          <Text style={styles.managePlacesText}>Manage Places</Text>
+        </TouchableOpacity>
 
         {/* Locations List */}
         {locations.length === 0 ? (
@@ -765,32 +484,38 @@ export default function LocationsScreen() {
                 </Text>
                 <Text
                   style={[
-                    styles.locationDetails,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                    styles.locationAddress,
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
                   ]}
                 >
-                  {location.category} • {location.radius}m radius
-                </Text>
-                <Text
-                  style={[
-                    styles.locationAdhkar,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
-                  ]}
-                >
-                  {location.entryAdhkarIds.length} entry,{" "}
-                  {location.exitAdhkarIds.length} exit adhkar
+                  {`${location.latitude.toFixed(
+                    4
+                  )}, ${location.longitude.toFixed(4)}`}
                 </Text>
               </View>
 
-              <Switch
-                value={location.enabled}
-                onValueChange={(value) => handleToggleLocation(location, value)}
-              />
+              <TouchableOpacity
+                onPress={() => handleEditLocation(location)}
+                style={styles.locationMoreButton}
+              >
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={24}
+                  color={
+                    isDark
+                      ? Colors[colorScheme ?? "light"].textSecondary
+                      : "#8E8E93"
+                  }
+                />
+              </TouchableOpacity>
             </TouchableOpacity>
           ))
         )}
       </ScrollView>
-      )}
     </View>
   );
 }
@@ -806,9 +531,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 28,
@@ -935,5 +660,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
     textAlign: "center",
+  },
+  locationAddress: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  locationMoreButton: {
+    padding: 4,
+  },
+  mapLocationIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#2196F3",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  mapExpandButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  managePlacesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 10,
+  },
+  managePlacesText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });

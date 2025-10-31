@@ -1,39 +1,167 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
+  Share,
   StatusBar,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
-import { PrayerTimesRepository } from "../data/repository";
-import { UserSettings } from "../domain/entities";
 
-const METHODS: { id: number; name: string }[] = [
-  { id: 15, name: "Moonsighting Committee" },
-  { id: 2, name: "ISNA" },
-  { id: 3, name: "Muslim World League" },
-  { id: 13, name: "UOIF" },
-];
+type SettingItem = {
+  id: string;
+  title: string;
+  icon: string;
+  route?: string;
+  onPress?: () => void;
+};
 
 export default function SettingsScreen() {
-  const repo = useMemo(() => new PrayerTimesRepository(), []);
-  const [settings, setSettings] = useState<UserSettings>(repo.loadSettings());
   const cs = useColorScheme();
-  const text = { color: Colors[cs ?? "light"].text };
   const isDark = cs === "dark";
   const router = useRouter();
 
-  function update(partial: Partial<UserSettings>) {
-    const next = { ...settings, ...partial };
-    setSettings(next);
-    repo.saveSettings(next);
-  }
+  const handleRateApp = () => {
+    Alert.alert("Rate App", "Would you like to rate our app?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Rate Now",
+        onPress: () => {
+          // Open app store rating page
+          // This would be replaced with actual app store link
+          Alert.alert("Thank you!", "We appreciate your feedback!");
+        },
+      },
+    ]);
+  };
+
+  const handleShareApp = async () => {
+    try {
+      await Share.share({
+        message: "Check out this amazing prayer app!",
+      });
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
+  };
+
+  const generalSettings: SettingItem[] = [
+    {
+      id: "appearance",
+      title: "Appearance",
+      icon: "color-palette",
+      route: "/appearance-settings",
+    },
+    {
+      id: "notifications",
+      title: "Notifications",
+      icon: "notifications",
+      route: "/notifications",
+    },
+    {
+      id: "rain-alerts",
+      title: "Rain Alerts",
+      icon: "rainy",
+      route: "/rain-alert-settings",
+    },
+  ];
+
+  const appExperienceSettings: SettingItem[] = [
+    {
+      id: "prayer-settings",
+      title: "Prayer Settings",
+      icon: "moon",
+      route: "/prayer-settings",
+    },
+    {
+      id: "travel-settings",
+      title: "Travel Settings",
+      icon: "car",
+      route: "/travel-settings",
+    },
+    {
+      id: "permissions",
+      title: "Permissions",
+      icon: "key",
+      onPress: () => {
+        Linking.openSettings();
+      },
+    },
+  ];
+
+  const supportSettings: SettingItem[] = [
+    {
+      id: "feedback",
+      title: "Send Feedback",
+      icon: "chatbox",
+      route: "/support",
+    },
+    {
+      id: "rate",
+      title: "Rate App",
+      icon: "star",
+      onPress: handleRateApp,
+    },
+    {
+      id: "share",
+      title: "Share App",
+      icon: "share-social",
+      onPress: handleShareApp,
+    },
+    {
+      id: "privacy",
+      title: "Privacy Policy",
+      icon: "shield-checkmark",
+      route: "/privacy-settings",
+    },
+    {
+      id: "terms",
+      title: "Terms of Service",
+      icon: "document-text",
+      route: "/terms-of-service",
+    },
+  ];
+
+  const renderSettingItem = (item: SettingItem) => (
+    <Pressable
+      key={item.id}
+      onPress={() => {
+        if (item.route) {
+          router.push(item.route as any);
+        } else if (item.onPress) {
+          item.onPress();
+        }
+      }}
+      style={[
+        styles.settingItem,
+        { backgroundColor: Colors[cs ?? "light"].cardBackground },
+      ]}
+    >
+      <View style={styles.settingIconContainer}>
+        <Ionicons
+          name={item.icon as any}
+          size={24}
+          color={Colors[cs ?? "light"].text}
+        />
+      </View>
+      <Text
+        style={[styles.settingTitle, { color: Colors[cs ?? "light"].text }]}
+      >
+        {item.title}
+      </Text>
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color={Colors[cs ?? "light"].textSecondary}
+      />
+    </Pressable>
+  );
 
   return (
     <View
@@ -47,286 +175,57 @@ export default function SettingsScreen() {
         backgroundColor="transparent"
         translucent
       />
+
       {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: Colors[cs ?? "light"].headerBackground },
-        ]}
-      >
+      <View style={styles.header}>
         <Text
           style={[styles.headerTitle, { color: Colors[cs ?? "light"].text }]}
         >
-          Prayer Settings
+          Settings
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <Text style={text}>Calculation Method</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {METHODS.map((m) => (
-            <Choice
-              key={m.id}
-              label={m.name}
-              selected={settings.method === m.id}
-              onPress={() => update({ method: m.id })}
-            />
-          ))}
-        </View>
-
-        <Text style={[{ marginTop: 8 }, text]}>Asr School (Mithl)</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Choice
-            label="Mithl 1"
-            selected={settings.schoolPrimary === 0}
-            onPress={() => update({ schoolPrimary: 0 })}
-          />
-          <Choice
-            label="Mithl 2"
-            selected={settings.schoolPrimary === 1}
-            onPress={() => update({ schoolPrimary: 1 })}
-          />
-        </View>
-
-        <Text style={[{ marginTop: 8 }, text]}>High Latitude Adjustment</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Choice
-            label="Angle Based"
-            selected={settings.lam === 3}
-            onPress={() => update({ lam: 3 })}
-          />
-          <Choice
-            label="Middle of Night"
-            selected={settings.lam === 1}
-            onPress={() => update({ lam: 1 })}
-          />
-          <Choice
-            label="One Seventh"
-            selected={settings.lam === 2}
-            onPress={() => update({ lam: 2 })}
-          />
-        </View>
-
-        <Text style={[{ marginTop: 8 }, text]}>Show both Asr</Text>
-        <Switch
-          value={settings.showBothAsr}
-          onValueChange={(v) => update({ showBothAsr: v })}
-        />
-
-        <Text style={[{ marginTop: 8 }, text]}>Show Midnight</Text>
-        <Text style={[{ fontSize: 12, color: "#666", marginTop: 2 }]}>
-          Midpoint between Maghrib and Fajr
-        </Text>
-        <Switch
-          value={settings.showMidnight ?? false}
-          onValueChange={(v) => update({ showMidnight: v })}
-        />
-
-        <Text style={[{ marginTop: 8 }, text]}>Show Last Third of Night</Text>
-        <Text style={[{ fontSize: 12, color: "#666", marginTop: 2 }]}>
-          Best time for Tahajjud prayer
-        </Text>
-        <Switch
-          value={settings.showLastThird ?? false}
-          onValueChange={(v) => update({ showLastThird: v })}
-        />
-
-        <Text style={[{ marginTop: 8 }, text]}>Tune (minutes)</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <TuneChoice
-            label="Fajr -1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, fajr: settings.tune.fajr - 1 },
-              })
-            }
-          />
-          <TuneChoice
-            label="Fajr +1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, fajr: settings.tune.fajr + 1 },
-              })
-            }
-          />
-          <TuneChoice
-            label="Dhuhr -1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, dhuhr: settings.tune.dhuhr - 1 },
-              })
-            }
-          />
-          <TuneChoice
-            label="Dhuhr +1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, dhuhr: settings.tune.dhuhr + 1 },
-              })
-            }
-          />
-          <TuneChoice
-            label="Asr -1"
-            onPress={() =>
-              update({ tune: { ...settings.tune, asr: settings.tune.asr - 1 } })
-            }
-          />
-          <TuneChoice
-            label="Asr +1"
-            onPress={() =>
-              update({ tune: { ...settings.tune, asr: settings.tune.asr + 1 } })
-            }
-          />
-          <TuneChoice
-            label="Maghrib -1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, maghrib: settings.tune.maghrib - 1 },
-              })
-            }
-          />
-          <TuneChoice
-            label="Maghrib +1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, maghrib: settings.tune.maghrib + 1 },
-              })
-            }
-          />
-          <TuneChoice
-            label="Isha -1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, isha: settings.tune.isha - 1 },
-              })
-            }
-          />
-          <TuneChoice
-            label="Isha +1"
-            onPress={() =>
-              update({
-                tune: { ...settings.tune, isha: settings.tune.isha + 1 },
-              })
-            }
-          />
-        </View>
-
-        {/* Rain Alerts Section */}
-        <View
-          style={{
-            marginTop: 24,
-            paddingTop: 16,
-            borderTopWidth: 1,
-            borderTopColor: Colors[cs ?? "light"].text + "20",
-          }}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* General Section */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: isDark ? Colors[cs ?? "light"].textSecondary : "#8E8E93" },
+          ]}
         >
-          <Text
-            style={[
-              { fontSize: 18, fontWeight: "600", marginBottom: 12 },
-              text,
-            ]}
-          >
-            Rain Alerts
-          </Text>
-          <Pressable
-            onPress={() => router.push("/rain-alert-settings")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              backgroundColor: Colors[cs ?? "light"].text + "08",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: Colors[cs ?? "light"].text + "20",
-            }}
-          >
-            <Text style={{ fontSize: 24, marginRight: 12 }}>🌧️</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>
-                Rain Alerts
-              </Text>
-              <Text
-                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}
-              >
-                Get notified when rain starts with dua reminders
-              </Text>
-            </View>
-            <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
-          </Pressable>
+          General
+        </Text>
+        <View style={styles.section}>
+          {generalSettings.map(renderSettingItem)}
         </View>
 
-        {/* Support & Feedback Section */}
-        <View
-          style={{
-            marginTop: 24,
-            paddingTop: 16,
-            borderTopWidth: 1,
-            borderTopColor: Colors[cs ?? "light"].text + "20",
-          }}
+        {/* App Experience Section */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: isDark ? Colors[cs ?? "light"].textSecondary : "#8E8E93" },
+          ]}
         >
-          <Text
-            style={[
-              { fontSize: 18, fontWeight: "600", marginBottom: 12 },
-              text,
-            ]}
-          >
-            Support
-          </Text>
-          <Pressable
-            onPress={() => router.push("/support")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              backgroundColor: Colors[cs ?? "light"].text + "08",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: Colors[cs ?? "light"].text + "20",
-              marginBottom: 8,
-            }}
-          >
-            <Text style={{ fontSize: 24, marginRight: 12 }}>💬</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>
-                Send Feedback
-              </Text>
-              <Text
-                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}
-              >
-                Share your thoughts and help us improve
-              </Text>
-            </View>
-            <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
-          </Pressable>
+          App Experience
+        </Text>
+        <View style={styles.section}>
+          {appExperienceSettings.map(renderSettingItem)}
+        </View>
 
-          <Pressable
-            onPress={() => router.push("/view-feedback")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              backgroundColor: Colors[cs ?? "light"].text + "08",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: Colors[cs ?? "light"].text + "20",
-            }}
-          >
-            <Text style={{ fontSize: 24, marginRight: 12 }}>📋</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[{ fontSize: 16, fontWeight: "500" }, text]}>
-                View Feedback
-              </Text>
-              <Text
-                style={[{ fontSize: 13, opacity: 0.7, marginTop: 2 }, text]}
-              >
-                Review all submitted feedback (Dev only)
-              </Text>
-            </View>
-            <Text style={[{ fontSize: 18, opacity: 0.5 }, text]}>›</Text>
-          </Pressable>
+        {/* Support & Info Section */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: isDark ? Colors[cs ?? "light"].textSecondary : "#8E8E93" },
+          ]}
+        >
+          Support & Info
+        </Text>
+        <View style={styles.section}>
+          {supportSettings.map(renderSettingItem)}
         </View>
       </ScrollView>
     </View>
@@ -338,10 +237,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 20,
   },
@@ -349,53 +245,41 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
   },
+  scrollContent: {
+    paddingTop: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 24,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  section: {
+    gap: 0,
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 2,
+  },
+  settingIconContainer: {
+    width: 32,
+    height: 32,
+    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  settingTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: "400",
+  },
 });
-
-function Choice({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: selected ? "#0A84FF" : "#CCC",
-        backgroundColor: selected ? "#0A84FF22" : "transparent",
-      }}
-    >
-      <Text style={{ color: selected ? "#0A84FF" : "#666" }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function TuneChoice({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#CCC",
-      }}
-    >
-      <Text style={{ color: "#666" }}>{label}</Text>
-    </Pressable>
-  );
-}

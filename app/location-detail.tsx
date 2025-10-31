@@ -9,12 +9,10 @@ import { AdhkarItem } from "@/types/adhkar";
 import { LocationCategory, SavedLocation } from "@/types/location";
 import { getLocationById, saveLocation } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
-import Slider from "@react-native-community/slider";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,33 +20,27 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, {
-  Circle,
-  MapPressEvent,
-  Marker,
-  PROVIDER_GOOGLE,
-} from "react-native-maps";
+import { MapPressEvent } from "react-native-maps";
 
 const categoryOptions: {
   value: LocationCategory;
   label: string;
   icon: string;
+  color: string;
 }[] = [
-  { value: "mosque", label: "Mosque", icon: "moon" },
-  { value: "home", label: "Home", icon: "home" },
-  { value: "work", label: "Work", icon: "briefcase" },
-  { value: "market", label: "Market", icon: "cart" },
-  { value: "travel", label: "Travel", icon: "car" },
-  { value: "other", label: "Other", icon: "location" },
+  { value: "home", label: "Home", icon: "home", color: "#2196F3" },
+  { value: "mosque", label: "Mosque", icon: "moon", color: "#4CAF50" },
+  { value: "work", label: "Work", icon: "briefcase", color: "#A0522D" },
+  { value: "other", label: "Other", icon: "location", color: "#9C27B0" },
 ];
 
 const categoryColors: Record<LocationCategory, string> = {
   mosque: "#4CAF50",
   home: "#2196F3",
-  work: "#FF9800",
+  work: "#A0522D",
   market: "#9C27B0",
   travel: "#00BCD4",
-  other: "#757575",
+  other: "#9C27B0",
 };
 
 export default function LocationDetailScreen() {
@@ -175,14 +167,17 @@ export default function LocationDetailScreen() {
 
       // Save location to database
       await saveLocation(location);
-      
+
       // Try to restart geofencing (may fail without background permission)
       try {
         await restartGeofencing();
       } catch (geofenceError: any) {
         console.warn("Geofencing not available:", geofenceError.message);
         // Show info but don't block the save
-        if (geofenceError.message?.includes("background") || geofenceError.message?.includes("authorized")) {
+        if (
+          geofenceError.message?.includes("background") ||
+          geofenceError.message?.includes("authorized")
+        ) {
           Alert.alert(
             "Location Saved",
             `Location saved successfully!\n\nNote: Background location monitoring requires a development build. Geofencing won't work in Expo Go.\n\nBuild with: eas build --profile development --platform android`,
@@ -215,331 +210,137 @@ export default function LocationDetailScreen() {
         ]}
       >
         {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-        <Text
-          style={[
-            styles.headerTitle,
-            { color: Colors[colorScheme ?? "light"].text },
-          ]}
-        >
-          {mode === "add" ? "Add Location" : "Edit Location"}
-        </Text>
-        <TouchableOpacity onPress={handleSave} disabled={isLoading}>
-          <Text
-            style={[
-              styles.saveButton,
-              { color: Colors[colorScheme ?? "light"].tint },
-            ]}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
           >
-            {isLoading ? "Saving..." : "Save"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {/* Name Input */}
-        <View style={styles.section}>
+            <Ionicons
+              name="arrow-back"
+              size={28}
+              color={Colors[colorScheme ?? "light"].text}
+            />
+          </TouchableOpacity>
           <Text
             style={[
-              styles.sectionTitle,
+              styles.headerTitle,
               { color: Colors[colorScheme ?? "light"].text },
             ]}
           >
-            Location Name
+            Add a new place
           </Text>
-          <TextInput
+        </View>
+
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+        >
+          {/* Search Maps Input */}
+          <View
             style={[
-              styles.input,
+              styles.searchBar,
               {
                 backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
-                color: Colors[colorScheme ?? "light"].text,
               },
             ]}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Central Mosque"
-            placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
-          />
-        </View>
-
-        {/* Category Selection */}
-        <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
           >
-            Category
-          </Text>
-          <View style={styles.categoryGrid}>
-            {categoryOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.categoryOption,
-                  {
-                    backgroundColor:
-                      category === option.value
-                        ? categoryColors[option.value]
-                        : Colors[colorScheme ?? "light"].cardBackground,
-                  },
-                ]}
-                onPress={() => setCategory(option.value)}
-              >
-                <Ionicons
-                  name={option.icon as any}
-                  size={24}
-                  color={
-                    category === option.value
-                      ? "white"
-                      : Colors[colorScheme ?? "light"].text
-                  }
-                />
-                <Text
+            <Ionicons
+              name="search"
+              size={20}
+              color={Colors[colorScheme ?? "light"].textSecondary}
+            />
+            <TextInput
+              style={[
+                styles.searchInput,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+              placeholder="Search Maps"
+              placeholderTextColor={
+                Colors[colorScheme ?? "light"].textSecondary
+              }
+            />
+          </View>
+
+          {/* Locate on Map Button */}
+          <TouchableOpacity
+            style={[
+              styles.locateButton,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
+            ]}
+            onPress={async () => {
+              const location = await getCurrentLocation();
+              if (location) {
+                setLatitude(location.coords.latitude);
+                setLongitude(location.coords.longitude);
+              }
+            }}
+          >
+            <Ionicons name="location" size={24} color="#007AFF" />
+            <Text
+              style={[
+                styles.locateButtonText,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Locate on map
+            </Text>
+          </TouchableOpacity>
+
+          {/* Categories Section */}
+          <View style={[styles.section, styles.categoriesSection]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Categories
+            </Text>
+            <View style={styles.categoryGrid}>
+              {categoryOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
                   style={[
-                    styles.categoryLabel,
+                    styles.categoryOption,
                     {
-                      color:
+                      backgroundColor:
+                        Colors[colorScheme ?? "light"].cardBackground,
+                      borderColor:
                         category === option.value
-                          ? "white"
-                          : Colors[colorScheme ?? "light"].text,
+                          ? option.color
+                          : "transparent",
                     },
                   ]}
+                  onPress={() => setCategory(option.value)}
                 >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <View
+                    style={[
+                      styles.categoryIconContainer,
+                      { backgroundColor: option.color },
+                    ]}
+                  >
+                    <Ionicons
+                      name={option.icon as any}
+                      size={24}
+                      color="white"
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.categoryLabel,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
-
-        {/* Map */}
-        <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            Location on Map
-          </Text>
-          <Text
-            style={[
-              styles.sectionSubtitle,
-              { color: Colors[colorScheme ?? "light"].textSecondary },
-            ]}
-          >
-            Tap on the map to set location
-          </Text>
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-              region={{
-                latitude,
-                longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-              onPress={handleMapPress}
-            >
-              <Marker coordinate={{ latitude, longitude }} />
-              <Circle
-                center={{ latitude, longitude }}
-                radius={radius}
-                strokeColor={categoryColors[category]}
-                fillColor={`${categoryColors[category]}30`}
-                strokeWidth={2}
-              />
-            </MapView>
-          </View>
-        </View>
-
-        {/* Radius Slider */}
-        <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            Radius: {radius}m
-          </Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={50}
-            maximumValue={500}
-            step={10}
-            value={radius}
-            onValueChange={setRadius}
-            minimumTrackTintColor={categoryColors[category]}
-            maximumTrackTintColor={Colors[colorScheme ?? "light"].textSecondary}
-          />
-        </View>
-
-        {/* Entry Adhkar */}
-        <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            Adhkar When Entering
-          </Text>
-          {entryAdhkarOptions.length === 0 ? (
-            <Text
-              style={[
-                styles.noAdhkarText,
-                { color: Colors[colorScheme ?? "light"].textSecondary },
-              ]}
-            >
-              No adhkar available for this category
-            </Text>
-          ) : (
-            entryAdhkarOptions.map(({ index, adhkar }) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.adhkarOption,
-                  {
-                    backgroundColor: entryAdhkarIds.includes(index.toString())
-                      ? `${categoryColors[category]}20`
-                      : Colors[colorScheme ?? "light"].cardBackground,
-                    borderColor: entryAdhkarIds.includes(index.toString())
-                      ? categoryColors[category]
-                      : "transparent",
-                  },
-                ]}
-                onPress={() => handleToggleAdhkar(index.toString(), "entry")}
-              >
-                <View style={styles.adhkarContent}>
-                  <Text
-                    style={[
-                      styles.adhkarTitle,
-                      { color: Colors[colorScheme ?? "light"].text },
-                    ]}
-                  >
-                    {adhkar.Adhkar}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.adhkarArabic,
-                      { color: Colors[colorScheme ?? "light"].text },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {adhkar.Arabic}
-                  </Text>
-                </View>
-                <Ionicons
-                  name={
-                    entryAdhkarIds.includes(index.toString())
-                      ? "checkmark-circle"
-                      : "ellipse-outline"
-                  }
-                  size={24}
-                  color={
-                    entryAdhkarIds.includes(index.toString())
-                      ? categoryColors[category]
-                      : Colors[colorScheme ?? "light"].textSecondary
-                  }
-                />
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-
-        {/* Exit Adhkar */}
-        <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            Adhkar When Leaving
-          </Text>
-          {exitAdhkarOptions.length === 0 ? (
-            <Text
-              style={[
-                styles.noAdhkarText,
-                { color: Colors[colorScheme ?? "light"].textSecondary },
-              ]}
-            >
-              No adhkar available for this category
-            </Text>
-          ) : (
-            exitAdhkarOptions.map(({ index, adhkar }) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.adhkarOption,
-                  {
-                    backgroundColor: exitAdhkarIds.includes(index.toString())
-                      ? `${categoryColors[category]}20`
-                      : Colors[colorScheme ?? "light"].cardBackground,
-                    borderColor: exitAdhkarIds.includes(index.toString())
-                      ? categoryColors[category]
-                      : "transparent",
-                  },
-                ]}
-                onPress={() => handleToggleAdhkar(index.toString(), "exit")}
-              >
-                <View style={styles.adhkarContent}>
-                  <Text
-                    style={[
-                      styles.adhkarTitle,
-                      { color: Colors[colorScheme ?? "light"].text },
-                    ]}
-                  >
-                    {adhkar.Adhkar}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.adhkarArabic,
-                      { color: Colors[colorScheme ?? "light"].text },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {adhkar.Arabic}
-                  </Text>
-                </View>
-                <Ionicons
-                  name={
-                    exitAdhkarIds.includes(index.toString())
-                      ? "checkmark-circle"
-                      : "ellipse-outline"
-                  }
-                  size={24}
-                  color={
-                    exitAdhkarIds.includes(index.toString())
-                      ? categoryColors[category]
-                      : Colors[colorScheme ?? "light"].textSecondary
-                  }
-                />
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
     </>
   );
 }
@@ -550,18 +351,19 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 16,
+    gap: 12,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: "bold",
+    flex: 1,
   },
   saveButton: {
     fontSize: 16,
@@ -570,13 +372,20 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  section: {
+  contentContainer: {
     padding: 16,
+  },
+  section: {
+    marginBottom: 0,
+  },
+  categoriesSection: {
+    marginTop: 16,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionSubtitle: {
     fontSize: 14,
@@ -587,24 +396,57 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     fontSize: 16,
   },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+  },
+  locateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 12,
+  },
+  locateButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 16,
+    paddingBottom: 0,
   },
   categoryOption: {
-    width: "30%",
-    aspectRatio: 1,
-    borderRadius: 12,
+    width: "47%",
+    aspectRatio: 1.1,
+    borderRadius: 16,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    padding: 16,
+    borderWidth: 3,
+    borderColor: "transparent",
+  },
+  categoryIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    padding: 8,
+    marginBottom: 6,
   },
   categoryLabel: {
-    marginTop: 8,
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: "600",
-    textAlign: "center",
   },
   mapContainer: {
     height: 200,

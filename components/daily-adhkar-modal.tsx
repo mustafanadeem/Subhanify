@@ -2,13 +2,7 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { DailyAdhkarCompletion } from "@/services/adhkar-completion-service";
 import { Ionicons } from "@expo/vector-icons";
-import {
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface DailyAdhkarModalProps {
   visible: boolean;
@@ -29,7 +23,7 @@ export function DailyAdhkarModal({
   if (!date) return null;
 
   // Format the date nicely
-  const dateObj = new Date(date + 'T00:00:00');
+  const dateObj = new Date(date + "T00:00:00");
   const formattedDate = dateObj.toLocaleDateString(undefined, {
     weekday: "long",
     year: "numeric",
@@ -48,11 +42,14 @@ export function DailyAdhkarModal({
   };
 
   // Check completion status
-  const isMorningCompleted = completion?.completedCategories.includes("morning") ?? false;
-  const isEveningCompleted = completion?.completedCategories.includes("evening") ?? false;
-  const isNightCompleted = completion?.completedCategories.includes("night") ?? false;
+  const isMorningCompleted =
+    completion?.completedCategories.includes("morning") ?? false;
+  const isEveningCompleted =
+    completion?.completedCategories.includes("evening") ?? false;
+  const isNightCompleted =
+    completion?.completedCategories.includes("night") ?? false;
 
-  const completedCount = (completion?.completedCategories.length ?? 0);
+  const completedCount = completion?.completedCategories.length ?? 0;
   const isPerfectDay = completedCount === 3;
 
   return (
@@ -142,7 +139,7 @@ export function DailyAdhkarModal({
                       ? "#2C2C2E"
                       : "#F5F5F5",
                     borderColor: isMorningCompleted
-                      ? "#4CAF50"
+                      ? "#2BD157"
                       : isDark
                       ? "#3C3C3E"
                       : "#E5E5EA",
@@ -183,7 +180,11 @@ export function DailyAdhkarModal({
                 </View>
                 <View style={styles.statusIcon}>
                   {isMorningCompleted ? (
-                    <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color="#2BD157"
+                    />
                   ) : (
                     <Ionicons
                       name="close-circle"
@@ -207,7 +208,7 @@ export function DailyAdhkarModal({
                       ? "#2C2C2E"
                       : "#F5F5F5",
                     borderColor: isEveningCompleted
-                      ? "#4CAF50"
+                      ? "#2BD157"
                       : isDark
                       ? "#3C3C3E"
                       : "#E5E5EA",
@@ -248,7 +249,11 @@ export function DailyAdhkarModal({
                 </View>
                 <View style={styles.statusIcon}>
                   {isEveningCompleted ? (
-                    <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color="#2BD157"
+                    />
                   ) : (
                     <Ionicons
                       name="close-circle"
@@ -272,7 +277,7 @@ export function DailyAdhkarModal({
                       ? "#2C2C2E"
                       : "#F5F5F5",
                     borderColor: isNightCompleted
-                      ? "#4CAF50"
+                      ? "#2BD157"
                       : isDark
                       ? "#3C3C3E"
                       : "#E5E5EA",
@@ -313,7 +318,11 @@ export function DailyAdhkarModal({
                 </View>
                 <View style={styles.statusIcon}>
                   {isNightCompleted ? (
-                    <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color="#2BD157"
+                    />
                   ) : (
                     <Ionicons
                       name="close-circle"
@@ -463,4 +472,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

@@ -15,22 +15,22 @@ import { Platform } from 'react-native';
 // ========================================
 // 🎨 LIGHT MODE PALETTE - EDIT THESE 5 COLORS
 // ========================================
-const LIGHT_MAIN = '#002685';        // Deep Royal Blue
-const LIGHT_ACCENT = '#A6B1E1';      // Lavender Blue
+const LIGHT_MAIN = '#007AFF';        // iOS Blue
+const LIGHT_ACCENT = '#007AFF';      // iOS Blue
 const LIGHT_BACKGROUND = '#F5F6FA';  // Pale Mist
 const LIGHT_TEXT = '#101820';        // Dark Charcoal
 const LIGHT_SECONDARY = '#DADCE0';   // Soft Gray
-const LIGHT_HIGHLIGHT = '#FFC6C6';   // Soft Rose
+const LIGHT_HIGHLIGHT = '#007AFF';   // iOS Blue
 
 // ========================================
 // 🌙 DARK MODE PALETTE - EDIT THESE 5 COLORS
 // ========================================
-const DARK_MAIN = '#C44D00';         // Dark Orange
-const DARK_ACCENT = '#FFD166';       // Warm Gold
-const DARK_BACKGROUND = '#151718';   // Almost Black
+const DARK_MAIN = '#0A84FF';         // iOS Blue (Dark)
+const DARK_ACCENT = '#0A84FF';       // iOS Blue (Dark)
+const DARK_BACKGROUND = '#000000';   // Pure Black
 const DARK_TEXT = '#ECEDEE';         // Off White
 const DARK_SECONDARY = '#9BA1A6';    // Gray
-const DARK_HIGHLIGHT = '#E1B12C';    // Golden Sand
+const DARK_HIGHLIGHT = '#0A84FF';    // iOS Blue (Dark)
 
 // ========================================
 // 📦 EXPORTED COLORS (Don't edit this section)

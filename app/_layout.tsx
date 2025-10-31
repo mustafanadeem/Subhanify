@@ -1,7 +1,7 @@
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider as NavigationThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -25,18 +25,16 @@ function RootNavigator() {
   const { colorScheme } = useTheme();
 
   return (
-    <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider
+      value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+    >
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="adhkar-detail" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="location-detail"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="prayer-settings"
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="dua-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="folder-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="location-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="prayer-settings" options={{ headerShown: false }} />
         <Stack.Screen
           name="calculation-method"
           options={{ headerShown: false }}

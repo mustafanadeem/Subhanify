@@ -15,9 +15,13 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
           borderTopColor: colorScheme === "dark" ? "#2C2C2E" : "#E5E5EA",
+          height: 84,
+          paddingTop: 10,
+          paddingBottom: 30,
         },
       }}
     >

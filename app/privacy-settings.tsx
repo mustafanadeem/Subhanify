@@ -1,6 +1,6 @@
 /**
  * Privacy & Permissions Settings Screen
- * 
+ *
  * Comprehensive settings for:
  * - Location permissions
  * - Motion & activity tracking
@@ -12,38 +12,38 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    addTravelStateListener,
-    getCurrentTravelState,
-    startMotionDetection,
-    stopMotionDetection,
-    type TravelState,
+  addTravelStateListener,
+  getCurrentTravelState,
+  startMotionDetection,
+  stopMotionDetection,
+  type TravelState,
 } from "@/services/motion-detection/motion-detection-service";
 import {
-    getAllPermissionsStatus,
-    requestMotionPermissionWithRationale,
-    showPermissionsDisclosure,
-    showTravelDetectionDisclosure
+  getAllPermissionsStatus,
+  requestMotionPermissionWithRationale,
+  showPermissionsDisclosure,
+  showTravelDetectionDisclosure,
 } from "@/services/motion-permissions-manager";
 import {
-    configureTravelNotifications,
-    isTravelNotificationsEnabled,
-    sendTestTravelNotification,
-    setTravelNotificationsEnabled,
+  configureTravelNotifications,
+  isTravelNotificationsEnabled,
+  sendTestTravelNotification,
+  setTravelNotificationsEnabled,
 } from "@/services/travel-notification-service";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    Alert,
-    Linking,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const TRAVEL_DETECTION_KEY = "@travel_detection_enabled";
@@ -59,7 +59,9 @@ export default function PrivacySettingsScreen() {
   const [travelDetection, setTravelDetection] = useState(false);
   const [motionNotifications, setMotionNotifications] = useState(true);
   const [travelNotifications, setTravelNotificationsState] = useState(true);
-  const [currentActivity, setCurrentActivity] = useState<TravelState | null>(null);
+  const [currentActivity, setCurrentActivity] = useState<TravelState | null>(
+    null
+  );
 
   useEffect(() => {
     loadSettings();
@@ -196,7 +198,10 @@ export default function PrivacySettingsScreen() {
           { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <Ionicons
             name="arrow-back"
             size={24}
@@ -204,7 +209,10 @@ export default function PrivacySettingsScreen() {
           />
         </TouchableOpacity>
         <Text
-          style={[styles.headerTitle, { color: Colors[colorScheme ?? "light"].text }]}
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
         >
           Privacy & Permissions
         </Text>
@@ -213,14 +221,25 @@ export default function PrivacySettingsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Permissions Status */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: isDark
+                  ? Colors[colorScheme ?? "light"].textSecondary
+                  : "#8E8E93",
+              },
+            ]}
+          >
             PERMISSIONS STATUS
           </Text>
 
           <View
             style={[
               styles.card,
-              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
             ]}
           >
             <PermissionRow
@@ -246,26 +265,43 @@ export default function PrivacySettingsScreen() {
             onPress={openSystemSettings}
           >
             <Ionicons name="settings-outline" size={20} color="white" />
-            <Text style={styles.settingsButtonText}>Manage in System Settings</Text>
+            <Text style={styles.settingsButtonText}>
+              Manage in System Settings
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Travel Detection */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: isDark
+                  ? Colors[colorScheme ?? "light"].textSecondary
+                  : "#8E8E93",
+              },
+            ]}
+          >
             TRAVEL FEATURES
           </Text>
 
           <View
             style={[
               styles.card,
-              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
             ]}
           >
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
                 <View style={styles.settingHeader}>
-                  <Ionicons name="car" size={24} color={Colors[colorScheme ?? "light"].tint} />
+                  <Ionicons
+                    name="car"
+                    size={24}
+                    color={Colors[colorScheme ?? "light"].tint}
+                  />
                   <Text
                     style={[
                       styles.settingTitle,
@@ -278,13 +314,19 @@ export default function PrivacySettingsScreen() {
                 <Text
                   style={[
                     styles.settingDescription,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
                   ]}
                 >
                   Detect when you're traveling and send travel-specific adhkar.
                   {currentActivity && travelDetection && (
                     <Text style={{ fontWeight: "600" }}>
-                      {"\n"}State: {currentActivity.tripState || 'unknown'} | Activity: {currentActivity.activityType} ({currentActivity.confidence})
+                      {"\n"}State: {currentActivity.tripState || "unknown"} |
+                      Activity: {currentActivity.activityType} (
+                      {currentActivity.confidence})
                     </Text>
                   )}
                 </Text>
@@ -300,7 +342,11 @@ export default function PrivacySettingsScreen() {
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
                 <View style={styles.settingHeader}>
-                  <Ionicons name="notifications" size={24} color={Colors[colorScheme ?? "light"].tint} />
+                  <Ionicons
+                    name="notifications"
+                    size={24}
+                    color={Colors[colorScheme ?? "light"].tint}
+                  />
                   <Text
                     style={[
                       styles.settingTitle,
@@ -313,10 +359,15 @@ export default function PrivacySettingsScreen() {
                 <Text
                   style={[
                     styles.settingDescription,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
                   ]}
                 >
-                  Receive travel duas when starting a journey. Respects Do Not Disturb settings.
+                  Receive travel duas when starting a journey. Respects Do Not
+                  Disturb settings.
                 </Text>
               </View>
               <Switch
@@ -331,7 +382,11 @@ export default function PrivacySettingsScreen() {
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
                 <View style={styles.settingHeader}>
-                  <Ionicons name="pulse" size={24} color={Colors[colorScheme ?? "light"].tint} />
+                  <Ionicons
+                    name="pulse"
+                    size={24}
+                    color={Colors[colorScheme ?? "light"].tint}
+                  />
                   <Text
                     style={[
                       styles.settingTitle,
@@ -344,11 +399,15 @@ export default function PrivacySettingsScreen() {
                 <Text
                   style={[
                     styles.settingDescription,
-                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                    {
+                      color: isDark
+                        ? Colors[colorScheme ?? "light"].textSecondary
+                        : "#8E8E93",
+                    },
                   ]}
                 >
-                  Smart notifications based on your activity (e.g., pause while driving for safety).
-                  Coming soon!
+                  Smart notifications based on your activity (e.g., pause while
+                  driving for safety). Coming soon!
                 </Text>
               </View>
               <Switch
@@ -362,14 +421,25 @@ export default function PrivacySettingsScreen() {
 
         {/* Privacy Information */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors[colorScheme ?? "light"].textSecondary }]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: isDark
+                  ? Colors[colorScheme ?? "light"].textSecondary
+                  : "#8E8E93",
+              },
+            ]}
+          >
             YOUR PRIVACY
           </Text>
 
           <View
             style={[
               styles.card,
-              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
             ]}
           >
             <InfoRow
@@ -451,8 +521,14 @@ function PermissionRow({
   return (
     <View style={styles.permissionRow}>
       <View style={styles.permissionInfo}>
-        <Ionicons name={icon as any} size={20} color={Colors[colorScheme].text} />
-        <Text style={[styles.permissionTitle, { color: Colors[colorScheme].text }]}>
+        <Ionicons
+          name={icon as any}
+          size={20}
+          color={Colors[colorScheme].text}
+        />
+        <Text
+          style={[styles.permissionTitle, { color: Colors[colorScheme].text }]}
+        >
           {title}
         </Text>
         {critical && (
@@ -461,7 +537,12 @@ function PermissionRow({
           </View>
         )}
       </View>
-      <View style={[styles.statusBadge, { backgroundColor: granted ? "#4CAF50" : "#FF9800" }]}>
+      <View
+        style={[
+          styles.statusBadge,
+          { backgroundColor: granted ? "#4CAF50" : "#FF9800" },
+        ]}
+      >
         <Text style={styles.statusText}>{granted ? "Granted" : "Not Set"}</Text>
       </View>
     </View>
@@ -479,6 +560,8 @@ function InfoRow({
   description: string;
   colorScheme: "light" | "dark";
 }) {
+  const isDark = colorScheme === "dark";
+
   return (
     <View style={styles.infoRow}>
       <Ionicons name={icon as any} size={24} color={Colors[colorScheme].tint} />
@@ -486,7 +569,12 @@ function InfoRow({
         <Text style={[styles.infoTitle, { color: Colors[colorScheme].text }]}>
           {title}
         </Text>
-        <Text style={[styles.infoDescription, { color: Colors[colorScheme].textSecondary }]}>
+        <Text
+          style={[
+            styles.infoDescription,
+            { color: isDark ? Colors[colorScheme].textSecondary : "#8E8E93" },
+          ]}
+        >
           {description}
         </Text>
       </View>
@@ -657,4 +745,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

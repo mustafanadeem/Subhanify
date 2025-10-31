@@ -1,114 +1,75 @@
-import { DuaCard } from "@/components/dua-card";
 import { ThemedText } from "@/components/themed-text";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { FavoriteAdhkar, getFavoritesByCategory } from "@/services/favorites-service";
+import {
+  FavoriteAdhkar,
+  FavoriteFolder,
+  deleteFolder,
+  loadFavorites,
+  loadFolders,
+} from "@/services/favorites-service";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View
+  Alert,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export default function FavoritesScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
 
-  const [favorites, setFavorites] = useState<{
-    morning: FavoriteAdhkar[];
-    evening: FavoriteAdhkar[];
-    night: FavoriteAdhkar[];
-  }>({
-    morning: [],
-    evening: [],
-    night: [],
-  });
+  const [allFavorites, setAllFavorites] = useState<FavoriteAdhkar[]>([]);
+  const [folders, setFolders] = useState<FavoriteFolder[]>([]);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
-  const loadFavorites = async () => {
-    const favs = await getFavoritesByCategory();
-    setFavorites(favs);
+  const loadData = async () => {
+    const [favs, fldrs] = await Promise.all([loadFavorites(), loadFolders()]);
+    setAllFavorites(favs);
+    setFolders(fldrs);
   };
 
   useFocusEffect(
     useCallback(() => {
-      loadFavorites();
+      loadData();
     }, [])
   );
 
-  const totalFavorites =
-    favorites.morning.length + favorites.evening.length + favorites.night.length;
-
-  const renderCategory = (
-    title: string,
-    subtitle: string,
-    icon: string,
-    items: FavoriteAdhkar[],
-    categoryKey: string
-  ) => {
-    if (items.length === 0) return null;
-
-    return (
-      <View style={styles.section}>
-        <View style={styles.categoryHeader}>
-          <View style={styles.categoryTitleRow}>
-            <IconSymbol
-              name={icon as any}
-              size={24}
-              color={Colors[colorScheme ?? "light"].tint}
-            />
-            <View style={styles.categoryTextContainer}>
-              <ThemedText style={styles.categoryTitle}>{title}</ThemedText>
-              <ThemedText style={styles.categorySubtitle}>{subtitle}</ThemedText>
-            </View>
-          </View>
-          <View
-            style={[
-              styles.countBadge,
-              {
-                backgroundColor: isDark
-                  ? "rgba(10, 132, 255, 0.2)"
-                  : "rgba(0, 122, 255, 0.15)",
-              },
-            ]}
-          >
-            <ThemedText
-              style={[
-                styles.countText,
-                { color: isDark ? "#0A84FF" : "#007AFF" },
-              ]}
-            >
-              {items.length}
-            </ThemedText>
-          </View>
-        </View>
-
-        {items.map((fav, index) => (
-          <DuaCard
-            key={fav.id}
-            title={fav.adhkar.Adhkar}
-            arabic={fav.adhkar.Arabic}
-            transliteration={fav.adhkar.transliteration}
-            translation={
-              typeof fav.adhkar.translation === "string"
-                ? fav.adhkar.translation
-                : ""
-            }
-            onPress={() => {
-              router.push({
-                pathname: "/favorite-detail",
-                params: { adhkar: JSON.stringify(fav.adhkar) },
-              });
-            }}
-          />
-        ))}
-      </View>
+  const handleDeleteFolder = (folderId: string, folderName: string) => {
+    Alert.alert(
+      "Delete Folder",
+      `Are you sure you want to delete "${folderName}"? Favorites inside will be moved to "All".`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteFolder(folderId, false);
+            loadData();
+          },
+        },
+      ]
     );
   };
+
+  const getFolderCount = (folderId: string | null) => {
+    return allFavorites.filter((fav) => fav.folderId === folderId).length;
+  };
+
+  const totalFavorites = allFavorites.length;
 
   return (
     <View
@@ -123,6 +84,7 @@ export default function FavoritesScreen() {
         translucent
       />
 
+      {/* Header */}
       <View
         style={[
           styles.header,
@@ -137,18 +99,42 @@ export default function FavoritesScreen() {
         >
           Favorites
         </Text>
-        {totalFavorites > 0 && (
-          <View
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => setShowOptionsMenu(true)}
+        >
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={24}
+            color={Colors[colorScheme ?? "light"].text}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
+            },
+          ]}
+        >
+          <Ionicons
+            name="search"
+            size={20}
+            color={isDark ? "#8E8E93" : "#999999"}
+          />
+          <Text
             style={[
-              styles.headerBadge,
-              {
-                backgroundColor: isDark ? "#0A84FF" : "#007AFF",
-              },
+              styles.searchPlaceholder,
+              { color: isDark ? "#8E8E93" : "#999999" },
             ]}
           >
-            <Text style={styles.headerBadgeText}>{totalFavorites}</Text>
-          </View>
-        )}
+            Search
+          </Text>
+        </View>
       </View>
 
       {totalFavorites === 0 ? (
@@ -163,46 +149,171 @@ export default function FavoritesScreen() {
               },
             ]}
           >
-            <IconSymbol
-              name="heart.fill"
+            <Ionicons
+              name="heart"
               size={60}
               color={Colors[colorScheme ?? "light"].textSecondary}
             />
           </View>
           <ThemedText style={styles.emptyTitle}>No Favorites Yet</ThemedText>
           <ThemedText style={styles.emptyMessage}>
-            Tap the heart icon while reading adhkar to add them to your favorites
+            Tap the heart icon while reading adhkar to add them to your
+            favorites
           </ThemedText>
         </View>
       ) : (
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {renderCategory(
-            "Morning",
-            "Adhkar Al-Sabah",
-            "sunrise.fill",
-            favorites.morning,
-            "morning"
-          )}
-          {renderCategory(
-            "Evening",
-            "Adhkar Al-Masaa",
-            "sunset.fill",
-            favorites.evening,
-            "evening"
-          )}
-          {renderCategory(
-            "Night",
-            "Before Sleep",
-            "moon.stars.fill",
-            favorites.night,
-            "night"
-          )}
+          <View style={styles.foldersGrid}>
+            {/* Custom Folders */}
+            {folders.map((folder) => (
+              <View
+                key={folder.id}
+                style={[
+                  styles.folderCard,
+                  {
+                    backgroundColor: isDark ? "#00284E" : "#E5F3FF",
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={styles.folderTouchable}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/folder-detail" as any,
+                      params: {
+                        folderId: folder.id,
+                        folderName: folder.name,
+                      },
+                    });
+                  }}
+                >
+                  <View style={styles.folderIconContainer}>
+                    <Image
+                      source={require("@/assets/images/folder.svg")}
+                      style={styles.folderIcon}
+                      contentFit="contain"
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.folderName,
+                      { color: isDark ? "#FFFFFF" : "#00284E" },
+                    ]}
+                  >
+                    {folder.name}
+                  </Text>
+                </TouchableOpacity>
+                <View style={styles.folderCount}>
+                  <Text
+                    style={[
+                      styles.folderCountText,
+                      { color: isDark ? "#FFFFFF" : "#00284E" },
+                    ]}
+                  >
+                    {getFolderCount(folder.id)}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </ScrollView>
       )}
+
+      {/* Options Menu Modal */}
+      <Modal
+        visible={showOptionsMenu}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowOptionsMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowOptionsMenu(false)}
+        >
+          <View
+            style={[
+              styles.optionsMenu,
+              {
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.optionsTitle,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Manage Folders
+            </Text>
+
+            {folders.length === 0 ? (
+              <Text
+                style={[
+                  styles.noFoldersText,
+                  { color: Colors[colorScheme ?? "light"].textSecondary },
+                ]}
+              >
+                No folders yet. Create folders when adding favorites!
+              </Text>
+            ) : (
+              folders.map((folder) => (
+                <View key={folder.id} style={styles.folderOption}>
+                  <View style={styles.folderOptionInfo}>
+                    <Ionicons
+                      name="folder"
+                      size={24}
+                      color={Colors[colorScheme ?? "light"].text}
+                    />
+                    <Text
+                      style={[
+                        styles.folderOptionName,
+                        { color: Colors[colorScheme ?? "light"].text },
+                      ]}
+                    >
+                      {folder.name}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => {
+                      setShowOptionsMenu(false);
+                      setTimeout(() => {
+                        handleDeleteFolder(folder.id, folder.name);
+                      }, 300);
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+
+            <TouchableOpacity
+              style={[
+                styles.closeButton,
+                {
+                  backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                },
+              ]}
+              onPress={() => setShowOptionsMenu(false)}
+            >
+              <Text
+                style={[
+                  styles.closeButtonText,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -213,21 +324,17 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 20,
-    position: "relative",
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
   },
   headerBadge: {
-    position: "absolute",
-    right: 20,
-    top: 60,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -243,6 +350,12 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingBottom: 20,
+  },
+  foldersGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   section: {
     marginBottom: 32,
@@ -306,5 +419,120 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
   },
+  moreButton: {
+    padding: 4,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 10,
+  },
+  searchPlaceholder: {
+    fontSize: 16,
+  },
+  folderCard: {
+    width: (SCREEN_WIDTH - 48) / 2,
+    height: 150,
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: "hidden",
+    position: "relative",
+  },
+  folderTouchable: {
+    flex: 1,
+    padding: 24,
+    justifyContent: "space-between",
+  },
+  folderIconContainer: {
+    width: 75,
+    height: 68,
+    alignSelf: "flex-start",
+  },
+  folderIcon: {
+    width: "100%",
+    height: "100%",
+  },
+  folderName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "left",
+    alignSelf: "flex-start",
+  },
+  folderCount: {
+    position: "absolute",
+    top: 24,
+    right: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  folderCountText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  optionsMenu: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  optionsTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 20,
+  },
+  noFoldersText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 20,
+  },
+  folderOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(142, 142, 147, 0.2)",
+  },
+  folderOptionInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  folderOptionName: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  closeButton: {
+    marginTop: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
 });
-

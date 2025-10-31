@@ -1,8 +1,10 @@
 import adhkarData from "@/data/adkar_dua.json";
+import duasData from "@/data/duas.json";
 import { AdhkarLevel, getLevelSettings } from "@/services/level-settings-service";
-import { AdhkarData, AdhkarItem, CategorySummary } from "@/types/adhkar";
+import { AdhkarData, AdhkarItem, CategorySummary, DuaItem } from "@/types/adhkar";
 
 const data: AdhkarData = adhkarData as AdhkarData;
+const duas: DuaItem[] = duasData as DuaItem[];
 
 export const getAdhkarByCategory = async (category: string): Promise<AdhkarItem[]> => {
   const levelSettings = await getLevelSettings();
@@ -92,48 +94,61 @@ export const getAdhkarCategories = async (): Promise<CategorySummary[]> => {
   });
 };
 
-// For duas, you can add separate logic when you have duas data
-export const duasCategories: CategorySummary[] = [
-  {
-    id: "1",
-    title: "Daily Duas",
-    subtitle: "Everyday supplications",
-    icon: "sun.max.fill",
-    count: 5,
-    category: "daily",
+// Duas utilities
+export const getAllDuas = (): DuaItem[] => {
+  return duas;
+};
+
+export const getDuaById = (id: string): DuaItem | undefined => {
+  return duas.find((dua) => dua.id === id);
+};
+
+// Category mapping for duas based on the actual data
+const duaCategoryMapping: Record<string, { title: string; subtitle: string; icon: string; duaIds: string[] }> = {
+  home: {
+    title: "Home",
+    subtitle: "Entering & leaving",
+    icon: "house.fill",
+    duaIds: ["leaving-house", "entering-house"],
   },
-  {
-    id: "2",
-    title: "Traveling",
+  mosque: {
+    title: "Mosque",
+    subtitle: "Sacred spaces",
+    icon: "moon.fill",
+    duaIds: ["entering-mosque", "leaving-mosque"],
+  },
+  travel: {
+    title: "Travel",
     subtitle: "For journeys",
     icon: "airplane",
-    count: 3,
-    category: "travel",
+    duaIds: ["travel", "destination"],
   },
-  {
-    id: "3",
-    title: "Health",
-    subtitle: "Healing prayers",
-    icon: "heart.fill",
-    count: 4,
-    category: "health",
+  weather: {
+    title: "Weather",
+    subtitle: "Rain supplications",
+    icon: "cloud.rain.fill",
+    duaIds: ["rain", "beneficial-rain"],
   },
-  {
-    id: "4",
-    title: "Protection",
-    subtitle: "Divine safeguarding",
-    icon: "shield.fill",
-    count: 2,
-    category: "protection",
-  },
-  {
-    id: "5",
-    title: "Gratitude",
-    subtitle: "Thanks to Allah",
-    icon: "hands.sparkles.fill",
-    count: 3,
-    category: "gratitude",
-  },
-];
+};
+
+export const getDuasCategories = (): CategorySummary[] => {
+  return Object.entries(duaCategoryMapping).map(([category, info]) => ({
+    id: category,
+    title: info.title,
+    subtitle: info.subtitle,
+    icon: info.icon,
+    count: info.duaIds.length,
+    category,
+  }));
+};
+
+export const getDuasByCategory = (category: string): DuaItem[] => {
+  const categoryInfo = duaCategoryMapping[category];
+  if (!categoryInfo) return [];
+  
+  return categoryInfo.duaIds
+    .map((id) => duas.find((dua) => dua.id === id))
+    .filter((dua): dua is DuaItem => dua !== undefined);
+};
 
 
