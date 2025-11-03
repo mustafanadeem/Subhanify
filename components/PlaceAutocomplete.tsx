@@ -1,16 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  Keyboard,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  ViewStyle,
+    ActivityIndicator,
+    Animated,
+    Keyboard,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    ViewStyle,
 } from "react-native";
 
 // Nominatim API response types
@@ -336,8 +336,11 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
                     handleSuggestionPress(item);
                   }}
                   activeOpacity={0.7}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${main}`}
                 >
-                  <View style={styles.iconContainer}>
+                  <View style={styles.iconContainer} pointerEvents="none">
                     <Ionicons
                       name="location"
                       size={20}
@@ -345,7 +348,7 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
                     />
                   </View>
                   
-                  <View style={styles.textContainer}>
+                  <View style={styles.textContainer} pointerEvents="none">
                     <Text
                       style={[styles.mainText, { color: colors.text }]}
                       numberOfLines={1}

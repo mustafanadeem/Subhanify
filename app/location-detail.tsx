@@ -21,12 +21,12 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View
 } from "react-native";
 import MapView, {
     Circle,
-    MapPressEvent,
     Marker,
     PROVIDER_GOOGLE
 } from "react-native-maps";
@@ -39,8 +39,6 @@ const categoryOptions: {
   { value: "mosque", label: "Mosque", icon: "moon" },
   { value: "home", label: "Home", icon: "home" },
   { value: "work", label: "Work", icon: "briefcase" },
-  { value: "market", label: "Market", icon: "cart" },
-  { value: "travel", label: "Travel", icon: "car" },
   { value: "other", label: "Other", icon: "location" },
 ];
 
@@ -392,6 +390,34 @@ export default function LocationDetailScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Custom Name Input for "Other" Category */}
+          {category === "other" && (
+            <View style={styles.customNameContainer}>
+              <Text
+                style={[
+                  styles.customNameLabel,
+                  { color: Colors[colorScheme ?? "light"].textSecondary },
+                ]}
+              >
+                Location Name
+              </Text>
+              <TextInput
+                style={[
+                  styles.customNameInput,
+                  {
+                    backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                    color: Colors[colorScheme ?? "light"].text,
+                    borderColor: Colors[colorScheme ?? "light"].border,
+                  },
+                ]}
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter location name..."
+                placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
+              />
+            </View>
+          )}
         </View>
 
         {/* Map Preview with Radius Slider (shown after location selected) */}
@@ -705,13 +731,16 @@ export default function LocationDetailScreen() {
             showsUserLocation
             showsMyLocationButton
           >
-            <Circle
-              center={{ latitude, longitude }}
-              radius={radius}
-              strokeColor={categoryColors[category]}
-              fillColor={`${categoryColors[category]}30`}
-              strokeWidth={2}
-            />
+            {/* Only show circle when NOT dragging */}
+            {!isMapDragging && (
+              <Circle
+                center={{ latitude, longitude }}
+                radius={radius}
+                strokeColor={categoryColors[category]}
+                fillColor={`${categoryColors[category]}30`}
+                strokeWidth={2}
+              />
+            )}
           </MapView>
 
           {/* Centered Pin Overlay */}
@@ -960,6 +989,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
+  },
+  customNameContainer: {
+    marginTop: 16,
+  },
+  customNameLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  customNameInput: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    fontSize: 16,
   },
   mapContainer: {
     height: 200,
