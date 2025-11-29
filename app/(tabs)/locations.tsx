@@ -1,37 +1,37 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-  getGeofencingStatus,
-  restartGeofencing,
-  stopGeofencingMonitoring,
+    getGeofencingStatus,
+    restartGeofencing,
+    stopGeofencingMonitoring,
 } from "@/services/geofence-service";
 import { loadMosques } from "@/services/mosque-data-service";
 import {
-  getMosqueMonitoringStats,
-  shouldUpdateMosqueMonitoring,
-  updateNearbyMosqueGeofencing,
+    getMosqueMonitoringStats,
+    shouldUpdateMosqueMonitoring,
+    updateNearbyMosqueGeofencing,
 } from "@/services/nearby-mosque-manager";
 import { LocationCategory, SavedLocation } from "@/types/location";
 import { Mosque } from "@/types/mosque";
 import {
-  deleteLocation,
-  getAllLocations,
-  initDatabase,
-  toggleLocationEnabled,
+    deleteLocation,
+    getAllLocations,
+    initDatabase,
+    toggleLocationEnabled,
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
@@ -47,10 +47,10 @@ const categoryIcons: Record<LocationCategory, string> = {
 const categoryColors: Record<LocationCategory, string> = {
   mosque: "#4CAF50",
   home: "#2196F3",
-  work: "#FF9800",
+  work: "#A0522D",
   market: "#9C27B0",
   travel: "#00BCD4",
-  other: "#757575",
+  other: "#9C27B0",
 };
 
 export default function LocationsScreen() {
@@ -394,19 +394,29 @@ export default function LocationsScreen() {
             showsIndoors={false}
             showsCompass={false}
           >
-            {/* Home location marker */}
-            {locations.length > 0 && locations[0] && (
+            {/* All saved location markers */}
+            {locations.map((location) => (
               <Marker
+                key={location.id}
                 coordinate={{
-                  latitude: locations[0].latitude,
-                  longitude: locations[0].longitude,
+                  latitude: location.latitude,
+                  longitude: location.longitude,
                 }}
               >
-                <View style={styles.mapLocationIcon}>
-                  <Ionicons name="home" size={28} color="#FFFFFF" />
+                <View 
+                  style={[
+                    styles.mapLocationIcon,
+                    { backgroundColor: categoryColors[location.category] }
+                  ]}
+                >
+                  <Ionicons 
+                    name={categoryIcons[location.category] as any} 
+                    size={28} 
+                    color="#FFFFFF" 
+                  />
                 </View>
               </Marker>
-            )}
+            ))}
           </MapView>
         </View>
 
