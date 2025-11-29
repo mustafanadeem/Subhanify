@@ -2,27 +2,25 @@
   "fajr": {
     "name": "Fajr",
     "structure": [
-      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
-      { "label": "Fard", "rakats": 4 }
+      { "label": "Sunnah", "rakats": 2 },
+      { "label": "Fard", "rakats": 2 }
     ],
     "total": 4
   },
   "duha": {
     "name": "Duha",
-    "timeWindow": "15 minutes after sunrise until 15 minutes before Dhuhr",
     "structure": [
-      { "label": "Duha", "rakats": 2, "note": "Minimum 2, can increase by 2s" }
+      { "label": "Duha", "rakats": 2 }
     ],
-    "minimum": 2,
-    "flexible": true
+    "total": "2+"
   },
   "dhuhr": {
     "name": "Dhuhr",
     "structure": [
-      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
-      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
+      { "label": "Sunnah", "rakats": 2 },
+      { "label": "Sunnah", "rakats": 2 },
       { "label": "Fard", "rakats": 4 },
-      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" }
+      { "label": "Sunnah", "rakats": 2 }
     ],
     "total": 10
   },
@@ -37,7 +35,7 @@
     "name": "Maghrib",
     "structure": [
       { "label": "Fard", "rakats": 3 },
-      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" }
+      { "label": "Sunnah", "rakats": 2 }
     ],
     "total": 5
   },
@@ -45,20 +43,23 @@
     "name": "Isha",
     "structure": [
       { "label": "Fard", "rakats": 4 },
-      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
-      { "label": "Witr", "rakats": 3, "emphasis": "wajib" }
+      { "label": "Sunnah", "rakats": 2 }
     ],
-    "total": 9
+    "total": 6
   },
   "tahajjud": {
     "name": "Tahajjud",
-    "timeWindow": "After Isha until Fajr (preferably last third of night)",
     "structure": [
-      { "label": "Tahajjud", "rakats": 2, "note": "Minimum 2, can increase by 2s" },
-      { "label": "Witr", "rakats": 3, "note": "End with Witr if not prayed after Isha" }
+      { "label": "Tahajjud", "rakats": 2 }
     ],
-    "minimum": 2,
-    "flexible": true
+    "total": "2+"
+  },
+  "witr": {
+    "name": "Witr",
+    "structure": [
+      { "label": "Witr", "rakats": 3 }
+    ],
+    "total": 3
   }
 }
 
