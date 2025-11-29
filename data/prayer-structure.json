@@ -1,0 +1,64 @@
+{
+  "fajr": {
+    "name": "Fajr",
+    "structure": [
+      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
+      { "label": "Fard", "rakats": 4 }
+    ],
+    "total": 4
+  },
+  "duha": {
+    "name": "Duha",
+    "timeWindow": "15 minutes after sunrise until 15 minutes before Dhuhr",
+    "structure": [
+      { "label": "Duha", "rakats": 2, "note": "Minimum 2, can increase by 2s" }
+    ],
+    "minimum": 2,
+    "flexible": true
+  },
+  "dhuhr": {
+    "name": "Dhuhr",
+    "structure": [
+      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
+      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
+      { "label": "Fard", "rakats": 4 },
+      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" }
+    ],
+    "total": 10
+  },
+  "asr": {
+    "name": "Asr",
+    "structure": [
+      { "label": "Fard", "rakats": 4 }
+    ],
+    "total": 4
+  },
+  "maghrib": {
+    "name": "Maghrib",
+    "structure": [
+      { "label": "Fard", "rakats": 3 },
+      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" }
+    ],
+    "total": 5
+  },
+  "isha": {
+    "name": "Isha",
+    "structure": [
+      { "label": "Fard", "rakats": 4 },
+      { "label": "Sunnah", "rakats": 2, "emphasis": "mu'akkadah" },
+      { "label": "Witr", "rakats": 3, "emphasis": "wajib" }
+    ],
+    "total": 9
+  },
+  "tahajjud": {
+    "name": "Tahajjud",
+    "timeWindow": "After Isha until Fajr (preferably last third of night)",
+    "structure": [
+      { "label": "Tahajjud", "rakats": 2, "note": "Minimum 2, can increase by 2s" },
+      { "label": "Witr", "rakats": 3, "note": "End with Witr if not prayed after Isha" }
+    ],
+    "minimum": 2,
+    "flexible": true
+  }
+}
+
