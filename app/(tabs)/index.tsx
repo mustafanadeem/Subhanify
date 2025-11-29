@@ -5,16 +5,16 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import {
-  TodayPrayerTimes,
-  UserSettings,
+    TodayPrayerTimes,
+    UserSettings,
 } from "@/modules/prayer-times/domain/entities";
 import { getTodayAdhkarStatus } from "@/services/adhkar-completion-service";
 import { getCurrentStreak, updateStreak } from "@/services/streak-service";
 import { CategorySummary } from "@/types/adhkar";
 import {
-  AdhkarPeriod,
-  getAdhkarTimeRange,
-  getCurrentAdhkarPeriod,
+    AdhkarPeriod,
+    getAdhkarTimeRange,
+    getCurrentAdhkarPeriod,
 } from "@/utils/adhkar-time-utils";
 import { getAdhkarCategories, getDuasCategories } from "@/utils/adhkar-utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,15 +22,15 @@ import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;

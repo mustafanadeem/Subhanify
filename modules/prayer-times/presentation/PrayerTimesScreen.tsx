@@ -1,4 +1,5 @@
 import { PrayerTimeCard } from "@/components/prayer-time-card";
+import { PrayerStructureCard } from "@/components/prayer-structure-card";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
@@ -475,6 +476,9 @@ export default function PrayerTimesScreen() {
         <View style={styles.prayerCardWrapper}>
           <PrayerTimeCard />
         </View>
+
+        {/* Prayer Structure Card */}
+        <PrayerStructureCard />
 
         {/* Prayer Times */}
         <View style={styles.sectionWrapper}>
