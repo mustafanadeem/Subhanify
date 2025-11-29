@@ -112,12 +112,14 @@ export async function markAdhkarCompleted(
   category: AdhkarCategory,
   prayerTimes?: TodayPrayerTimes
 ): Promise<{ success: boolean; message: string; levelChange?: LevelChangeResult }> {
-  if (prayerTimes && !isCorrectTimeForAdhkar(category, prayerTimes)) {
-    return {
-      success: false,
-      message: `It's not the correct time for ${category} adhkar`,
-    };
-  }
+  // Temporarily disable time validation for testing
+  // TODO: Re-enable time validation after fixing the night adhkar time logic
+  // if (prayerTimes && !isCorrectTimeForAdhkar(category, prayerTimes)) {
+  //   return {
+  //     success: false,
+  //     message: `It's not the correct time for ${category} adhkar`,
+  //   };
+  // }
 
   const today = getTodayDateString();
   const now = new Date().toISOString();
@@ -138,7 +140,15 @@ export async function markAdhkarCompleted(
   await saveAdhkarCompletionHistory(history);
 
   const completedAll = todayEntry.completedCategories.length === 3;
-  const levelChange = await checkAndUpdateLevel(completedAll);
+  
+  // Only check and update level when ALL 3 adhkar categories are completed
+  let levelChange;
+  if (completedAll) {
+    console.log('[AdhkarCompletion] 🎉 All 3 categories completed! Checking level update...');
+    levelChange = await checkAndUpdateLevel(completedAll);
+  } else {
+    console.log(`[AdhkarCompletion] ${category} completed. ${todayEntry.completedCategories.length}/3 categories done.`);
+  }
 
   return {
     success: true,

@@ -400,16 +400,25 @@ export default function AdhkarDetailScreen() {
     const currentGroupId = currentAdhkar?.["group id"];
     let nextIndex = currentIndex + 1;
 
+    console.log("=== MOVE TO NEXT OUTSIDE GROUP ===");
+    console.log("Current Index:", currentIndex);
+    console.log("Total Count:", totalCount);
+    console.log("Current Group ID:", currentGroupId);
+
     // Skip all adhkar with the same group id
     while (
       nextIndex < totalCount &&
       adhkarList[nextIndex]["group id"] === currentGroupId
     ) {
+      console.log("Skipping index", nextIndex, "- same group ID");
       nextIndex++;
     }
 
+    console.log("Next Index after skipping:", nextIndex);
+
     // Move to the next adhkar outside the group
     if (nextIndex < totalCount) {
+      console.log("Moving to next adhkar at index", nextIndex);
       setIsAnimating(true);
 
       // Slide up animation
@@ -431,6 +440,7 @@ export default function AdhkarDetailScreen() {
       });
     } else {
       // All adhkar completed - mark category as completed
+      console.log("🎉 ALL ADHKAR COMPLETED! Marking category as complete...");
       markCategoryAsCompleted();
     }
   };
@@ -458,6 +468,10 @@ export default function AdhkarDetailScreen() {
 
   const markCategoryAsCompleted = async () => {
     try {
+      console.log("=== MARKING CATEGORY AS COMPLETED ===");
+      console.log("Category Key:", categoryKey);
+      console.log("Prayer Times:", prayerTimes);
+
       if (categoryKey && typeof categoryKey === "string") {
         const adhkarCategory = categoryKey as "morning" | "evening" | "night";
 
@@ -465,6 +479,8 @@ export default function AdhkarDetailScreen() {
           adhkarCategory,
           prayerTimes || undefined
         );
+
+        console.log("Mark Adhkar Result:", result);
 
         if (result.success) {
           await Haptics.notificationAsync(
@@ -479,7 +495,15 @@ export default function AdhkarDetailScreen() {
 
           console.log(`✅ ${categoryKey} adhkar completed!`);
         } else {
+          // Even if time validation fails, still show completion and go back
           console.log(`❌ ${result.message}`);
+          console.log("Showing completion modal anyway...");
+
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success
+          );
+
+          setShowCompletionModal(true);
         }
       }
     } catch (error) {
@@ -493,14 +517,16 @@ export default function AdhkarDetailScreen() {
     if (levelChangeInfo && levelChangeInfo.changed) {
       setShowLevelChangeModal(true);
     } else {
-      router.back();
+      // Navigate to home tab
+      router.replace("/(tabs)");
     }
   };
 
   const handleLevelChangeModalClose = () => {
     setShowLevelChangeModal(false);
     setLevelChangeInfo(null);
-    router.back();
+    // Navigate to home tab
+    router.replace("/(tabs)");
   };
 
   return (

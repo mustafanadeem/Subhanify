@@ -8,7 +8,7 @@ import {
   TodayPrayerTimes,
   UserSettings,
 } from "@/modules/prayer-times/domain/entities";
-import { getAllIndividualProgress } from "@/services/individual-adhkar-progress-service";
+import { getTodayAdhkarStatus } from "@/services/adhkar-completion-service";
 import { getCurrentStreak, updateStreak } from "@/services/streak-service";
 import { CategorySummary } from "@/types/adhkar";
 import {
@@ -102,9 +102,21 @@ export default function HomeScreen() {
 
   const loadAdhkarProgress = async () => {
     try {
-      // Use individual progress service for granular tracking
-      const progress = await getAllIndividualProgress();
-      setAdhkarProgress(progress);
+      // Get today's adhkar completion status (checks if all 3 adhkars completed)
+      const status = await getTodayAdhkarStatus();
+
+      // Convert boolean completion to percentage (0 or 100)
+      setAdhkarProgress({
+        morning: status.morning ? 100 : 0,
+        evening: status.evening ? 100 : 0,
+        night: status.night ? 100 : 0,
+      });
+
+      console.log("Adhkar Progress Loaded:", {
+        morning: status.morning ? "100%" : "0%",
+        evening: status.evening ? "100%" : "0%",
+        night: status.night ? "100%" : "0%",
+      });
     } catch (error) {
       console.error("Error loading adhkar progress:", error);
     }

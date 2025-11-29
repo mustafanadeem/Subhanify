@@ -3,8 +3,14 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   DailyAdhkarCompletion,
-  getAdhkarCompletionForDate,
+  loadAdhkarCompletionHistory,
 } from "@/services/adhkar-completion-service";
+import {
+  LevelSettings,
+  getLevelSettings,
+  checkAndUpdateLevel,
+  resetLevelData,
+} from "@/services/level-settings-service";
 import { loadStreakData } from "@/services/streak-service";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -31,6 +37,12 @@ export default function StreakDetailsScreen() {
   const isDark = colorScheme === "dark";
 
   const [streakData, setStreakData] = useState<StreakData | null>(null);
+  const [levelSettings, setLevelSettings] = useState<LevelSettings | null>(
+    null
+  );
+  const [adhkarCompletionData, setAdhkarCompletionData] = useState<{
+    [date: string]: DailyAdhkarCompletion;
+  }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeTab, setActiveTab] = useState<"overview" | "progress">(
@@ -50,12 +62,101 @@ export default function StreakDetailsScreen() {
   const loadData = async () => {
     try {
       const data = await loadStreakData();
+
+      // Load level data (use actual saved data, don't reset)
+      const levels = await getLevelSettings();
+
+      // Load adhkar completion history
+      const adhkarHistory = await loadAdhkarCompletionHistory();
+
+      // Check if today is a perfect day (all 3 adhkar completed)
+      const today = new Date().toISOString().split("T")[0];
+      const todayCompletion = adhkarHistory[today];
+      const completedAllToday = todayCompletion && todayCompletion.completedCategories.length === 3;
+
+      // If all 3 adhkar are completed today, ensure level is updated
+      if (completedAllToday) {
+        console.log("🎉 All 3 adhkar completed today! Ensuring level is updated...");
+        const levelUpdate = await checkAndUpdateLevel(true);
+        console.log("Level update result:", levelUpdate);
+        
+        // Reload level settings after update
+        const updatedLevels = await getLevelSettings();
+        setLevelSettings(updatedLevels);
+      } else {
+        setLevelSettings(levels);
+      }
+
+      // Debug logging
+      console.log("=== STREAK & LEVEL DATA ===");
+      console.log("Current Streak:", data.currentStreak);
+      console.log("Longest Streak:", data.longestStreak);
+      console.log("Level Settings:", levels);
+      console.log("Current Level:", levels.currentLevel);
+      console.log("Consecutive Perfect Days:", levels.consecutivePerfectDays);
+      console.log("Level System Enabled:", levels.enabled);
+      console.log("Adhkar Completion History:", adhkarHistory);
+      console.log("Today's Completion:", todayCompletion);
+      console.log("===========================");
+
       setStreakData(data);
+      setAdhkarCompletionData(adhkarHistory);
     } catch (error) {
       console.error("Error loading streak data:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Calculate current adhkar completion streak (consecutive days with all 3 adhkars completed)
+  const calculateAdhkarStreak = (): { current: number; longest: number } => {
+    if (Object.keys(adhkarCompletionData).length === 0) {
+      return { current: 0, longest: 0 };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+
+    // Start from today and go backwards to find current streak
+    let checkDate = new Date(today);
+    let foundIncompleteDay = false;
+
+    while (!foundIncompleteDay) {
+      const dateString = checkDate.toISOString().split("T")[0];
+      const completion = adhkarCompletionData[dateString];
+
+      // If all 3 adhkars completed, increment current streak
+      if (completion && completion.completedCategories.length === 3) {
+        currentStreak++;
+      } else {
+        foundIncompleteDay = true;
+      }
+
+      // Move to previous day
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    // Now calculate longest streak by checking all history
+    const allDates = Object.keys(adhkarCompletionData).sort();
+
+    for (const dateString of allDates) {
+      const completion = adhkarCompletionData[dateString];
+
+      if (completion && completion.completedCategories.length === 3) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    return {
+      current: currentStreak,
+      longest: Math.max(longestStreak, currentStreak),
+    };
   };
 
   const getDaysInMonth = (date: Date): number => {
@@ -80,31 +181,26 @@ export default function StreakDetailsScreen() {
   };
 
   const isDateCompleted = (day: number): boolean => {
-    if (!streakData) return false;
-
     const dateToCheck = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
       day
     );
     const dateString = dateToCheck.toISOString().split("T")[0];
-    const lastOpenDate = streakData.lastOpenDate;
-
-    // Check if this date is part of the current streak
-    const today = new Date();
-    const lastOpen = new Date(lastOpenDate);
-    const checkDate = new Date(dateString);
 
     // If the date is in the future, return false
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(dateString + "T00:00:00");
     if (checkDate > today) return false;
 
-    // Calculate days between last open and check date
-    const daysDiff = Math.floor(
-      (lastOpen.getTime() - checkDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    // Check if all 3 adhkar categories were completed on this date
+    // This will be checked asynchronously when loading calendar data
+    if (adhkarCompletionData[dateString]) {
+      return adhkarCompletionData[dateString].completedCategories.length === 3;
+    }
 
-    // If within current streak range, mark as completed
-    return daysDiff >= 0 && daysDiff < streakData.currentStreak;
+    return false;
   };
 
   const wasAppInstalled = (day: number): boolean => {
@@ -169,6 +265,67 @@ export default function StreakDetailsScreen() {
     setSelectedDateCompletion(null);
   };
 
+  // Helper function to calculate level progress
+  const getLevelProgress = (level: number) => {
+    if (!levelSettings)
+      return { completed: false, progress: 0, progressPercent: 0, total: 10 };
+
+    const currentLevel = levelSettings.currentLevel;
+    const perfectDays = levelSettings.consecutivePerfectDays;
+
+    // Level 1 (Beginner) - Always completed if on level 2 or 3
+    if (level === 1) {
+      const total = 15; // Need 15 days to level up from 1 to 2
+      if (currentLevel >= 2) {
+        return {
+          completed: true,
+          progress: total,
+          progressPercent: 100,
+          total,
+        };
+      }
+      // On level 1, show progress towards level 2 (need 15 days)
+      const progress = Math.min(perfectDays, total);
+      const progressPercent = (progress / total) * 100;
+      return { completed: false, progress, progressPercent, total };
+    }
+
+    // Level 2 (Intermediate) - Completed if on level 3
+    if (level === 2) {
+      const total = 30; // Need 30 days to level up from 2 to 3
+      if (currentLevel >= 3) {
+        return {
+          completed: true,
+          progress: total,
+          progressPercent: 100,
+          total,
+        };
+      }
+      // On level 2, show progress towards level 3 (need 30 days)
+      if (currentLevel === 2) {
+        const progress = Math.min(perfectDays, total);
+        const progressPercent = (progress / total) * 100;
+        return { completed: false, progress, progressPercent, total };
+      }
+      // On level 1, not started
+      return { completed: false, progress: 0, progressPercent: 0, total };
+    }
+
+    // Level 3 (Advanced) - Current highest level
+    if (level === 3) {
+      const total = 30; // Display max progress for level 3
+      if (currentLevel === 3) {
+        // Show current progress even though it's the max level
+        const progress = Math.min(perfectDays, total);
+        const progressPercent = Math.min((progress / total) * 100, 100);
+        return { completed: true, progress, progressPercent, total };
+      }
+      return { completed: false, progress: 0, progressPercent: 0, total };
+    }
+
+    return { completed: false, progress: 0, progressPercent: 0, total: 10 };
+  };
+
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentMonth);
     const firstDay = getFirstDayOfMonth(currentMonth);
@@ -210,10 +367,7 @@ export default function StreakDetailsScreen() {
               styles.day,
               isCompleted && styles.completedDay,
               isToday && isCompleted && styles.todayDay,
-              isToday &&
-                !isCompleted &&
-                appWasInstalled &&
-                styles.todayIncomplete,
+              // Today but not completed - no styling (just text will be styled)
               isMissed && styles.missedDay,
             ]}
             onPress={() => handleDayPress(day)}
@@ -224,7 +378,7 @@ export default function StreakDetailsScreen() {
               style={[
                 styles.dayText,
                 isCompleted && styles.completedDayText,
-                isToday && !isCompleted && appWasInstalled && styles.todayText,
+                isToday && !isCompleted && styles.todayTextIncomplete,
                 isMissed && styles.missedDayText,
               ]}
             >
@@ -493,7 +647,7 @@ export default function StreakDetailsScreen() {
                       { color: Colors[colorScheme ?? "light"].text },
                     ]}
                   >
-                    {streakData?.currentStreak || 0}
+                    {calculateAdhkarStreak().current}
                   </Text>
                   <Text
                     style={[
@@ -526,7 +680,7 @@ export default function StreakDetailsScreen() {
                       { color: Colors[colorScheme ?? "light"].text },
                     ]}
                   >
-                    {streakData?.longestStreak || 0}
+                    {calculateAdhkarStreak().longest}
                   </Text>
                   <Text
                     style={[
@@ -558,10 +712,38 @@ export default function StreakDetailsScreen() {
                 {/* Week Days Chart */}
                 <View style={styles.weekChart}>
                   {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => {
-                    // Sample data - you can replace with actual data
-                    const isCompleted = index >= 3; // Last 4 days completed
-                    const isPartial = index === 2; // Wednesday partial
-                    const isMissed = index < 2; // Monday and Tuesday missed
+                    // Calculate the date for this day of the week
+                    const today = new Date();
+                    const currentDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                    // Adjust to make Monday = 0
+                    const adjustedCurrentDay =
+                      currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
+                    const daysBack = adjustedCurrentDay - index;
+                    const dateForThisDay = new Date(today);
+                    dateForThisDay.setDate(today.getDate() - daysBack);
+                    dateForThisDay.setHours(0, 0, 0, 0);
+
+                    // Get date string for checking adhkar completion
+                    const dateString = dateForThisDay
+                      .toISOString()
+                      .split("T")[0];
+
+                    // Check if all 3 adhkars were completed on this day
+                    const adhkarCompletion = adhkarCompletionData[dateString];
+                    const isCompleted =
+                      adhkarCompletion &&
+                      adhkarCompletion.completedCategories.length === 3;
+
+                    // Check if day is in the future
+                    const isFuture = dateForThisDay > today;
+
+                    // Determine bar height and color
+                    const barHeight = isFuture ? 0 : isCompleted ? 80 : 20;
+                    const barColor = isFuture
+                      ? "transparent"
+                      : isCompleted
+                      ? "#2BD157"
+                      : "#E74C3C";
 
                     return (
                       <View key={index} style={styles.weekDayContainer}>
@@ -569,12 +751,8 @@ export default function StreakDetailsScreen() {
                           style={[
                             styles.weekDayBar,
                             {
-                              height: isCompleted ? 80 : isPartial ? 40 : 20,
-                              backgroundColor: isCompleted
-                                ? "#2BD157"
-                                : isPartial
-                                ? "#FF9800"
-                                : "#E74C3C",
+                              height: barHeight,
+                              backgroundColor: barColor,
                             },
                           ]}
                         />
@@ -656,27 +834,101 @@ export default function StreakDetailsScreen() {
                         { color: isDark ? "#8E9BAE" : "#666666" },
                       ]}
                     >
-                      Complete 30 days streak in Level 2
+                      Complete 30 perfect days in Level 2
                     </Text>
                     {/* Progress bar with ticks */}
-                    <View style={styles.progressContainer}>
-                      <View style={styles.progressTrack}>
-                        <View style={[styles.progressFill, { width: "30%" }]} />
-                      </View>
-                      <View style={styles.progressTicks}>
-                        {[...Array(10)].map((_, i) => (
-                          <View
-                            key={i}
+                    {(() => {
+                      const { completed, progress, progressPercent, total } =
+                        getLevelProgress(3);
+                      return completed && levelSettings?.currentLevel === 3 ? (
+                        // For level 3, show progress bar even when "completed" since it's max level
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressTrack}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                { width: `${progressPercent}%` },
+                              ]}
+                            />
+                          </View>
+                          <View style={styles.progressTicks}>
+                            {[...Array(Math.min(total, 10))].map((_, i) => {
+                              const segmentSize = total / 10;
+                              const isCompleted =
+                                progress >= (i + 1) * segmentSize;
+                              return (
+                                <View
+                                  key={i}
+                                  style={[
+                                    styles.progressTick,
+                                    {
+                                      backgroundColor: isCompleted
+                                        ? "#2196F3"
+                                        : "#2C3E50",
+                                    },
+                                  ]}
+                                />
+                              );
+                            })}
+                          </View>
+                          <Text
                             style={[
-                              styles.progressTick,
-                              {
-                                backgroundColor: i < 3 ? "#2196F3" : "#2C3E50",
-                              },
+                              styles.progressDaysText,
+                              { color: isDark ? "#8E9BAE" : "#666666" },
                             ]}
+                          >
+                            {progress}/{total} perfect days
+                          </Text>
+                        </View>
+                      ) : completed ? (
+                        <View style={styles.completedCheck}>
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={40}
+                            color="#2BD157"
                           />
-                        ))}
-                      </View>
-                    </View>
+                        </View>
+                      ) : (
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressTrack}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                { width: `${progressPercent}%` },
+                              ]}
+                            />
+                          </View>
+                          <View style={styles.progressTicks}>
+                            {[...Array(Math.min(total, 10))].map((_, i) => {
+                              const segmentSize = total / 10;
+                              const isCompleted =
+                                progress >= (i + 1) * segmentSize;
+                              return (
+                                <View
+                                  key={i}
+                                  style={[
+                                    styles.progressTick,
+                                    {
+                                      backgroundColor: isCompleted
+                                        ? "#2196F3"
+                                        : "#2C3E50",
+                                    },
+                                  ]}
+                                />
+                              );
+                            })}
+                          </View>
+                          <Text
+                            style={[
+                              styles.progressDaysText,
+                              { color: isDark ? "#8E9BAE" : "#666666" },
+                            ]}
+                          >
+                            {progress}/{total} perfect days
+                          </Text>
+                        </View>
+                      );
+                    })()}
                   </View>
                 </View>
 
@@ -725,16 +977,61 @@ export default function StreakDetailsScreen() {
                         { color: isDark ? "#8E9BAE" : "#666666" },
                       ]}
                     >
-                      Complete 15 days streak in Level 1
+                      Complete 15 perfect days in Level 1
                     </Text>
-                    {/* Completed checkmark */}
-                    <View style={styles.completedCheck}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={40}
-                        color="#2BD157"
-                      />
-                    </View>
+                    {/* Progress or checkmark */}
+                    {(() => {
+                      const { completed, progress, progressPercent, total } =
+                        getLevelProgress(2);
+                      return completed ? (
+                        <View style={styles.completedCheck}>
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={40}
+                            color="#2BD157"
+                          />
+                        </View>
+                      ) : (
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressTrack}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                { width: `${progressPercent}%` },
+                              ]}
+                            />
+                          </View>
+                          <View style={styles.progressTicks}>
+                            {[...Array(Math.min(total, 10))].map((_, i) => {
+                              const segmentSize = total / 10;
+                              const isCompleted =
+                                progress >= (i + 1) * segmentSize;
+                              return (
+                                <View
+                                  key={i}
+                                  style={[
+                                    styles.progressTick,
+                                    {
+                                      backgroundColor: isCompleted
+                                        ? "#2196F3"
+                                        : "#2C3E50",
+                                    },
+                                  ]}
+                                />
+                              );
+                            })}
+                          </View>
+                          <Text
+                            style={[
+                              styles.progressDaysText,
+                              { color: isDark ? "#8E9BAE" : "#666666" },
+                            ]}
+                          >
+                            {progress}/{total} perfect days
+                          </Text>
+                        </View>
+                      );
+                    })()}
                   </View>
                 </View>
 
@@ -783,16 +1080,63 @@ export default function StreakDetailsScreen() {
                         { color: isDark ? "#8E9BAE" : "#666666" },
                       ]}
                     >
-                      -
+                      {levelSettings?.currentLevel === 1
+                        ? `${levelSettings.consecutivePerfectDays}/15 perfect days`
+                        : "Starting level"}
                     </Text>
-                    {/* Completed checkmark */}
-                    <View style={styles.completedCheck}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={40}
-                        color="#2BD157"
-                      />
-                    </View>
+                    {/* Progress or checkmark */}
+                    {(() => {
+                      const { completed, progress, progressPercent, total } =
+                        getLevelProgress(1);
+                      return completed ? (
+                        <View style={styles.completedCheck}>
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={40}
+                            color="#2BD157"
+                          />
+                        </View>
+                      ) : (
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressTrack}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                { width: `${progressPercent}%` },
+                              ]}
+                            />
+                          </View>
+                          <View style={styles.progressTicks}>
+                            {[...Array(Math.min(total, 10))].map((_, i) => {
+                              const segmentSize = total / 10;
+                              const isCompleted =
+                                progress >= (i + 1) * segmentSize;
+                              return (
+                                <View
+                                  key={i}
+                                  style={[
+                                    styles.progressTick,
+                                    {
+                                      backgroundColor: isCompleted
+                                        ? "#2196F3"
+                                        : "#2C3E50",
+                                    },
+                                  ]}
+                                />
+                              );
+                            })}
+                          </View>
+                          <Text
+                            style={[
+                              styles.progressDaysText,
+                              { color: isDark ? "#8E9BAE" : "#666666" },
+                            ]}
+                          >
+                            {progress}/{total} perfect days
+                          </Text>
+                        </View>
+                      );
+                    })()}
                   </View>
                 </View>
               </View>
@@ -978,6 +1322,10 @@ const styles = StyleSheet.create({
     color: "#E74C3C",
     fontWeight: "700",
   },
+  todayTextIncomplete: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
   missedDayText: {
     color: "#E74C3C",
     fontWeight: "600",
@@ -1041,6 +1389,27 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
     paddingHorizontal: 16,
+  },
+  currentLevelCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  currentLevelText: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   levelCardsContainer: {
     marginHorizontal: 16,
@@ -1127,6 +1496,12 @@ const styles = StyleSheet.create({
     width: 4,
     height: 12,
     borderRadius: 2,
+  },
+  progressDaysText: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 8,
+    textAlign: "center",
   },
   completedCheck: {
     marginTop: 8,
