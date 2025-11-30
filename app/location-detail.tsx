@@ -116,6 +116,13 @@ export default function LocationDetailScreen() {
     initialize();
   }, []);
 
+  // Automatically set duas when category changes
+  useEffect(() => {
+    const duas = getDuasByCategory(category);
+    setEntryAdhkarIds(duas.entry.map(d => d.id));
+    setExitAdhkarIds(duas.exit.map(d => d.id));
+  }, [category, allDuas]);
+
   const initialize = async () => {
     try {
       if (mode === "edit" && locationId) {
@@ -127,8 +134,7 @@ export default function LocationDetailScreen() {
           setLatitude(location.latitude);
           setLongitude(location.longitude);
           setRadius(location.radius);
-          setEntryAdhkarIds(location.entryAdhkarIds);
-          setExitAdhkarIds(location.exitAdhkarIds);
+          // Duas will be auto-assigned based on category via useEffect
           setHasSelectedLocation(true); // Show map for existing location
         }
       } else {
@@ -196,33 +202,10 @@ export default function LocationDetailScreen() {
     ]).start();
   };
 
-  const handleToggleDua = (duaId: string, type: "entry" | "exit") => {
-    if (type === "entry") {
-      if (entryAdhkarIds.includes(duaId)) {
-        setEntryAdhkarIds(entryAdhkarIds.filter((id) => id !== duaId));
-      } else {
-        setEntryAdhkarIds([...entryAdhkarIds, duaId]);
-      }
-    } else {
-      if (exitAdhkarIds.includes(duaId)) {
-        setExitAdhkarIds(exitAdhkarIds.filter((id) => id !== duaId));
-      } else {
-        setExitAdhkarIds([...exitAdhkarIds, duaId]);
-      }
-    }
-  };
 
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert("Error", "Please enter a location name");
-      return;
-    }
-
-    if (entryAdhkarIds.length === 0 && exitAdhkarIds.length === 0) {
-      Alert.alert(
-        "Error",
-        "Please select at least one du'a for entry or exit"
-      );
       return;
     }
 
@@ -593,20 +576,15 @@ export default function LocationDetailScreen() {
               </Text>
             ) : (
               entryDuaOptions.map((dua) => (
-                <TouchableOpacity
+                <View
                   key={dua.id}
                   style={[
                     styles.adhkarOption,
                     {
-                      backgroundColor: entryAdhkarIds.includes(dua.id)
-                        ? `${categoryColors[category]}20`
-                        : Colors[colorScheme ?? "light"].cardBackground,
-                      borderColor: entryAdhkarIds.includes(dua.id)
-                        ? categoryColors[category]
-                        : "transparent",
+                      backgroundColor: `${categoryColors[category]}20`,
+                      borderColor: categoryColors[category],
                     },
                   ]}
-                  onPress={() => handleToggleDua(dua.id, "entry")}
                 >
                   <View style={styles.adhkarContent}>
                     <Text
@@ -636,20 +614,7 @@ export default function LocationDetailScreen() {
                       {dua.translation}
                     </Text>
                   </View>
-                  <Ionicons
-                    name={
-                      entryAdhkarIds.includes(dua.id)
-                        ? "checkmark-circle"
-                        : "ellipse-outline"
-                    }
-                    size={24}
-                    color={
-                      entryAdhkarIds.includes(dua.id)
-                        ? categoryColors[category]
-                        : Colors[colorScheme ?? "light"].textSecondary
-                    }
-                  />
-                </TouchableOpacity>
+                </View>
               ))
             )}
           </View>
@@ -675,20 +640,15 @@ export default function LocationDetailScreen() {
               </Text>
             ) : (
               exitDuaOptions.map((dua) => (
-                <TouchableOpacity
+                <View
                   key={dua.id}
                   style={[
                     styles.adhkarOption,
                     {
-                      backgroundColor: exitAdhkarIds.includes(dua.id)
-                        ? `${categoryColors[category]}20`
-                        : Colors[colorScheme ?? "light"].cardBackground,
-                      borderColor: exitAdhkarIds.includes(dua.id)
-                        ? categoryColors[category]
-                        : "transparent",
+                      backgroundColor: `${categoryColors[category]}20`,
+                      borderColor: categoryColors[category],
                     },
                   ]}
-                  onPress={() => handleToggleDua(dua.id, "exit")}
                 >
                   <View style={styles.adhkarContent}>
                     <Text
@@ -718,20 +678,7 @@ export default function LocationDetailScreen() {
                       {dua.translation}
                     </Text>
                   </View>
-                  <Ionicons
-                    name={
-                      exitAdhkarIds.includes(dua.id)
-                        ? "checkmark-circle"
-                        : "ellipse-outline"
-                    }
-                    size={24}
-                    color={
-                      exitAdhkarIds.includes(dua.id)
-                        ? categoryColors[category]
-                        : Colors[colorScheme ?? "light"].textSecondary
-                    }
-                  />
-                </TouchableOpacity>
+                </View>
               ))
             )}
           </View>

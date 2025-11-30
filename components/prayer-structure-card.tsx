@@ -4,7 +4,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import { TodayPrayerTimes } from "@/modules/prayer-times/domain/entities";
 import { useEffect, useState } from "react";
-import { ImageBackground, StyleSheet, Text, View } from "react-native";
+import { Image, ImageBackground, StyleSheet, Text, View } from "react-native";
 
 type PrayerName = "fajr" | "duha" | "dhuhr" | "asr" | "maghrib" | "isha" | "tahajjud" | "witr";
 
@@ -30,7 +30,35 @@ export function PrayerStructureCard() {
 
   useEffect(() => {
     loadPrayerData();
+    preloadImages();
   }, []);
+
+  // Use TEST_PRAYER for now to easily switch between prayers
+  const displayPrayer = TEST_PRAYER; // Change this line to: currentPrayer when ready for production
+
+  const preloadImages = () => {
+    // Preload all prayer background images so they're ready instantly
+    const images = [
+      require("@/assets/images/prayer-bg/fajr.png"),
+      require("@/assets/images/prayer-bg/dhuhr.png"),
+      require("@/assets/images/prayer-bg/asr.png"),
+      require("@/assets/images/prayer-bg/maghreb.png"),
+      require("@/assets/images/prayer-bg/isha.png"),
+    ];
+    
+    images.forEach((imageSource) => {
+      try {
+        const resolved = Image.resolveAssetSource(imageSource);
+        if (resolved?.uri) {
+          Image.prefetch(resolved.uri).catch(() => {
+            // Ignore prefetch errors - images will still load normally
+          });
+        }
+      } catch (error) {
+        // Ignore errors - images will still load normally
+      }
+    });
+  };
 
   const loadPrayerData = async () => {
     try {
@@ -74,9 +102,6 @@ export function PrayerStructureCard() {
     const date = new Date(timeIso);
     return date.getHours() * 60 + date.getMinutes();
   };
-
-  // Use TEST_PRAYER for now to easily switch between prayers
-  const displayPrayer = TEST_PRAYER; // Change this line to: currentPrayer when ready for production
   
   if (!displayPrayer) {
     return null;

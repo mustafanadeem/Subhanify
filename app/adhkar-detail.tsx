@@ -1,7 +1,7 @@
 import { AdhkarCompletionModal } from "@/components/adhkar-completion-modal";
 import {
-  FavoriteFolder,
-  FavoritesFolderModal,
+    FavoriteFolder,
+    FavoritesFolderModal,
 } from "@/components/favorites-folder-modal";
 import { LevelChangeModal } from "@/components/level-change-modal";
 import { ThemedText } from "@/components/themed-text";
@@ -11,16 +11,16 @@ import { useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import {
-  TodayPrayerTimes,
-  UserSettings,
+    TodayPrayerTimes,
+    UserSettings,
 } from "@/modules/prayer-times/domain/entities";
 import { markAdhkarCompleted } from "@/services/adhkar-completion-service";
 import {
-  addToFavorites,
-  createFolder,
-  isFavorite,
-  loadFolders,
-  removeFromFavorites,
+    addToFavorites,
+    createFolder,
+    isFavorite,
+    loadFolders,
+    removeFromFavorites,
 } from "@/services/favorites-service";
 import { markIndividualAdhkarCompleted } from "@/services/individual-adhkar-progress-service";
 import { LevelChangeResult } from "@/services/level-settings-service";
@@ -32,17 +32,17 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Modal,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -94,6 +94,12 @@ export default function AdhkarDetailScreen() {
   );
   const slideAnim2 = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const [showRelatedArticles, setShowRelatedArticles] = useState(false);
+  
+  // Track touch for differentiating tap vs scroll
+  const touchStartY = useRef<number | null>(null);
+  const touchStartTime = useRef<number | null>(null);
+  const isScrolling = useRef<boolean>(false);
+  const [isScrollingState, setIsScrollingState] = useState<boolean>(false);
 
   const currentAdhkar: AdhkarItem | undefined = adhkarList[currentIndex];
 
@@ -1069,19 +1075,64 @@ export default function AdhkarDetailScreen() {
               index === currentIndex ? count : adhkar.quantity;
 
             return (
-              <TouchableOpacity
-                key={index}
-                style={styles.page}
-                onPress={handleCount}
-                activeOpacity={1}
-              >
+              <View key={index} style={styles.page}>
                 <ScrollView
                   style={styles.content}
                   contentContainerStyle={styles.contentContainer}
                   showsVerticalScrollIndicator={false}
+                  onScrollBeginDrag={() => {
+                    isScrolling.current = true;
+                    setIsScrollingState(true);
+                  }}
+                  onScrollEndDrag={() => {
+                    // Reset after a short delay to allow for tap detection
+                    setTimeout(() => {
+                      isScrolling.current = false;
+                      setIsScrollingState(false);
+                    }, 200);
+                  }}
+                  onMomentumScrollBegin={() => {
+                    isScrolling.current = true;
+                    setIsScrollingState(true);
+                  }}
+                  onMomentumScrollEnd={() => {
+                    setTimeout(() => {
+                      isScrolling.current = false;
+                      setIsScrollingState(false);
+                    }, 200);
+                  }}
+                  nestedScrollEnabled={true}
                 >
-                  {/* Title and Counter */}
-                  <View style={styles.titleSection}>
+                  <View
+                    onStartShouldSetResponder={() => false}
+                    onMoveShouldSetResponder={() => false}
+                    onTouchStart={(e) => {
+                      if (index === currentIndex) {
+                        touchStartY.current = e.nativeEvent.pageY;
+                        touchStartTime.current = Date.now();
+                      }
+                    }}
+                    onTouchEnd={(e) => {
+                      if (
+                        index === currentIndex &&
+                        touchStartY.current !== null &&
+                        touchStartTime.current !== null &&
+                        !isScrolling.current
+                      ) {
+                        const deltaY = Math.abs(e.nativeEvent.pageY - touchStartY.current);
+                        const deltaTime = Date.now() - touchStartTime.current;
+                        
+                        // Only trigger if it was a tap (small movement, quick)
+                        if (deltaY < 15 && deltaTime < 300) {
+                          handleCount();
+                        }
+                      }
+                      touchStartY.current = null;
+                      touchStartTime.current = null;
+                    }}
+                  >
+                    {/* Title and Counter */}
+                    <View style={styles.titleSection}>
                     <ThemedText style={styles.title}>
                       {displayItem.Adhkar}
                     </ThemedText>
@@ -1346,8 +1397,9 @@ export default function AdhkarDetailScreen() {
                       </ThemedText>
                     </View>
                   )}
+                  </View>
                 </ScrollView>
-              </TouchableOpacity>
+              </View>
             );
           })}
         </ScrollView>

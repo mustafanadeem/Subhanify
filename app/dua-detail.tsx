@@ -9,15 +9,15 @@ import Slider from "@react-native-community/slider";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Modal,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,6 +35,7 @@ export default function DuaDetailScreen() {
   // Get the category from params
   const categoryTitle = (params.title as string) || "Home";
   const categoryKey = (params.category as string)?.toLowerCase() || "home";
+  const initialIndex = params.initialIndex ? parseInt(params.initialIndex as string, 10) : 0;
 
   // State for duas list
   const [duasList, setDuasList] = useState<DuaItem[]>([]);
@@ -57,12 +58,25 @@ export default function DuaDetailScreen() {
     loadDuasList();
   }, [categoryKey]);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const scrollViewRef = useRef<ScrollView>(null);
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   const currentDua: DuaItem | undefined = duasList[currentIndex];
+
+  // Scroll to initial index when list loads
+  useEffect(() => {
+    if (!isLoading && duasList.length > 0 && initialIndex > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          x: initialIndex * SCREEN_WIDTH,
+          animated: false,
+        });
+        setCurrentIndex(initialIndex);
+      }, 100);
+    }
+  }, [isLoading, duasList.length, initialIndex]);
 
   // Handle scroll to track current index
   const handleScroll = (event: any) => {

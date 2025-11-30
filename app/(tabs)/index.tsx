@@ -171,7 +171,7 @@ export default function HomeScreen() {
   ) => {
     if (isDua) {
       router.push({
-        pathname: "/dua-detail",
+        pathname: "/dua-list",
         params: { category: categoryKey, title },
       });
     } else {
