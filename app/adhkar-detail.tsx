@@ -232,7 +232,7 @@ export default function AdhkarDetailScreen() {
       <View
         style={[
           styles.container,
-          { backgroundColor: Colors[colorScheme ?? "light"].background },
+          { backgroundColor: isDark ? '#000000' : '#F0F9FF' },
         ]}
       >
         <StatusBar
@@ -240,28 +240,8 @@ export default function AdhkarDetailScreen() {
           backgroundColor="transparent"
           translucent
         />
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol
-              name="chevron.left"
-              size={24}
-              color={Colors[colorScheme ?? "light"].text}
-            />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <ThemedText style={styles.headerTitle}>Loading...</ThemedText>
-          </View>
-          <View style={styles.headerActions} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={[{ fontSize: 18, fontWeight: '600', color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>Loading...</Text>
         </View>
       </View>
     );
@@ -272,7 +252,7 @@ export default function AdhkarDetailScreen() {
       <View
         style={[
           styles.container,
-          { backgroundColor: Colors[colorScheme ?? "light"].background },
+          { backgroundColor: isDark ? '#000000' : '#F0F9FF' },
         ]}
       >
         <StatusBar
@@ -280,26 +260,12 @@ export default function AdhkarDetailScreen() {
           backgroundColor="transparent"
           translucent
         />
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <IconSymbol
-              name="chevron.left"
-              size={24}
-              color={Colors[colorScheme ?? "light"].text}
-            />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <ThemedText style={styles.headerTitle}>No Data Found</ThemedText>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={[{ fontSize: 18, fontWeight: '600', color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>No adhkar available</Text>
+        </View>
+      </View>
+    );
+  }
           </View>
           <View style={styles.headerActions} />
         </View>
@@ -539,7 +505,7 @@ export default function AdhkarDetailScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: Colors[colorScheme ?? "light"].background },
+        { backgroundColor: isDark ? '#000000' : '#F0F9FF' },
       ]}
     >
       <StatusBar
@@ -547,67 +513,13 @@ export default function AdhkarDetailScreen() {
         backgroundColor="transparent"
         translucent
       />
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
-          },
-        ]}
+
+      {/* Floating Back Button */}
+      <TouchableOpacity 
+        style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]} 
+        onPress={() => router.back()}
       >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-
-        <ThemedText style={styles.headerTitle}>{categoryTitle}</ThemedText>
-
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => setShowQuickSettings(true)}
-        >
-          <IconSymbol
-            name="ellipsis"
-            size={22}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Related Articles Button */}
-      <TouchableOpacity
-        style={[
-          styles.relatedArticlesButton,
-          {
-            backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
-            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-          },
-        ]}
-        onPress={() => setShowRelatedArticles(true)}
-      >
-        <View style={styles.relatedArticlesContent}>
-          <IconSymbol name="list.bullet.rectangle" size={20} color="#3B82F6" />
-          <Text
-            style={[
-              styles.relatedArticlesText,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            {categoryTitle}
-          </Text>
-        </View>
-        <IconSymbol
-          name="chevron.right"
-          size={16}
-          color={Colors[colorScheme ?? "light"].textSecondary}
-        />
+        <Text style={[styles.backArrow, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>←</Text>
       </TouchableOpacity>
 
       {/* Related Articles Modal */}
@@ -1040,7 +952,7 @@ export default function AdhkarDetailScreen() {
         <View
           style={[
             styles.progressBar,
-            { backgroundColor: isDark ? "#2C2C2E" : "#E5E5EA" },
+            { backgroundColor: isDark ? "#1E293B" : "#E0F2FE" },
           ]}
         >
           <View
@@ -1048,7 +960,7 @@ export default function AdhkarDetailScreen() {
               styles.progressFill,
               {
                 width: `${((currentIndex + 1) / totalCount) * 100}%`,
-                backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+                backgroundColor: isDark ? "#0EA5E9" : "#0C4A6E",
               },
             ]}
           />
@@ -1133,9 +1045,17 @@ export default function AdhkarDetailScreen() {
                   >
                     {/* Title and Counter */}
                     <View style={styles.titleSection}>
-                    <ThemedText style={styles.title}>
-                      {displayItem.Adhkar}
-                    </ThemedText>
+                    <View style={styles.header}>
+                      <Text style={[styles.categoryTitle, { color: isDark ? '#94A3B8' : '#64748B' }]}>{categoryTitle}</Text>
+                      <ThemedText style={[styles.title, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>
+                        {displayItem.Adhkar}
+                      </ThemedText>
+                      <View style={[styles.countBadge, { backgroundColor: isDark ? '#1E40AF' : '#3B82F6' }]}>
+                        <Text style={styles.countText}>
+                          {index + 1} of {totalCount}
+                        </Text>
+                      </View>
+                    </View>
 
                     {/* Group Indicator - only show when viewing this adhkar and it's grouped */}
                     {index === currentIndex &&
@@ -1678,55 +1598,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 20,
-    gap: 12,
-  },
   backButton: {
-    padding: 4,
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  settingsButton: {
-    padding: 4,
+  backArrow: {
+    fontSize: 24,
+    color: '#0C4A6E',
+    fontWeight: '600',
   },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 16,
+  header: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    paddingTop: 80,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    flex: 1,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  positionBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  positionText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  repeatBadge: {
-    alignSelf: "flex-start",
-    marginBottom: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1.5,
-  },
-  repeatText: {
+  categoryTitle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  countBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
+  },
+  countText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   progressContainer: {
     paddingHorizontal: 20,
@@ -1734,7 +1660,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   progressBar: {
-    height: 3,
+    height: 4,
     borderRadius: 2,
     overflow: "hidden",
   },
@@ -1800,7 +1726,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     padding: 24,
     marginBottom: 12,
     minHeight: 100,
