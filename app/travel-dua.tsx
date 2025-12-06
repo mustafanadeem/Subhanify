@@ -1,335 +1,277 @@
-/**
- * Travel Dua Display Screen
- * 
- * Shows travel duas when opened from notifications or manually.
- * Displays Arabic text, transliteration, translation, and reference.
- */
+import React from 'react';
+import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { getTravelDuas } from "@/services/travel-notification-service";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
-import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+const TRAVEL_DUAS = [
+  {
+    id: 'travel_start_1',
+    arabic: 'سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَٰذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ',
+    transliteration: 'Subhāna alladhī sakhkhara lanā hādhā wa mā kunnā lahu muqrinīn',
+    translation: 'Glory be to Him who has subjected this to us, and we could never have it (by our efforts).',
+    reference: 'Quran 43:13'
+  },
+  {
+    id: 'travel_start_2',
+    arabic: 'وَإِنَّا إِلَىٰ رَبِّنَا لَمُنقَلِبُونَ',
+    transliteration: 'wa innā ilā rabbinā lamunqalibūn',
+    translation: 'And surely, unto our Lord we are returning.',
+    reference: 'Quran 43:14'
+  },
+  {
+    id: 'travel_protection',
+    arabic: 'اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَٰذَا الْبِرَّ وَالتَّقْوَىٰ وَمِنَ الْعَمَلِ مَا تَرْضَىٰ',
+    transliteration: 'Allāhumma innā nas\'aluka fī safarinā hādhā al-birra wa at-taqwā wa min al-\'amali mā tarḍā',
+    translation: 'O Allah, we ask You for righteousness and piety in this journey of ours, and deeds that please You.',
+    reference: 'Tirmidhi'
+  }
+];
 
 export default function TravelDuaScreen() {
-  const colorScheme = useColorScheme();
-  const params = useLocalSearchParams();
-  
-  const allDuas = getTravelDuas();
-  const [currentDuaIndex, setCurrentDuaIndex] = useState(0);
-  
-  // If opened from notification with specific dua ID
-  React.useEffect(() => {
-    if (params.duaId) {
-      const index = allDuas.findIndex(dua => dua.id === params.duaId);
-      if (index !== -1) {
-        setCurrentDuaIndex(index);
-      }
-    }
-  }, [params.duaId]);
-
-  const currentDua = allDuas[currentDuaIndex];
-
-  const nextDua = () => {
-    setCurrentDuaIndex((prev) => (prev + 1) % allDuas.length);
-  };
-
-  const previousDua = () => {
-    setCurrentDuaIndex((prev) => (prev - 1 + allDuas.length) % allDuas.length);
-  };
+  const router = useRouter();
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: Colors[colorScheme ?? "light"].background },
-      ]}
-    >
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={Colors[colorScheme ?? "light"].text}
-          />
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Travel Dua',
+          headerBackTitle: 'Back',
+          presentation: 'modal',
+        }}
+      />
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.emoji}>🚗</Text>
+          <Text style={styles.title}>Travel Dua</Text>
+          <View style={styles.intensityBadge}>
+            <Text style={styles.intensityText}>Safe Journey</Text>
+          </View>
+        </View>
+
+        <View style={styles.duaCard}>
+          <Text style={styles.duaLabel}>Dua for Travel</Text>
+          <Text style={styles.duaArabic}>{TRAVEL_DUAS[0].arabic}</Text>
+          <Text style={styles.duaTransliteration}>{TRAVEL_DUAS[0].transliteration}</Text>
+          <Text style={styles.duaTranslation}>{TRAVEL_DUAS[0].translation}</Text>
+        </View>
+
+        <View style={styles.meaningCard}>
+          <Text style={styles.meaningTitle}>Meaning & Context</Text>
+          <Text style={styles.meaningText}>
+            This beautiful supplication is recited when beginning a journey, acknowledging Allah's blessing
+            in providing us with means of transportation.
+          </Text>
+          <Text style={styles.meaningText}>
+            It reminds us that all conveniences we enjoy are gifts from Allah, and we should be grateful
+            for His bounties.
+          </Text>
+        </View>
+
+        <View style={styles.referenceCard}>
+          <Text style={styles.referenceTitle}>Reference</Text>
+          <Text style={styles.referenceText}>
+            {TRAVEL_DUAS[0].reference}
+          </Text>
+        </View>
+
+        <View style={styles.additionalDuas}>
+          <Text style={styles.additionalTitle}>Additional Travel Duas</Text>
+          
+          <View style={styles.additionalDuaCard}>
+            <Text style={styles.additionalArabic}>{TRAVEL_DUAS[1].arabic}</Text>
+            <Text style={styles.additionalTranslation}>
+              {TRAVEL_DUAS[1].translation}
+            </Text>
+          </View>
+
+          <View style={styles.additionalDuaCard}>
+            <Text style={styles.additionalArabic}>{TRAVEL_DUAS[2].arabic}</Text>
+            <Text style={styles.additionalTranslation}>
+              {TRAVEL_DUAS[2].translation}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
-        <Text
-          style={[styles.headerTitle, { color: Colors[colorScheme ?? "light"].text }]}
-        >
-          Travel Duas
-        </Text>
-        <View style={styles.headerRight}>
-          <Text
-            style={[
-              styles.duaCounter,
-              { color: Colors[colorScheme ?? "light"].textSecondary },
-            ]}
-          >
-            {currentDuaIndex + 1} of {allDuas.length}
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            May Allah grant you a safe and blessed journey
           </Text>
         </View>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Dua Card */}
-        <View
-          style={[
-            styles.duaCard,
-            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
-          ]}
-        >
-          {/* Arabic Text */}
-          <View style={styles.arabicContainer}>
-            <Text
-              style={[
-                styles.arabicText,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              {currentDua.arabic}
-            </Text>
-          </View>
-
-          {/* Transliteration */}
-          <View style={styles.transliterationContainer}>
-            <Text
-              style={[
-                styles.transliterationText,
-                { color: Colors[colorScheme ?? "light"].textSecondary },
-              ]}
-            >
-              {currentDua.transliteration}
-            </Text>
-          </View>
-
-          {/* Translation */}
-          <View style={styles.translationContainer}>
-            <Text
-              style={[
-                styles.translationText,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              "{currentDua.translation}"
-            </Text>
-          </View>
-
-          {/* Reference */}
-          <View style={styles.referenceContainer}>
-            <Text
-              style={[
-                styles.referenceText,
-                { color: Colors[colorScheme ?? "light"].textSecondary },
-              ]}
-            >
-              — {currentDua.reference}
-            </Text>
-          </View>
-        </View>
-
-        {/* Navigation */}
-        <View style={styles.navigationContainer}>
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
-            ]}
-            onPress={previousDua}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={Colors[colorScheme ?? "light"].text}
-            />
-            <Text
-              style={[
-                styles.navButtonText,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Previous
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
-            ]}
-            onPress={nextDua}
-          >
-            <Text
-              style={[
-                styles.navButtonText,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Next
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={24}
-              color={Colors[colorScheme ?? "light"].text}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Info Section */}
-        <View
-          style={[
-            styles.infoCard,
-            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
-          ]}
-        >
-          <View style={styles.infoHeader}>
-            <Ionicons
-              name="information-circle"
-              size={24}
-              color={Colors[colorScheme ?? "light"].tint}
-            />
-            <Text
-              style={[
-                styles.infoTitle,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              About Travel Duas
-            </Text>
-          </View>
-          <Text
-            style={[
-              styles.infoText,
-              { color: Colors[colorScheme ?? "light"].textSecondary },
-            ]}
-          >
-            These duas are recommended to be recited when beginning a journey. They seek Allah's protection and blessing for safe travel.
-          </Text>
-        </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F0F9FF',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+  },
+  emoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  intensityBadge: {
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
   },
-  backButton: {
-    marginRight: 16,
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    flex: 1,
-  },
-  headerRight: {
-    alignItems: "flex-end",
-  },
-  duaCounter: {
+  intensityText: {
     fontSize: 14,
-    fontWeight: "500",
-  },
-  content: {
-    flex: 1,
-    padding: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
   duaCard: {
-    borderRadius: 16,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginBottom: 16,
     padding: 24,
-    marginBottom: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  arabicContainer: {
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  arabicText: {
-    fontSize: 28,
-    lineHeight: 44,
-    textAlign: "center",
-    fontFamily: "System", // You can use Arabic font here
-  },
-  transliterationContainer: {
+  duaLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginBottom: 16,
+    textAlign: 'center',
   },
-  transliterationText: {
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-  translationContainer: {
+  duaArabic: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
     marginBottom: 16,
+    lineHeight: 48,
   },
-  translationText: {
+  duaTransliteration: {
     fontSize: 18,
-    lineHeight: 28,
-    textAlign: "center",
+    fontStyle: 'italic',
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 12,
   },
-  referenceContainer: {
-    alignItems: "center",
+  duaTranslation: {
+    fontSize: 18,
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  meaningCard: {
+    backgroundColor: '#EFF6FF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 12,
+  },
+  meaningTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 12,
+  },
+  meaningText: {
+    fontSize: 15,
+    color: '#1E3A8A',
+    lineHeight: 24,
+    marginBottom: 12,
+  },
+  referenceCard: {
+    backgroundColor: '#FEF3C7',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  referenceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 8,
   },
   referenceText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  navigationContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  navButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  navButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  infoCard: {
-    borderRadius: 12,
-    padding: 16,
-  },
-  infoHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  infoText: {
-    fontSize: 14,
+    fontSize: 13,
+    color: '#78350F',
     lineHeight: 20,
+  },
+  additionalDuas: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  additionalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0C4A6E',
+    marginBottom: 12,
+  },
+  additionalDuaCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  additionalArabic: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 32,
+  },
+  additionalTranslation: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  closeButton: {
+    backgroundColor: '#3B82F6',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  footer: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#64748B',
+    textAlign: 'center',
   },
 });
 

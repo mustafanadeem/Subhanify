@@ -67,6 +67,7 @@ export default function LocationDetailScreen() {
   const mode = params.mode as "add" | "edit";
   const locationId = params.locationId as string | undefined;
 
+  const [step, setStep] = useState<1 | 2>(mode === "edit" ? 2 : 1);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<LocationCategory>("mosque");
   const [latitude, setLatitude] = useState(37.78825);
@@ -287,24 +288,54 @@ export default function LocationDetailScreen() {
               { color: Colors[colorScheme ?? "light"].text },
             ]}
           >
-            {mode === "add" ? "Add a new place" : "Edit place"}
+            {mode === "add" ? (step === 1 ? "Choose Category & Location" : "Location Details") : "Edit place"}
           </Text>
-          <TouchableOpacity 
-            onPress={handleSave} 
-            disabled={isLoading}
-            style={styles.saveButtonContainer}
-          >
-            <Text
-              style={[
-                styles.saveButtonText,
-                { 
-                  color: isLoading ? Colors[colorScheme ?? "light"].textSecondary : "#007AFF",
-                },
-              ]}
+          {step === 2 && mode === "add" && (
+            <TouchableOpacity 
+              onPress={() => setStep(1)}
+              style={styles.backButtonContainer}
             >
-              {isLoading ? "Saving..." : "Save"}
-            </Text>
-          </TouchableOpacity>
+              <Text style={{ color: "#007AFF", fontSize: 16, fontWeight: "600" }}>
+                Back
+              </Text>
+            </TouchableOpacity>
+          )}
+          {step === 2 && (
+            <TouchableOpacity 
+              onPress={handleSave} 
+              disabled={isLoading}
+              style={styles.saveButtonContainer}
+            >
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  { 
+                    color: isLoading ? Colors[colorScheme ?? "light"].textSecondary : "#007AFF",
+                  },
+                ]}
+              >
+                {isLoading ? "Saving..." : "Save"}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {step === 1 && mode === "add" && (
+            <TouchableOpacity 
+              onPress={() => hasSelectedLocation && setStep(2)}
+              disabled={!hasSelectedLocation}
+              style={styles.nextButtonContainer}
+            >
+              <Text
+                style={[
+                  styles.nextButtonText,
+                  { 
+                    color: hasSelectedLocation ? "#007AFF" : Colors[colorScheme ?? "light"].textSecondary,
+                  },
+                ]}
+              >
+                Next
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <ScrollView
@@ -312,71 +343,74 @@ export default function LocationDetailScreen() {
           contentContainerStyle={styles.contentContainer}
           scrollEnabled={!suggestionsVisible}
         >
-          {/* Search Maps Input */}
-          <PlaceAutocomplete
-            onSelect={handlePlaceSelect}
-            theme={colorScheme ?? "light"}
-            placeholder="Search Maps"
-            initialValue={name}
-            onSuggestionsVisibilityChange={setSuggestionsVisible}
-          />
+          {/* STEP 1: Category & Location Selection */}
+          {step === 1 && mode === "add" && (
+            <>
+              {/* Search Maps Input */}
+              <PlaceAutocomplete
+                onSelect={handlePlaceSelect}
+                theme={colorScheme ?? "light"}
+                placeholder="Search Maps"
+                initialValue={name}
+                onSuggestionsVisibilityChange={setSuggestionsVisible}
+              />
 
-          {/* Locate on Map Button */}
-          <TouchableOpacity
-            style={[
-              styles.locateButton,
-              {
-                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
-              },
-            ]}
-            onPress={() => setShowMapModal(true)}
-          >
-            <Ionicons name="location" size={24} color="#007AFF" />
-            <Text
-              style={[
-                styles.locateButtonText,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              {hasSelectedLocation ? "Adjust on map" : "Locate on map"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Categories Section */}
-          <View style={[styles.section, styles.categoriesSection]}>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Categories
-            </Text>
-            <View style={styles.categoryGrid}>
-              {categoryOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
+              {/* Locate on Map Button */}
+              <TouchableOpacity
+                style={[
+                  styles.locateButton,
+                  {
+                    backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                  },
+                ]}
+                onPress={() => setShowMapModal(true)}
+              >
+                <Ionicons name="location" size={24} color="#007AFF" />
+                <Text
                   style={[
-                    styles.categoryOption,
-                    {
-                      backgroundColor:
-                        Colors[colorScheme ?? "light"].cardBackground,
-                      borderColor:
-                        category === option.value
-                          ? option.color
-                          : "transparent",
-                    },
+                    styles.locateButtonText,
+                    { color: Colors[colorScheme ?? "light"].text },
                   ]}
-                  onPress={() => setCategory(option.value)}
                 >
-                  <View
-                    style={[
-                      styles.categoryIconContainer,
-                      { backgroundColor: option.color },
-                    ]}
-                  >
-                    <Ionicons
-                      name={option.icon as any}
+                  {hasSelectedLocation ? "Adjust on map" : "Locate on map"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Categories Section */}
+              <View style={[styles.section, styles.categoriesSection]}>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Categories
+                </Text>
+                <View style={styles.categoryGrid}>
+                  {categoryOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.categoryOption,
+                        {
+                          backgroundColor:
+                            Colors[colorScheme ?? "light"].cardBackground,
+                          borderColor:
+                            category === option.value
+                              ? option.color
+                              : "transparent",
+                        },
+                      ]}
+                      onPress={() => setCategory(option.value)}
+                    >
+                      <View
+                        style={[
+                          styles.categoryIconContainer,
+                          { backgroundColor: option.color },
+                        ]}
+                      >
+                        <Ionicons
+                          name={option.icon as any}
                       size={24}
                       color="white"
                     />
@@ -421,46 +455,48 @@ export default function LocationDetailScreen() {
               </View>
             )}
           </View>
-
-          {/* Location Name Input (shown after location selected) */}
-          {hasSelectedLocation && (
-            <View style={styles.section}>
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  { color: Colors[colorScheme ?? "light"].text },
-                ]}
-              >
-                Location Name
-              </Text>
-              <TextInput
-                style={[
-                  styles.nameInput,
-                  {
-                    backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
-                    color: Colors[colorScheme ?? "light"].text,
-                    borderColor: Colors[colorScheme ?? "light"].border,
-                  },
-                ]}
-                value={name}
-                onChangeText={setName}
-                placeholder="Enter a name for this location..."
-                placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
-              />
-            </View>
+            </>
           )}
 
-          {/* Map Preview with Radius Slider (shown after location selected) */}
-          {hasSelectedLocation && (
-            <View style={styles.section}>
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  { color: Colors[colorScheme ?? "light"].text },
-                ]}
-              >
-                Location Preview
-              </Text>
+          {/* STEP 2: Location Name & Duas Selection */}
+          {step === 2 && (
+            <>
+              {/* Location Name Input */}
+              <View style={styles.section}>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Location Name
+                </Text>
+                <TextInput
+                  style={[
+                    styles.nameInput,
+                    {
+                      backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                      color: Colors[colorScheme ?? "light"].text,
+                      borderColor: Colors[colorScheme ?? "light"].border,
+                    },
+                  ]}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Enter a name for this location..."
+                  placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
+                />
+              </View>
+
+              {/* Map Preview with Radius Slider */}
+              <View style={styles.section}>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Location Preview
+                </Text>
               
               {/* Mini Map Preview */}
               <View style={styles.mapPreviewContainer}>
@@ -682,6 +718,8 @@ export default function LocationDetailScreen() {
               ))
             )}
           </View>
+            </>
+          )}
         </ScrollView>
 
         {/* Map Modal */}
@@ -833,6 +871,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  nextButtonContainer: {
+    padding: 4,
+  },
+  nextButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  backButtonContainer: {
+    padding: 4,
+  },
   nameInput: {
     padding: 16,
     borderRadius: 12,
@@ -846,11 +894,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    marginBottom: 0,
+    marginBottom: 4,
   },
   categoriesSection: {
     marginTop: 16,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   sectionTitle: {
     fontSize: 18,

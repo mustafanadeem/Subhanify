@@ -1,13 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { loadMosques } from "@/services/mosque-data-service";
-import { LocationCategory, SavedLocation } from "@/types/location";
 import { Mosque } from "@/types/mosque";
-import {
-  deleteLocation,
-  getAllLocations,
-  toggleLocationEnabled,
-} from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, Stack } from "expo-router";
@@ -26,31 +20,28 @@ interface MosqueWithDistance extends Mosque {
   distance: number;
 }
 
-const categoryIcons: Record<LocationCategory, string> = {
-  mosque: "moon",
-  home: "home",
-  work: "briefcase",
-  market: "cart",
-  travel: "car",
-  other: "location",
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };
 
-const categoryColors: Record<LocationCategory, string> = {
-  mosque: "#4CAF50",
-  home: "#2196F3",
-  work: "#A0522D",
-  market: "#9C27B0",
-  travel: "#00BCD4",
-  other: "#9C27B0",
-};
-
-type ViewMode = "saved" | "mosques";
-
-export default function ManagePlacesScreen() {
+export default function NearbyMosquesScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const [viewMode, setViewMode] = useState<ViewMode>("saved");
-  const [locations, setLocations] = useState<SavedLocation[]>([]);
   const [mosques, setMosques] = useState<Mosque[]>([]);
   const [nearbyMosques, setNearbyMosques] = useState<MosqueWithDistance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,10 +55,6 @@ export default function ManagePlacesScreen() {
   const initialize = async () => {
     try {
       setIsLoading(true);
-
-      // Load saved locations
-      const savedLocations = await getAllLocations();
-      setLocations(savedLocations);
 
       // Load mosques data
       const mosquesData = await loadMosques();
@@ -96,8 +83,8 @@ export default function ManagePlacesScreen() {
         setNearbyMosques(nearby);
       }
     } catch (error) {
-      console.error("Error initializing manage places:", error);
-      Alert.alert("Error", "Failed to load places");
+      console.error("Error initializing nearby mosques:", error);
+      Alert.alert("Error", "Failed to load mosques");
     } finally {
       setIsLoading(false);
     }
@@ -120,61 +107,6 @@ export default function ManagePlacesScreen() {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
-  };
-
-  const handleToggleLocationEnabled = async (
-    locationId: string,
-    currentEnabled: boolean
-  ) => {
-    try {
-      await toggleLocationEnabled(locationId, !currentEnabled);
-      await loadSavedLocations();
-    } catch (error) {
-      console.error("Error toggling location:", error);
-      Alert.alert("Error", "Failed to update location");
-    }
-  };
-
-  const handleDeleteLocation = (location: SavedLocation) => {
-    Alert.alert(
-      "Delete Location",
-      `Are you sure you want to delete "${location.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteLocation(location.id);
-              await loadSavedLocations();
-            } catch (error) {
-              console.error("Error deleting location:", error);
-              Alert.alert("Error", "Failed to delete location");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const loadSavedLocations = async () => {
-    const savedLocations = await getAllLocations();
-    setLocations(savedLocations);
-  };
-
-  const handleEditLocation = (location: SavedLocation) => {
-    router.push({
-      pathname: "/location-detail",
-      params: { mode: "edit", locationId: location.id },
-    });
-  };
-
-  const handleAddLocation = () => {
-    router.push({
-      pathname: "/location-detail",
-      params: { mode: "add" },
-    });
   };
 
   if (isLoading) {
@@ -204,7 +136,7 @@ export default function ManagePlacesScreen() {
                 { color: Colors[colorScheme ?? "light"].text },
               ]}
             >
-              Manage Places
+              Nearby Mosques
             </Text>
           </View>
           <View style={styles.loadingContainer}>
@@ -245,85 +177,8 @@ export default function ManagePlacesScreen() {
               { color: Colors[colorScheme ?? "light"].text },
             ]}
           >
-            Manage Places
+            Nearby Mosques
           </Text>
-          {viewMode === "saved" && (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddLocation}
-            >
-              <Ionicons
-                name="add-circle"
-                size={28}
-                color={colorScheme === "dark" ? "#0A84FF" : "#007AFF"}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Toggle Tabs */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              viewMode === "saved" && styles.activeTab,
-              viewMode === "saved" && {
-                backgroundColor: colorScheme === "dark" ? "#0A84FF" : "#007AFF",
-              },
-            ]}
-            onPress={() => setViewMode("saved")}
-          >
-            <Ionicons
-              name="location"
-              size={20}
-              color={
-                viewMode === "saved"
-                  ? "#FFFFFF"
-                  : Colors[colorScheme ?? "light"].text
-              }
-            />
-            <Text
-              style={[
-                styles.tabText,
-                viewMode === "saved"
-                  ? styles.activeTabText
-                  : { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Saved Locations ({locations.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              viewMode === "mosques" && styles.activeTab,
-              viewMode === "mosques" && {
-                backgroundColor: colorScheme === "dark" ? "#0A84FF" : "#007AFF",
-              },
-            ]}
-            onPress={() => setViewMode("mosques")}
-          >
-            <Ionicons
-              name="moon"
-              size={20}
-              color={
-                viewMode === "mosques"
-                  ? "#FFFFFF"
-                  : Colors[colorScheme ?? "light"].text
-              }
-            />
-            <Text
-              style={[
-                styles.tabText,
-                viewMode === "mosques"
-                  ? styles.activeTabText
-                  : { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Nearby Mosques ({nearbyMosques.length})
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Content */}
@@ -332,177 +187,7 @@ export default function ManagePlacesScreen() {
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
-          {viewMode === "saved" ? (
-            // Saved Locations View
-            locations.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="location-outline"
-                  size={64}
-                  color={
-                    isDark
-                      ? Colors[colorScheme ?? "light"].textSecondary
-                      : "#8E8E93"
-                  }
-                />
-                <Text
-                  style={[
-                    styles.emptyText,
-                    {
-                      color: isDark
-                        ? Colors[colorScheme ?? "light"].textSecondary
-                        : "#8E8E93",
-                    },
-                  ]}
-                >
-                  No saved locations yet
-                </Text>
-                <Text
-                  style={[
-                    styles.emptySubtext,
-                    {
-                      color: isDark
-                        ? Colors[colorScheme ?? "light"].textSecondary
-                        : "#8E8E93",
-                    },
-                  ]}
-                >
-                  Tap the + button to add your first location
-                </Text>
-              </View>
-            ) : (
-              locations.map((location) => (
-                <View
-                  key={location.id}
-                  style={[
-                    styles.locationCard,
-                    {
-                      backgroundColor:
-                        Colors[colorScheme ?? "light"].cardBackground,
-                    },
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={styles.locationMainContent}
-                    onPress={() => handleEditLocation(location)}
-                  >
-                    <View
-                      style={[
-                        styles.locationIcon,
-                        { backgroundColor: categoryColors[location.category] },
-                      ]}
-                    >
-                      <Ionicons
-                        name={categoryIcons[location.category] as any}
-                        size={24}
-                        color="white"
-                      />
-                    </View>
-
-                    <View style={styles.locationInfo}>
-                      <Text
-                        style={[
-                          styles.locationName,
-                          { color: Colors[colorScheme ?? "light"].text },
-                        ]}
-                      >
-                        {location.name}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.locationAddress,
-                          {
-                            color: isDark
-                              ? Colors[colorScheme ?? "light"].textSecondary
-                              : "#8E8E93",
-                          },
-                        ]}
-                      >
-                        {location.category.charAt(0).toUpperCase() +
-                          location.category.slice(1)}
-                        {" • "}
-                        {location.radius}m radius
-                      </Text>
-                    </View>
-
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={
-                        isDark
-                          ? Colors[colorScheme ?? "light"].textSecondary
-                          : "#8E8E93"
-                      }
-                    />
-                  </TouchableOpacity>
-
-                  {/* Action Buttons */}
-                  <View style={styles.locationActions}>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() =>
-                        handleToggleLocationEnabled(
-                          location.id,
-                          location.enabled
-                        )
-                      }
-                    >
-                      <Ionicons
-                        name={
-                          location.enabled
-                            ? "notifications"
-                            : "notifications-off"
-                        }
-                        size={20}
-                        color={
-                          location.enabled
-                            ? colorScheme === "dark"
-                              ? "#0A84FF"
-                              : "#007AFF"
-                            : isDark
-                            ? Colors[colorScheme ?? "light"].textSecondary
-                            : "#8E8E93"
-                        }
-                      />
-                      <Text
-                        style={[
-                          styles.actionButtonText,
-                          {
-                            color: location.enabled
-                              ? colorScheme === "dark"
-                                ? "#0A84FF"
-                                : "#007AFF"
-                              : isDark
-                              ? Colors[colorScheme ?? "light"].textSecondary
-                              : "#8E8E93",
-                          },
-                        ]}
-                      >
-                        {location.enabled ? "Enabled" : "Disabled"}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => handleDeleteLocation(location)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={20}
-                        color="#FF3B30"
-                      />
-                      <Text
-                        style={[styles.actionButtonText, { color: "#FF3B30" }]}
-                      >
-                        Delete
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))
-            )
-          ) : // Nearby Mosques View
-          nearbyMosques.length === 0 ? (
+          {nearbyMosques.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons
                 name="moon-outline"

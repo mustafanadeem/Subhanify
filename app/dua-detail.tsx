@@ -1,36 +1,26 @@
-import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
-import { useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { DuaItem } from "@/types/adhkar";
 import { getDuasByCategory } from "@/utils/adhkar-utils";
-import { Ionicons } from "@expo/vector-icons";
-import Slider from "@react-native-community/slider";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
+import { useEffect, useState, useLayoutEffect } from "react";
 import {
-    Animated,
     Dimensions,
-    Modal,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 export default function DuaDetailScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { getFontFamily, arabicTextSize, setArabicTextSize } = useFont();
-  const insets = useSafeAreaInsets();
 
   // Get the category from params
   const categoryTitle = (params.title as string) || "Home";
@@ -39,8 +29,17 @@ export default function DuaDetailScreen() {
 
   // State for duas list
   const [duasList, setDuasList] = useState<DuaItem[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isLoading, setIsLoading] = useState(true);
-  const totalCount = duasList.length;
+
+  // Set navigation options once
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: categoryTitle,
+      headerBackTitle: 'Back',
+      presentation: 'modal',
+    });
+  }, [navigation, categoryTitle]);
 
   useEffect(() => {
     const loadDuasList = () => {
@@ -58,457 +57,83 @@ export default function DuaDetailScreen() {
     loadDuasList();
   }, [categoryKey]);
 
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const [showQuickSettings, setShowQuickSettings] = useState(false);
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
   const currentDua: DuaItem | undefined = duasList[currentIndex];
 
-  // Scroll to initial index when list loads
-  useEffect(() => {
-    if (!isLoading && duasList.length > 0 && initialIndex > 0) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          x: initialIndex * SCREEN_WIDTH,
-          animated: false,
-        });
-        setCurrentIndex(initialIndex);
-      }, 100);
-    }
-  }, [isLoading, duasList.length, initialIndex]);
-
-  // Handle scroll to track current index
-  const handleScroll = (event: any) => {
-    const xOffset = event.nativeEvent.contentOffset.x;
-    const index = Math.round(xOffset / SCREEN_WIDTH);
-    if (index !== currentIndex && index >= 0 && index < totalCount) {
-      setCurrentIndex(index);
+  const nextDua = () => {
+    if (currentIndex < duasList.length - 1) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
-  // Navigate to specific dua
-  const goToIndex = (index: number) => {
-    if (scrollViewRef.current && index >= 0 && index < totalCount) {
-      scrollViewRef.current.scrollTo({
-        x: index * SCREEN_WIDTH,
-        animated: true,
-      });
-      setCurrentIndex(index);
+  const previousDua = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
     }
   };
 
-  // Quick settings animation
-  const toggleQuickSettings = () => {
-    if (showQuickSettings) {
-      Animated.timing(slideAnim, {
-        toValue: SCREEN_HEIGHT,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setShowQuickSettings(false));
-    } else {
-      setShowQuickSettings(true);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  };
-
-  const closeQuickSettings = () => {
-    Animated.timing(slideAnim, {
-      toValue: SCREEN_HEIGHT,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => setShowQuickSettings(false));
-  };
-
-  if (isLoading) {
+  if (isLoading || !currentDua || duasList.length === 0) {
     return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: Colors[colorScheme ?? "light"].background },
-        ]}
-      >
-        <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor="transparent"
-          translucent
-        />
-        <View style={styles.loadingContainer}>
-          <ThemedText>Loading duas...</ThemedText>
-        </View>
-      </View>
-    );
-  }
-
-  if (duasList.length === 0) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: Colors[colorScheme ?? "light"].background },
-        ]}
-      >
-        <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor="transparent"
-          translucent
-        />
-        <View style={styles.loadingContainer}>
-          <ThemedText>No duas found for this category.</ThemedText>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <ThemedText>Go Back</ThemedText>
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F0F9FF', justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={[styles.title, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: Colors[colorScheme ?? "light"].background },
-      ]}
-    >
-      <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor="transparent"
-        translucent
-      />
+    <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F0F9FF' }]}>
+      <TouchableOpacity style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]} onPress={() => router.back()}>
+        <Text style={[styles.backArrow, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>←</Text>
+      </TouchableOpacity>
 
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + 10,
-            backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons
-            name="chevron-back"
-            size={28}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text
-            style={[
-              styles.headerTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            {categoryTitle}
-          </Text>
-          <Text
-            style={[
-              styles.headerSubtitle,
-              { color: isDark ? "#8E8E93" : "#666666" },
-            ]}
-          >
-            {currentIndex + 1} of {totalCount}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={toggleQuickSettings}
-        >
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={24}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Main Scroll View for Duas */}
       <ScrollView
-        ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
+        onMomentumScrollEnd={(event) => {
+          const newIndex = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+          setCurrentIndex(newIndex);
+        }}
         scrollEventThrottle={16}
-        style={styles.mainScrollView}
       >
         {duasList.map((dua, index) => (
-          <ScrollView
-            key={dua.id}
-            style={styles.duaPage}
-            contentContainerStyle={styles.duaPageContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.duaContainer}>
-              {/* Arabic Text */}
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                    borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.arabicText,
-                    {
-                      fontFamily: getFontFamily(),
-                      fontSize: arabicTextSize,
-                      lineHeight: arabicTextSize * 2,
-                      color: Colors[colorScheme ?? "light"].text,
-                    },
-                  ]}
-                >
-                  {dua.arabic}
+          <ScrollView key={`${dua.id}-${index}`} style={styles.duaPage} showsVerticalScrollIndicator={false}>
+            <View style={styles.header}>
+              <Text style={[styles.categoryTitle, { color: isDark ? '#94A3B8' : '#64748B' }]}>{categoryTitle}</Text>
+              <Text style={[styles.title, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>{dua.title}</Text>
+              <View style={[styles.countBadge, { backgroundColor: isDark ? '#1E40AF' : '#3B82F6' }]}>
+                <Text style={styles.countText}>
+                  {index + 1} of {duasList.length}
                 </Text>
               </View>
+            </View>
 
-              {/* Transliteration */}
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                    borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.transliterationText,
-                    { color: isDark ? "#8E8E93" : "#666666" },
-                  ]}
-                >
-                  {dua.transliteration}
-                </Text>
+            <View style={[styles.duaCard, { backgroundColor: isDark ? '#1E293B' : '#fff' }]}>
+              <Text style={[styles.duaLabel, { color: isDark ? '#94A3B8' : '#6B7280' }]}>Dua</Text>
+              <Text style={[styles.duaArabic, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>{dua.arabic}</Text>
+              <Text style={[styles.duaTransliteration, { color: isDark ? '#94A3B8' : '#475569' }]}>{dua.transliteration}</Text>
+              <Text style={[styles.duaTranslation, { color: isDark ? '#CBD5E1' : '#1E293B' }]}>{dua.translation}</Text>
+            </View>
+
+            <View style={[styles.referenceCard, { backgroundColor: isDark ? '#422006' : '#FEF3C7' }]}>
+              <Text style={[styles.referenceTitle, { color: isDark ? '#FDE68A' : '#92400E' }]}>Reference</Text>
+              <Text style={[styles.referenceText, { color: isDark ? '#FCD34D' : '#78350F' }]}>{dua.reference}</Text>
+            </View>
+
+            {dua.commentary && (
+              <View style={[styles.meaningCard, { backgroundColor: isDark ? '#0A0A0A' : '#EFF6FF' }]}>
+                <Text style={[styles.meaningTitle, { color: isDark ? '#60A5FA' : '#1E40AF' }]}>Commentary</Text>
+                <Text style={[styles.meaningText, { color: isDark ? '#93C5FD' : '#1E3A8A' }]}>{dua.commentary}</Text>
               </View>
+            )}
 
-              {/* Translation */}
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                    borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.translationText,
-                    { color: Colors[colorScheme ?? "light"].text },
-                  ]}
-                >
-                  {dua.translation}
-                </Text>
-              </View>
-
-              {/* Reference */}
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                    borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                  },
-                ]}
-              >
-                <View style={styles.referenceHeader}>
-                  <Ionicons
-                    name="book"
-                    size={16}
-                    color={isDark ? "#8E8E93" : "#666666"}
-                  />
-                  <Text
-                    style={[
-                      styles.referenceText,
-                      { color: isDark ? "#8E8E93" : "#666666" },
-                    ]}
-                  >
-                    {dua.reference}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Commentary (if available) */}
-              {dua.commentary && (
-                <View
-                  style={[
-                    styles.card,
-                    {
-                      backgroundColor: isDark
-                        ? "rgba(10, 132, 255, 0.12)"
-                        : "rgba(0, 122, 255, 0.08)",
-                      borderColor: isDark ? "#0A84FF" : "#007AFF",
-                    },
-                  ]}
-                >
-                  <View style={styles.commentaryHeader}>
-                    <Ionicons
-                      name="information-circle"
-                      size={20}
-                      color={isDark ? "#0A84FF" : "#007AFF"}
-                    />
-                    <Text
-                      style={[
-                        styles.commentaryTitle,
-                        { color: isDark ? "#0A84FF" : "#007AFF" },
-                      ]}
-                    >
-                      Commentary
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      styles.commentaryText,
-                      { color: Colors[colorScheme ?? "light"].text },
-                    ]}
-                  >
-                    {dua.commentary}
-                  </Text>
-                </View>
-              )}
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
+                May Allah accept our duas
+              </Text>
             </View>
           </ScrollView>
         ))}
       </ScrollView>
-
-      {/* Navigation Dots */}
-      {totalCount > 1 && (
-        <View style={styles.dotsContainer}>
-          {duasList.map((_, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => goToIndex(index)}
-              style={[
-                styles.dot,
-                {
-                  backgroundColor:
-                    index === currentIndex
-                      ? isDark
-                        ? "#0A84FF"
-                        : "#007AFF"
-                      : isDark
-                      ? "#2C2C2E"
-                      : "#E5E5EA",
-                  width: index === currentIndex ? 24 : 8,
-                },
-              ]}
-            />
-          ))}
-        </View>
-      )}
-
-      {/* Quick Settings Modal */}
-      <Modal
-        visible={showQuickSettings}
-        animationType="none"
-        transparent={true}
-        onRequestClose={closeQuickSettings}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={closeQuickSettings}
-        >
-          <Animated.View
-            style={[
-              styles.quickSettingsPanel,
-              {
-                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.quickSettingsHandle} />
-
-            <Text
-              style={[
-                styles.quickSettingsTitle,
-                { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Text Settings
-            </Text>
-
-            {/* Arabic Text Size Slider */}
-            <View style={styles.settingSection}>
-              <View style={styles.settingHeader}>
-                <Text
-                  style={[
-                    styles.settingLabel,
-                    { color: Colors[colorScheme ?? "light"].text },
-                  ]}
-                >
-                  Arabic Text Size
-                </Text>
-                <Text
-                  style={[
-                    styles.settingValue,
-                    { color: isDark ? "#0A84FF" : "#007AFF" },
-                  ]}
-                >
-                  {arabicTextSize}
-                </Text>
-              </View>
-              <Slider
-                style={styles.slider}
-                minimumValue={24}
-                maximumValue={48}
-                step={2}
-                value={arabicTextSize}
-                onValueChange={setArabicTextSize}
-                minimumTrackTintColor={isDark ? "#0A84FF" : "#007AFF"}
-                maximumTrackTintColor={isDark ? "#2C2C2E" : "#E5E5EA"}
-                thumbTintColor={isDark ? "#0A84FF" : "#007AFF"}
-              />
-              <View style={styles.sliderLabels}>
-                <Text
-                  style={[
-                    styles.sliderLabel,
-                    { color: isDark ? "#8E8E93" : "#666666" },
-                  ]}
-                >
-                  Small
-                </Text>
-                <Text
-                  style={[
-                    styles.sliderLabel,
-                    { color: isDark ? "#8E8E93" : "#666666" },
-                  ]}
-                >
-                  Large
-                </Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.closeSettingsButton,
-                { backgroundColor: isDark ? "#0A84FF" : "#007AFF" },
-              ]}
-              onPress={closeQuickSettings}
-            >
-              <Text style={styles.closeSettingsButtonText}>Done</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 }
@@ -516,170 +141,154 @@ export default function DuaDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    backgroundColor: '#F0F9FF',
   },
   backButton: {
-    padding: 4,
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  settingsButton: {
-    padding: 4,
-  },
-  mainScrollView: {
-    flex: 1,
+  backArrow: {
+    fontSize: 24,
+    color: '#0C4A6E',
+    fontWeight: '600',
   },
   duaPage: {
     width: SCREEN_WIDTH,
   },
-  duaPageContent: {
+  header: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    paddingTop: 80,
+  },
+  categoryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  countBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
+  },
+  countText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  duaCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginBottom: 16,
     padding: 24,
-    paddingBottom: 100,
-  },
-  duaContainer: {
-    gap: 16,
-  },
-  card: {
     borderRadius: 16,
-    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  duaLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  duaArabic: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 48,
+  },
+  duaTransliteration: {
+    fontSize: 18,
+    fontStyle: 'italic',
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  duaTranslation: {
+    fontSize: 18,
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  meaningCard: {
+    backgroundColor: '#EFF6FF',
+    marginHorizontal: 16,
+    marginBottom: 16,
     padding: 20,
+    borderRadius: 12,
   },
-  arabicText: {
-    fontWeight: "400",
-    textAlign: "right",
-    writingDirection: "rtl",
+  meaningTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 12,
   },
-  transliterationText: {
-    fontSize: 16,
-    fontStyle: "italic",
+  meaningText: {
+    fontSize: 15,
+    color: '#1E3A8A',
     lineHeight: 24,
-    textAlign: "left",
+    marginBottom: 12,
   },
-  translationText: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400",
-    textAlign: "left",
+  referenceCard: {
+    backgroundColor: '#FEF3C7',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
   },
-  referenceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  referenceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 8,
   },
   referenceText: {
-    fontSize: 14,
-    flex: 1,
-  },
-  commentaryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  commentaryTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  commentaryText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  dotsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 20,
-    gap: 8,
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  quickSettingsPanel: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 12,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
-  },
-  quickSettingsHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#8E8E93",
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  quickSettingsTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 24,
-  },
-  settingSection: {
-    marginBottom: 24,
-  },
-  settingHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  settingValue: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  slider: {
-    width: "100%",
-    height: 40,
-  },
-  sliderLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 4,
-  },
-  sliderLabel: {
     fontSize: 13,
+    color: '#78350F',
+    lineHeight: 20,
   },
-  closeSettingsButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 16,
+  footer: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
-  closeSettingsButtonText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "600",
+  footerText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#64748B',
+    textAlign: 'center',
   },
 });
