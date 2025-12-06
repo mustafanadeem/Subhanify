@@ -16,3 +16,4 @@ export const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_K
 // Alternative: Use a proxy server to keep API key secure
 // export const PLACES_API_ENDPOINT = "https://your-backend.com/api/places";
 
+

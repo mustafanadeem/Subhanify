@@ -103,52 +103,179 @@ export const getDuaById = (id: string): DuaItem | undefined => {
   return duas.find((dua) => dua.id === id);
 };
 
-// Category mapping for duas based on the actual data
-const duaCategoryMapping: Record<string, { title: string; subtitle: string; icon: string; duaIds: string[] }> = {
-  home: {
+// Category display configuration with icons and subtitles
+const duaCategoryDisplayInfo: Record<string, { title: string; subtitle: string; icon: string }> = {
+  "Home": {
     title: "Home",
     subtitle: "Entering & leaving",
     icon: "house.fill",
-    duaIds: ["leaving-house", "entering-house"],
   },
-  mosque: {
+  "Mosque": {
     title: "Mosque",
     subtitle: "Sacred spaces",
     icon: "moon.fill",
-    duaIds: ["entering-mosque", "leaving-mosque"],
   },
-  travel: {
+  "Travel": {
     title: "Travel",
     subtitle: "For journeys",
     icon: "airplane",
-    duaIds: ["travel", "destination"],
   },
-  weather: {
+  "Weather": {
     title: "Weather",
     subtitle: "Rain supplications",
     icon: "cloud.rain.fill",
-    duaIds: ["rain", "beneficial-rain"],
+  },
+  "Ablution": {
+    title: "Ablution",
+    subtitle: "Wudu supplications",
+    icon: "drop.fill",
+  },
+  "Bathing & Hygiene": {
+    title: "Bathing & Hygiene",
+    subtitle: "Bathroom duas",
+    icon: "water.waves",
+  },
+  "Clothing": {
+    title: "Clothing",
+    subtitle: "Wearing garments",
+    icon: "tshirt.fill",
+  },
+  "Salah": {
+    title: "Salah",
+    subtitle: "Prayer duas",
+    icon: "person.fill",
+  },
+  "Morning & Evening": {
+    title: "Morning & Evening",
+    subtitle: "Daily remembrance",
+    icon: "sun.horizon.fill",
+  },
+  "Sleep": {
+    title: "Sleep",
+    subtitle: "Before sleeping",
+    icon: "moon.zzz.fill",
+  },
+  "Protection": {
+    title: "Protection",
+    subtitle: "Seeking refuge",
+    icon: "shield.fill",
+  },
+  "Hardship & Distress": {
+    title: "Hardship & Distress",
+    subtitle: "In difficult times",
+    icon: "heart.fill",
+  },
+  "Faith & Spirituality": {
+    title: "Faith & Spirituality",
+    subtitle: "Spiritual guidance",
+    icon: "sparkles",
+  },
+  "Life Guidance": {
+    title: "Life Guidance",
+    subtitle: "Daily guidance",
+    icon: "book.fill",
+  },
+  "Other": {
+    title: "Other",
+    subtitle: "Miscellaneous duas",
+    icon: "ellipsis.circle.fill",
   },
 };
 
+// Helper to convert category name to key
+function categoryToKey(category: string): string {
+  return category
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export const getDuasCategories = (): CategorySummary[] => {
-  return Object.entries(duaCategoryMapping).map(([category, info]) => ({
-    id: category,
-    title: info.title,
-    subtitle: info.subtitle,
-    icon: info.icon,
-    count: info.duaIds.length,
-    category,
-  }));
+  // Get all unique categories from duas
+  const categories = new Set<string>();
+  duas.forEach((dua) => {
+    if (dua.category) {
+      categories.add(dua.category);
+    }
+  });
+
+  // Build category summaries
+  return Array.from(categories)
+    .map((category) => {
+      const key = categoryToKey(category);
+      const displayInfo = duaCategoryDisplayInfo[category] || {
+        title: category,
+        subtitle: `${category} duas`,
+        icon: "ellipsis.circle.fill",
+      };
+
+      const count = duas.filter(
+        (dua) => dua.category && dua.category === category
+      ).length;
+
+      return {
+        id: key,
+        title: displayInfo.title,
+        subtitle: displayInfo.subtitle,
+        icon: displayInfo.icon,
+        count,
+        category: key,
+      };
+    })
+    .sort((a, b) => {
+      // Sort by count (descending), then alphabetically
+      if (b.count !== a.count) {
+        return b.count - a.count;
+      }
+      return a.title.localeCompare(b.title);
+    });
 };
 
-export const getDuasByCategory = (category: string): DuaItem[] => {
-  const categoryInfo = duaCategoryMapping[category];
-  if (!categoryInfo) return [];
+export const getDuasByCategory = (categoryKey: string): DuaItem[] => {
+  // Normalize the category key (handle both the key format and direct category name)
+  const normalizedKey = categoryKey.toLowerCase().trim();
   
-  return categoryInfo.duaIds
-    .map((id) => duas.find((dua) => dua.id === id))
-    .filter((dua): dua is DuaItem => dua !== undefined);
+  // First, try to find exact match by key
+  const categoryMap = new Map<string, string>();
+  const reverseMap = new Map<string, string>(); // category name -> key
+  
+  duas.forEach((dua) => {
+    if (dua.category) {
+      const key = categoryToKey(dua.category);
+      if (!categoryMap.has(key)) {
+        categoryMap.set(key, dua.category);
+      }
+      // Also create reverse mapping for direct category name lookup
+      const categoryLower = dua.category.toLowerCase();
+      if (!reverseMap.has(categoryLower)) {
+        reverseMap.set(categoryLower, dua.category);
+      }
+    }
+  });
+
+  // Try to find category name
+  let categoryName: string | undefined = categoryMap.get(normalizedKey);
+  
+  // If not found by key, try direct category name match
+  if (!categoryName) {
+    categoryName = reverseMap.get(normalizedKey);
+  }
+  
+  // If still not found, try partial match (for cases like "salah-during-prayer")
+  if (!categoryName) {
+    for (const [key, name] of categoryMap.entries()) {
+      if (key.includes(normalizedKey) || normalizedKey.includes(key)) {
+        categoryName = name;
+        break;
+      }
+    }
+  }
+
+  if (!categoryName) return [];
+
+  return duas.filter(
+    (dua) => dua.category && dua.category === categoryName
+  );
 };
 
 
