@@ -266,12 +266,6 @@ export default function AdhkarDetailScreen() {
       </View>
     );
   }
-          </View>
-          <View style={styles.headerActions} />
-        </View>
-      </View>
-    );
-  }
 
   const handleCount = async () => {
     const isGrouped = currentAdhkar && currentAdhkar["group id"] !== 0;
@@ -1206,86 +1200,54 @@ export default function AdhkarDetailScreen() {
                     {/* Arabic Text */}
                     <View
                       style={[
-                        styles.card,
+                        styles.adhkarCard,
                         {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                          backgroundColor: isDark ? '#1E293B' : '#fff',
                         },
                       ]}
                     >
+                      <Text style={[styles.duaLabel, { color: isDark ? '#94A3B8' : '#6B7280' }]}>Adhkar</Text>
                       <ThemedText
                         style={[
-                          styles.arabicText,
+                          styles.duaArabic,
                           {
-                            fontFamily: getFontFamily(),
                             fontSize: arabicTextSize,
                             lineHeight: arabicTextSize * 2,
+                            color: isDark ? '#E0F2FE' : '#0C4A6E',
                           },
                         ]}
                       >
                         {displayItem.Arabic}
                       </ThemedText>
-                    </View>
-
-                    {/* Transliteration */}
-                    <View
-                      style={[
-                        styles.card,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
                       <ThemedText
-                        style={[styles.transliteration, { fontSize: textSize }]}
+                        style={[styles.duaTransliteration, { fontSize: textSize, color: isDark ? '#94A3B8' : '#475569' }]}
                       >
                         {displayItem.transliteration}
                       </ThemedText>
-                    </View>
-
-                    {/* Translation */}
-                    {typeof displayItem.translation === "string" && (
-                      <View
-                        style={[
-                          styles.card,
-                          {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                          },
-                        ]}
-                      >
+                      {typeof displayItem.translation === "string" && (
                         <ThemedText
-                          style={[styles.translation, { fontSize: textSize }]}
+                          style={[styles.duaTranslation, { fontSize: textSize, color: isDark ? '#CBD5E1' : '#1E293B' }]}
                         >
                           {displayItem.translation}
                         </ThemedText>
-                      </View>
-                    )}
+                      )}
+                    </View>
                   </Animated.View>
 
                   {/* Virtue */}
                   {displayItem.virtue && (
                     <View
                       style={[
-                        styles.virtueCard,
+                        styles.meaningCard,
                         {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                          backgroundColor: isDark ? '#0A0A0A' : '#EFF6FF',
                         },
                       ]}
                     >
-                      <View style={styles.referenceHeader}>
-                        <IconSymbol
-                          name="star.fill"
-                          size={18}
-                          color={isDark ? "#FFD60A" : "#FFCC00"}
-                        />
-                        <ThemedText style={styles.referenceTitle}>
-                          Virtue
-                        </ThemedText>
-                      </View>
-                      <ThemedText style={styles.referenceText}>
+                      <ThemedText style={[styles.meaningTitle, { color: isDark ? '#60A5FA' : '#1E40AF' }]}>
+                        Virtue
+                      </ThemedText>
+                      <ThemedText style={[styles.meaningText, { color: isDark ? '#93C5FD' : '#1E3A8A' }]}>
                         {displayItem.virtue}
                       </ThemedText>
                     </View>
@@ -1297,22 +1259,14 @@ export default function AdhkarDetailScreen() {
                       style={[
                         styles.referenceCard,
                         {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                          backgroundColor: isDark ? '#422006' : '#FEF3C7',
                         },
                       ]}
                     >
-                      <View style={styles.referenceHeader}>
-                        <IconSymbol
-                          name="book.fill"
-                          size={18}
-                          color={isDark ? "#8E8E93" : "#8E8E93"}
-                        />
-                        <ThemedText style={styles.referenceTitle}>
-                          Reference
-                        </ThemedText>
-                      </View>
-                      <ThemedText style={styles.referenceText}>
+                      <ThemedText style={[styles.referenceTitle, { color: isDark ? '#FDE68A' : '#92400E' }]}>
+                        Reference
+                      </ThemedText>
+                      <ThemedText style={[styles.referenceText, { color: isDark ? '#FCD34D' : '#78350F' }]}>
                         {displayItem.reference}
                       </ThemedText>
                     </View>
@@ -1387,83 +1341,53 @@ export default function AdhkarDetailScreen() {
                       {/* Arabic Text */}
                       <View
                         style={[
-                          styles.card,
+                          styles.adhkarCard,
                           {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                            backgroundColor: isDark ? '#1E293B' : '#fff',
                           },
                         ]}
                       >
+                        <Text style={[styles.duaLabel, { color: isDark ? '#94A3B8' : '#6B7280' }]}>Adhkar</Text>
                         <ThemedText
                           style={[
-                            styles.arabicText,
+                            styles.duaArabic,
                             {
-                              fontFamily: getFontFamily(),
                               fontSize: arabicTextSize,
                               lineHeight: arabicTextSize * 2,
+                              color: isDark ? '#E0F2FE' : '#0C4A6E',
                             },
                           ]}
                         >
                           {nextAdhkar.Arabic}
                         </ThemedText>
-                      </View>
-
-                      {/* Transliteration */}
-                      <View
-                        style={[
-                          styles.card,
-                          {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                          },
-                        ]}
-                      >
-                        <ThemedText style={styles.transliteration}>
+                        <ThemedText
+                          style={[styles.duaTransliteration, { fontSize: textSize, color: isDark ? '#94A3B8' : '#475569' }]}
+                        >
                           {nextAdhkar.transliteration}
                         </ThemedText>
-                      </View>
-
-                      {/* Translation */}
-                      {typeof nextAdhkar.translation === "string" && (
-                        <View
-                          style={[
-                            styles.card,
-                            {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                            },
-                          ]}
-                        >
-                          <ThemedText style={styles.translation}>
+                        {typeof nextAdhkar.translation === "string" && (
+                          <ThemedText
+                            style={[styles.duaTranslation, { fontSize: textSize, color: isDark ? '#CBD5E1' : '#1E293B' }]}
+                          >
                             {nextAdhkar.translation}
                           </ThemedText>
-                        </View>
-                      )}
+                        )}
+                      </View>
 
                       {/* Virtue */}
                       {nextAdhkar.virtue && (
                         <View
                           style={[
-                            styles.virtueCard,
+                            styles.meaningCard,
                             {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                              backgroundColor: isDark ? '#0A0A0A' : '#EFF6FF',
                             },
                           ]}
                         >
-                          <View style={styles.referenceHeader}>
-                            <IconSymbol
-                              name="star.fill"
-                              size={18}
-                              color={isDark ? "#FFD60A" : "#FFCC00"}
-                            />
-                            <ThemedText style={styles.referenceTitle}>
-                              Virtue
-                            </ThemedText>
-                          </View>
-                          <ThemedText style={styles.referenceText}>
+                          <Text style={[styles.meaningTitle, { color: isDark ? '#60A5FA' : '#1E40AF' }]}>Virtue</Text>
+                          <Text style={[styles.meaningText, { color: isDark ? '#93C5FD' : '#1E3A8A' }]}>
                             {nextAdhkar.virtue}
-                          </ThemedText>
+                          </Text>
                         </View>
                       )}
 
@@ -1473,24 +1397,14 @@ export default function AdhkarDetailScreen() {
                           style={[
                             styles.referenceCard,
                             {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                              backgroundColor: isDark ? '#422006' : '#FEF3C7',
                             },
                           ]}
                         >
-                          <View style={styles.referenceHeader}>
-                            <IconSymbol
-                              name="book.fill"
-                              size={18}
-                              color={isDark ? "#8E8E93" : "#8E8E93"}
-                            />
-                            <ThemedText style={styles.referenceTitle}>
-                              Reference
-                            </ThemedText>
-                          </View>
-                          <ThemedText style={styles.referenceText}>
+                          <Text style={[styles.referenceTitle, { color: isDark ? '#FDE68A' : '#92400E' }]}>Reference</Text>
+                          <Text style={[styles.referenceText, { color: isDark ? '#FCD34D' : '#78350F' }]}>
                             {nextAdhkar.reference}
-                          </ThemedText>
+                          </Text>
                         </View>
                       )}
                     </>
@@ -1548,6 +1462,17 @@ export default function AdhkarDetailScreen() {
         >
           <IconSymbol
             name="square.and.arrow.up"
+            size={26}
+            color={Colors[colorScheme ?? "light"].text}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.bottomNavButton}
+          onPress={() => setShowQuickSettings(true)}
+        >
+          <IconSymbol
+            name="gearshape.fill"
             size={26}
             color={Colors[colorScheme ?? "light"].text}
           />
@@ -1731,50 +1656,82 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     minHeight: 100,
   },
-  arabicText: {
-    fontWeight: "400",
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
-  transliteration: {
-    fontSize: 16,
-    fontStyle: "italic",
-    lineHeight: 24,
-    textAlign: "left",
-  },
-  translation: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400",
-    textAlign: "left",
-  },
-  virtueCard: {
+  adhkarCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 24,
     borderRadius: 16,
-    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  duaLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  duaArabic: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 48,
+  },
+  duaTransliteration: {
+    fontSize: 18,
+    fontStyle: 'italic',
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 24,
+  },
+  duaTranslation: {
+    fontSize: 18,
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  meaningCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
     padding: 20,
+    borderRadius: 12,
+  },
+  meaningTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 12,
+  },
+  meaningText: {
+    fontSize: 15,
+    color: '#1E3A8A',
+    lineHeight: 24,
     marginBottom: 12,
   },
   referenceCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-    marginTop: 8,
-  },
-  referenceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
   },
   referenceTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    opacity: 0.8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 8,
   },
   referenceText: {
-    fontSize: 14,
-    lineHeight: 22,
-    opacity: 0.7,
+    fontSize: 13,
+    color: '#78350F',
+    lineHeight: 20,
   },
   bottomBar: {
     flexDirection: "row",
