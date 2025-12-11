@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { RainAlertCooldown } from "../services/rain-alert-cooldown";
 import { RainAlertService } from "../services/rain-alert-service";
 import { RainAlertStorage } from "../services/rain-alert-storage";
@@ -129,16 +130,17 @@ export default function RainAlertSettingsScreen() {
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
       {/* Header */}
       <View
@@ -503,7 +505,7 @@ export default function RainAlertSettingsScreen() {
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -521,7 +523,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 16,
   },
   backButton: {

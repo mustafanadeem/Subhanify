@@ -1,9 +1,13 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface FavoriteFolder {
   id: string;
@@ -35,9 +40,13 @@ export function FavoritesFolderModal({
 }: FavoritesFolderModalProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollRef = useRef<ScrollView | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const isKeyboardOpen = keyboardHeight > 0;
 
   const handleSave = () => {
     onSave(selectedFolder);
@@ -60,6 +69,27 @@ export function FavoritesFolderModal({
     onClose();
   };
 
+  useEffect(() => {
+    const onShow = (e: any) => {
+      setKeyboardHeight(e.endCoordinates?.height ?? 0);
+    };
+    const onHide = () => setKeyboardHeight(0);
+
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      onShow
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      onHide
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   return (
     <Modal
       visible={visible}
@@ -68,181 +98,201 @@ export function FavoritesFolderModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View
-          style={[
-            styles.modalContent,
-            {
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-            },
-          ]}
+        {/* Dismiss by pressing the overlay */}
+        <Pressable style={styles.overlayPressable} onPress={handleCancel} />
+        {/* Use flex-end with padding; stable layout without keyboard too */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : insets.bottom}
+          style={{ flex: 1, justifyContent: "flex-end" }}
         >
-          <Text
+          <View
             style={[
-              styles.modalTitle,
-              { color: Colors[colorScheme ?? "light"].text },
+              styles.modalContent,
+              {
+                backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                // When keyboard is open, reduce bottom padding to sit flush
+                paddingBottom: isKeyboardOpen ? 8 : Math.max(insets.bottom, 20),
+                zIndex: 10,
+                elevation: 10,
+              },
             ]}
           >
-            Add to Favorites
-          </Text>
-
-          <ScrollView style={styles.scrollContent}>
-            {/* Folders Section */}
             <Text
               style={[
-                styles.sectionTitle,
+                styles.modalTitle,
                 { color: Colors[colorScheme ?? "light"].text },
               ]}
             >
-              Folders
+              Add to Favorites
             </Text>
 
-            {/* Create Folder Button */}
-            {!showCreateFolder && (
-              <TouchableOpacity
-                style={[
-                  styles.createFolderButton,
-                  {
-                    backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                    borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
-                  },
-                ]}
-                onPress={() => setShowCreateFolder(true)}
-              >
-                <Ionicons
-                  name="add-circle"
-                  size={24}
-                  color={isDark ? "#0A84FF" : "#007AFF"}
-                />
-                <Text
-                  style={[
-                    styles.createFolderText,
-                    { color: isDark ? "#0A84FF" : "#007AFF" },
-                  ]}
-                >
-                  Create Folder
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Create Folder Input */}
-            {showCreateFolder && (
-              <View
-                style={[
-                  styles.createFolderInput,
-                  {
-                    backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                    borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
-                  },
-                ]}
-              >
-                <TextInput
-                  style={[
-                    styles.input,
-                    { color: Colors[colorScheme ?? "light"].text },
-                  ]}
-                  placeholder="Folder name"
-                  placeholderTextColor={isDark ? "#8E8E93" : "#999999"}
-                  value={newFolderName}
-                  onChangeText={setNewFolderName}
-                  autoFocus
-                />
-                <View style={styles.inputActions}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowCreateFolder(false);
-                      setNewFolderName("");
-                    }}
-                  >
-                    <Text style={styles.cancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handleCreateFolder}>
-                    <Text
-                      style={[
-                        styles.addText,
-                        { color: isDark ? "#0A84FF" : "#007AFF" },
-                      ]}
-                    >
-                      Add
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Folder List */}
-            {folders.map((folder) => (
-              <TouchableOpacity
-                key={folder.id}
-                style={[
-                  styles.folderItem,
-                  {
-                    backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-                    borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
-                  },
-                ]}
-                onPress={() => setSelectedFolder(folder.id)}
-              >
-                <Ionicons
-                  name="folder"
-                  size={24}
-                  color={Colors[colorScheme ?? "light"].text}
-                />
-                <Text
-                  style={[
-                    styles.folderName,
-                    { color: Colors[colorScheme ?? "light"].text },
-                  ]}
-                >
-                  {folder.name}
-                </Text>
-                <View
-                  style={[
-                    styles.radioButton,
-                    {
-                      borderColor: isDark ? "#8E8E93" : "#C7C7CC",
-                    },
-                  ]}
-                >
-                  {selectedFolder === folder.id && (
-                    <View
-                      style={[
-                        styles.radioButtonInner,
-                        { backgroundColor: isDark ? "#0A84FF" : "#007AFF" },
-                      ]}
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Action Buttons */}
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleCancel}
+            <ScrollView
+              style={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              contentContainerStyle={{
+                paddingBottom: isKeyboardOpen ? 8 : Math.max(insets.bottom, 20),
+              }}
+              ref={(ref) => (scrollRef.current = ref as ScrollView | null)}
             >
+              {/* Folders Section */}
               <Text
                 style={[
-                  styles.cancelButtonText,
+                  styles.sectionTitle,
                   { color: Colors[colorScheme ?? "light"].text },
                 ]}
               >
-                Cancel
+                Folders
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleSave}>
-              <Text
-                style={[
-                  styles.saveButtonText,
-                  { color: isDark ? "#0A84FF" : "#007AFF" },
-                ]}
+
+              {/* Create Folder Button */}
+              {!showCreateFolder && (
+                <TouchableOpacity
+                  style={[
+                    styles.createFolderButton,
+                    {
+                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                    },
+                  ]}
+                  onPress={() => setShowCreateFolder(true)}
+                >
+                  <Ionicons
+                    name="add-circle"
+                    size={24}
+                    color={isDark ? "#0A84FF" : "#007AFF"}
+                  />
+                  <Text
+                    style={[
+                      styles.createFolderText,
+                      { color: isDark ? "#0A84FF" : "#007AFF" },
+                    ]}
+                  >
+                    Create Folder
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Create Folder Input */}
+              {showCreateFolder && (
+                <View
+                  style={[
+                    styles.createFolderInput,
+                    {
+                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                    },
+                  ]}
+                >
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                    placeholder="Folder name"
+                    placeholderTextColor={isDark ? "#8E8E93" : "#999999"}
+                    value={newFolderName}
+                    onChangeText={setNewFolderName}
+                    autoFocus
+                    onFocus={() =>
+                      scrollRef.current?.scrollToEnd({ animated: true })
+                    }
+                  />
+                </View>
+              )}
+
+              {/* Folder List */}
+              {folders.map((folder) => (
+                <TouchableOpacity
+                  key={folder.id}
+                  style={[
+                    styles.folderItem,
+                    {
+                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                    },
+                  ]}
+                  onPress={() => setSelectedFolder(folder.id)}
+                >
+                  <Ionicons
+                    name="folder"
+                    size={24}
+                    color={Colors[colorScheme ?? "light"].text}
+                  />
+                  <Text
+                    style={[
+                      styles.folderName,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    {folder.name}
+                  </Text>
+                  <View
+                    style={[
+                      styles.radioButton,
+                      {
+                        borderColor: isDark ? "#8E8E93" : "#C7C7CC",
+                      },
+                    ]}
+                  >
+                    {selectedFolder === folder.id && (
+                      <View
+                        style={[
+                          styles.radioButtonInner,
+                          { backgroundColor: isDark ? "#0A84FF" : "#007AFF" },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Action Buttons */}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => {
+                  if (showCreateFolder) {
+                    setShowCreateFolder(false);
+                    setNewFolderName("");
+                  } else {
+                    handleCancel();
+                  }
+                }}
               >
-                Save
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.cancelButtonText,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => {
+                  if (showCreateFolder) {
+                    handleCreateFolder();
+                  } else {
+                    handleSave();
+                  }
+                }}
+              >
+                <Text
+                  style={[
+                    styles.saveButtonText,
+                    { color: isDark ? "#0A84FF" : "#007AFF" },
+                  ]}
+                >
+                  {showCreateFolder ? "Add" : "Save"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -251,8 +301,17 @@ export function FavoritesFolderModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
+  },
+  overlayPressable: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 1,
   },
   modalContent: {
     borderTopLeftRadius: 20,
@@ -260,7 +319,9 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 40,
     maxHeight: "80%",
+    position: "relative",
   },
+  // (removed) keyboardAvoiding absolute style to prevent layout jumps
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
@@ -296,20 +357,6 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
-    marginBottom: 12,
-  },
-  inputActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 20,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: "#8E8E93",
-  },
-  addText: {
-    fontSize: 16,
-    fontWeight: "600",
   },
   folderItem: {
     flexDirection: "row",

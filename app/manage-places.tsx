@@ -21,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface MosqueWithDistance extends Mosque {
   distance: number;
@@ -194,7 +195,7 @@ export default function ManagePlacesScreen() {
             >
               <Ionicons
                 name="chevron-back"
-                size={28}
+                size={24}
                 color={Colors[colorScheme ?? "light"].text}
               />
             </TouchableOpacity>
@@ -221,21 +222,27 @@ export default function ManagePlacesScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
+        edges={["top"]}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: Colors[colorScheme ?? "light"].background },
+          ]}
+        >
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
             <Ionicons
               name="chevron-back"
-              size={28}
+              size={24}
               color={Colors[colorScheme ?? "light"].text}
             />
           </TouchableOpacity>
@@ -254,7 +261,7 @@ export default function ManagePlacesScreen() {
             >
               <Ionicons
                 name="add-circle"
-                size={28}
+                size={24}
                 color={colorScheme === "dark" ? "#0A84FF" : "#007AFF"}
               />
             </TouchableOpacity>
@@ -592,7 +599,7 @@ export default function ManagePlacesScreen() {
             ))
           )}
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -605,16 +612,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
     gap: 12,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
     flex: 1,
   },
   addButton: {

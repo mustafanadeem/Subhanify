@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TermsOfServiceScreen() {
   const colorScheme = useColorScheme();
@@ -16,11 +17,12 @@ export default function TermsOfServiceScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
+        edges={["top"]}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -213,7 +215,7 @@ export default function TermsOfServiceScreen() {
             through the Send Feedback option in Settings.
           </Text>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -225,17 +227,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
     gap: 12,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
     flex: 1,
   },
   content: {

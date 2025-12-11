@@ -1,39 +1,40 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    getGeofencingStatus,
-    restartGeofencing,
-    stopGeofencingMonitoring,
+  getGeofencingStatus,
+  restartGeofencing,
+  stopGeofencingMonitoring,
 } from "@/services/geofence-service";
 import { loadMosques } from "@/services/mosque-data-service";
 import {
-    getMosqueMonitoringStats,
-    shouldUpdateMosqueMonitoring,
-    updateNearbyMosqueGeofencing,
+  getMosqueMonitoringStats,
+  shouldUpdateMosqueMonitoring,
+  updateNearbyMosqueGeofencing,
 } from "@/services/nearby-mosque-manager";
 import { LocationCategory, SavedLocation } from "@/types/location";
 import { Mosque } from "@/types/mosque";
 import {
-    deleteLocation,
-    getAllLocations,
-    initDatabase,
-    toggleLocationEnabled,
+  deleteLocation,
+  getAllLocations,
+  initDatabase,
+  toggleLocationEnabled,
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const categoryIcons: Record<LocationCategory, string> = {
   mosque: "moon",
@@ -339,26 +340,38 @@ export default function LocationsScreen() {
 
   if (isLoading) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
+        edges={["top"]}
       >
-        <ActivityIndicator
-          size="large"
-          color={Colors[colorScheme ?? "light"].tint}
-        />
-      </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator
+            size="large"
+            color={Colors[colorScheme ?? "light"].tint}
+          />
+          <Text
+            style={[
+              styles.loadingText,
+              { color: Colors[colorScheme ?? "light"].text },
+            ]}
+          >
+            Loading locations...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -403,16 +416,16 @@ export default function LocationsScreen() {
                   longitude: location.longitude,
                 }}
               >
-                <View 
+                <View
                   style={[
                     styles.mapLocationIcon,
-                    { backgroundColor: categoryColors[location.category] }
+                    { backgroundColor: categoryColors[location.category] },
                   ]}
                 >
-                  <Ionicons 
-                    name={categoryIcons[location.category] as any} 
-                    size={28} 
-                    color="#FFFFFF" 
+                  <Ionicons
+                    name={categoryIcons[location.category] as any}
+                    size={28}
+                    color="#FFFFFF"
                   />
                 </View>
               </Marker>
@@ -526,13 +539,23 @@ export default function LocationsScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: "500",
   },
   scrollContent: {
     flex: 1,
@@ -542,12 +565,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
   },
   addButton: {
     padding: 4,

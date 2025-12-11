@@ -7,12 +7,13 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 import { FontProvider } from "@/contexts/FontContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { RainAlertNotificationHandler } from "@/services/rain-alert-notification-handler";
+import { preloadCriticalImages } from "@/utils/image-preloader";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -58,6 +59,7 @@ function RootNavigator() {
         />
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="view-feedback" options={{ headerShown: false }} />
+        <Stack.Screen name="dua-list" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </NavigationThemeProvider>
@@ -70,17 +72,38 @@ export default function RootLayout() {
     "Saleen-Regular": require("../assets/fonts/Saleen-Regular.ttf"),
   });
 
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
+  // Load images and wait for completion before showing app
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+    const loadImages = async () => {
+      try {
+        await preloadCriticalImages();
+        setImagesLoaded(true);
+      } catch (error) {
+        console.warn("Error loading images:", error);
+        setImagesLoaded(true); // Show app even if images fail
+      }
+    };
+
+    loadImages();
+  }, []);
+
+  // Only hide splash screen when BOTH fonts and images are loaded
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && imagesLoaded) {
+      SplashScreen.hideAsync().catch(() => {
+        // Ignore errors
+      });
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, imagesLoaded]);
 
   useEffect(() => {
     RainAlertNotificationHandler.initialize();
   }, []);
 
-  if (!fontsLoaded && !fontError) {
+  // Show nothing until both fonts and images are loaded
+  if ((!fontsLoaded && !fontError) || !imagesLoaded) {
     return null;
   }
 

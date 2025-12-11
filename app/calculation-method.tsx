@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { PrayerTimesRepository } from "../modules/prayer-times/data/repository";
 import { UserSettings } from "../modules/prayer-times/domain/entities";
 
@@ -149,16 +150,17 @@ export default function CalculationMethodScreen() {
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
       {/* Header */}
       <View
@@ -254,7 +256,7 @@ export default function CalculationMethodScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 20,
   },
   headerTitle: {
@@ -322,13 +324,3 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-
-
-
-
-
-
-
-
-
-

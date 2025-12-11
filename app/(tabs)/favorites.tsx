@@ -1,9 +1,10 @@
-import { ThemedText } from "@/components/themed-text";
+import { FavoritesFolderModal } from "@/components/favorites-folder-modal";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   FavoriteAdhkar,
   FavoriteFolder,
+  createFolder,
   deleteFolder,
   loadFavorites,
   loadFolders,
@@ -11,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Dimensions,
@@ -20,9 +21,11 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -34,6 +37,13 @@ export default function FavoritesScreen() {
   const [allFavorites, setAllFavorites] = useState<FavoriteAdhkar[]>([]);
   const [folders, setFolders] = useState<FavoriteFolder[]>([]);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter folders based on search query
+  const filteredFolders = folders.filter((folder) =>
+    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const loadData = async () => {
     const [favs, fldrs] = await Promise.all([loadFavorites(), loadFolders()]);
@@ -46,6 +56,10 @@ export default function FavoritesScreen() {
       loadData();
     }, [])
   );
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleDeleteFolder = (folderId: string, folderName: string) => {
     Alert.alert(
@@ -69,22 +83,30 @@ export default function FavoritesScreen() {
     return allFavorites.filter((fav) => fav.folderId === folderId).length;
   };
 
+  const handleCreateFolder = async (folderName: string) => {
+    const newFolder = await createFolder(folderName);
+    if (newFolder) {
+      loadData();
+      setShowCreateFolderModal(false);
+    }
+  };
+
   const totalFavorites = allFavorites.length;
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top", "left", "right"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={true}
       />
 
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -126,49 +148,69 @@ export default function FavoritesScreen() {
             size={20}
             color={isDark ? "#8E8E93" : "#999999"}
           />
-          <Text
+          <TextInput
             style={[
-              styles.searchPlaceholder,
-              { color: isDark ? "#8E8E93" : "#999999" },
+              styles.searchInput,
+              { color: Colors[colorScheme ?? "light"].text },
             ]}
-          >
-            Search
-          </Text>
+            placeholder="Search folders"
+            placeholderTextColor={isDark ? "#8E8E93" : "#999999"}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={isDark ? "#8E8E93" : "#999999"}
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      {totalFavorites === 0 ? (
-        <View style={styles.emptyContainer}>
-          <View
-            style={[
-              styles.emptyIconContainer,
-              {
-                backgroundColor: isDark
-                  ? "rgba(142, 142, 147, 0.12)"
-                  : "#F2F2F7",
-              },
-            ]}
-          >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {folders.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
             <Ionicons
-              name="heart"
-              size={60}
-              color={Colors[colorScheme ?? "light"].textSecondary}
+              name="folder-open"
+              size={64}
+              color={isDark ? "#8E8E93" : "#C7C7CC"}
             />
+            <Text
+              style={[
+                styles.emptyStateText,
+                { color: Colors[colorScheme ?? "light"].textSecondary },
+              ]}
+            >
+              No folders yet. Create one from the menu!
+            </Text>
           </View>
-          <ThemedText style={styles.emptyTitle}>No Favorites Yet</ThemedText>
-          <ThemedText style={styles.emptyMessage}>
-            Tap the heart icon while reading adhkar to add them to your
-            favorites
-          </ThemedText>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-        >
+        ) : filteredFolders.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <Ionicons
+              name="search"
+              size={64}
+              color={isDark ? "#8E8E93" : "#C7C7CC"}
+            />
+            <Text
+              style={[
+                styles.emptyStateText,
+                { color: Colors[colorScheme ?? "light"].textSecondary },
+              ]}
+            >
+              No folders found matching "{searchQuery}"
+            </Text>
+          </View>
+        ) : (
           <View style={styles.foldersGrid}>
             {/* Custom Folders */}
-            {folders.map((folder) => (
+            {filteredFolders.map((folder) => (
               <View
                 key={folder.id}
                 style={[
@@ -219,8 +261,8 @@ export default function FavoritesScreen() {
               </View>
             ))}
           </View>
-        </ScrollView>
-      )}
+        )}
+      </ScrollView>
 
       {/* Options Menu Modal */}
       <Modal
@@ -251,6 +293,33 @@ export default function FavoritesScreen() {
               Manage Folders
             </Text>
 
+            <TouchableOpacity
+              style={[
+                styles.menuOption,
+                { borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA" },
+              ]}
+              onPress={() => {
+                setShowOptionsMenu(false);
+                setTimeout(() => {
+                  setShowCreateFolderModal(true);
+                }, 300);
+              }}
+            >
+              <Ionicons
+                name="add-circle-outline"
+                size={24}
+                color={Colors[colorScheme ?? "light"].text}
+              />
+              <Text
+                style={[
+                  styles.menuOptionText,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Create New Folder
+              </Text>
+            </TouchableOpacity>
+
             {folders.length === 0 ? (
               <Text
                 style={[
@@ -258,39 +327,53 @@ export default function FavoritesScreen() {
                   { color: Colors[colorScheme ?? "light"].textSecondary },
                 ]}
               >
-                No folders yet. Create folders when adding favorites!
+                No folders to delete yet.
               </Text>
             ) : (
-              folders.map((folder) => (
-                <View key={folder.id} style={styles.folderOption}>
-                  <View style={styles.folderOptionInfo}>
-                    <Ionicons
-                      name="folder"
-                      size={24}
-                      color={Colors[colorScheme ?? "light"].text}
-                    />
-                    <Text
-                      style={[
-                        styles.folderOptionName,
-                        { color: Colors[colorScheme ?? "light"].text },
-                      ]}
+              <>
+                <Text
+                  style={[
+                    styles.deleteSectionTitle,
+                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                  ]}
+                >
+                  Delete Folders
+                </Text>
+                {folders.map((folder) => (
+                  <View key={folder.id} style={styles.folderOption}>
+                    <View style={styles.folderOptionInfo}>
+                      <Ionicons
+                        name="folder"
+                        size={24}
+                        color={Colors[colorScheme ?? "light"].text}
+                      />
+                      <Text
+                        style={[
+                          styles.folderOptionName,
+                          { color: Colors[colorScheme ?? "light"].text },
+                        ]}
+                      >
+                        {folder.name}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => {
+                        setShowOptionsMenu(false);
+                        setTimeout(() => {
+                          handleDeleteFolder(folder.id, folder.name);
+                        }, 300);
+                      }}
                     >
-                      {folder.name}
-                    </Text>
+                      <Ionicons
+                        name="trash-outline"
+                        size={22}
+                        color="#FF3B30"
+                      />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => {
-                      setShowOptionsMenu(false);
-                      setTimeout(() => {
-                        handleDeleteFolder(folder.id, folder.name);
-                      }, 300);
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={22} color="#FF3B30" />
-                  </TouchableOpacity>
-                </View>
-              ))
+                ))}
+              </>
             )}
 
             <TouchableOpacity
@@ -314,7 +397,20 @@ export default function FavoritesScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-    </View>
+
+      <FavoritesFolderModal
+        visible={showCreateFolderModal}
+        onClose={() => setShowCreateFolderModal(false)}
+        onSave={(folderId) => {
+          setShowCreateFolderModal(false);
+          if (folderId) {
+            loadData();
+          }
+        }}
+        folders={folders}
+        onCreateFolder={handleCreateFolder}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -327,12 +423,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
   },
   headerBadge: {
     paddingHorizontal: 12,
@@ -347,6 +443,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 0,
+  },
   content: {
     paddingHorizontal: 20,
     paddingBottom: 20,
@@ -354,8 +454,10 @@ const styles = StyleSheet.create({
   foldersGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     paddingTop: 8,
+    paddingBottom: 8,
+    justifyContent: "space-between",
   },
   section: {
     marginBottom: 32,
@@ -434,6 +536,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 10,
   },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
+  },
   searchPlaceholder: {
     fontSize: 16,
   },
@@ -442,6 +549,7 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 16,
     marginBottom: 16,
+    marginHorizontal: 8,
     overflow: "hidden",
     position: "relative",
   },
@@ -482,6 +590,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
+  createFolderCard: {
+    borderStyle: "dashed",
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    backgroundColor: "rgba(0, 122, 255, 0.05)",
+  },
+  createFolderContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
+  createFolderText: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 12,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -503,6 +627,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginVertical: 20,
+  },
+  menuOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  menuOptionText: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  deleteSectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginTop: 8,
+    marginBottom: 4,
   },
   folderOption: {
     flexDirection: "row",
@@ -534,5 +676,16 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 17,
     fontWeight: "600",
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyStateText: {
+    marginTop: 16,
+    fontSize: 16,
+    textAlign: "center",
   },
 });

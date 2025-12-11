@@ -6,12 +6,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -29,6 +29,11 @@ export default function DuaListScreen() {
   // State for duas list
   const [duasList, setDuasList] = useState<DuaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Ensure proper contrast for header title
+  const titleColor = isDark
+    ? "#E5E5E5" // Lighter gray for dark mode
+    : "#101820"; // Dark text for light mode
 
   useEffect(() => {
     const loadDuasList = () => {
@@ -48,8 +53,12 @@ export default function DuaListScreen() {
 
   const handleDuaPress = (index: number) => {
     router.push({
-      pathname: "/dua-detail",
-      params: { category: categoryKey, title: categoryTitle, initialIndex: index.toString() },
+      pathname: "/adhkar-detail",
+      params: {
+        category: categoryKey,
+        title: categoryTitle,
+        initialIndex: index.toString(),
+      },
     });
   };
 
@@ -67,7 +76,12 @@ export default function DuaListScreen() {
           translucent
         />
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: Colors[colorScheme ?? "light"].text }]}>
+          <Text
+            style={[
+              styles.loadingText,
+              { color: Colors[colorScheme ?? "light"].text },
+            ]}
+          >
             Loading duas...
           </Text>
         </View>
@@ -87,7 +101,7 @@ export default function DuaListScreen() {
         backgroundColor="transparent"
         translucent
       />
-      
+
       {/* Header */}
       <View
         style={[
@@ -109,14 +123,11 @@ export default function DuaListScreen() {
           />
         </TouchableOpacity>
         <Text
-          style={[
-            styles.headerTitle,
-            { color: Colors[colorScheme ?? "light"].text },
-          ]}
+          style={[styles.headerTitle, { color: titleColor }]}
+          accessibilityRole="header"
         >
           {categoryTitle}
         </Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       {/* List of Duas */}
@@ -174,13 +185,15 @@ export default function DuaListScreen() {
                   style={[
                     styles.duaTitle,
                     {
-                      color: Colors[colorScheme ?? "light"].text,
+                      color: isDark
+                        ? "#FFFFFF"
+                        : Colors[colorScheme ?? "light"].text,
                       fontWeight: "400",
                     },
                   ]}
                   numberOfLines={2}
                 >
-                  {dua.Adhkar}
+                  {dua.title}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -200,21 +213,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 16,
+    paddingTop: 12,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(128, 128, 128, 0.2)",
   },
   backButton: {
     padding: 8,
-    marginRight: 8,
+    marginRight: 16,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: "600",
-    flex: 1,
-    textAlign: "center",
-  },
-  headerSpacer: {
-    width: 40,
+    textAlign: "left",
+    zIndex: 10,
   },
   scrollView: {
     flex: 1,
@@ -267,4 +280,3 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 });
-

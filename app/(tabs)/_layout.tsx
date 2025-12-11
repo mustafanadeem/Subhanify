@@ -29,8 +29,16 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+          tabBarIcon: ({ focused }) => (
+            <IconSymbol
+              size={28}
+              name="house.fill"
+              color={
+                focused
+                  ? Colors[colorScheme ?? "light"].tabIconSelected
+                  : Colors[colorScheme ?? "light"].tabIconDefault
+              }
+            />
           ),
         }}
       />
@@ -38,8 +46,16 @@ export default function TabLayout() {
         name="favorites"
         options={{
           title: "Favorites",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="heart.fill" color={color} />
+          tabBarIcon: ({ focused }) => (
+            <IconSymbol
+              size={28}
+              name="heart.fill"
+              color={
+                focused
+                  ? Colors[colorScheme ?? "light"].tabIconSelected
+                  : Colors[colorScheme ?? "light"].tabIconDefault
+              }
+            />
           ),
         }}
       />
@@ -47,8 +63,16 @@ export default function TabLayout() {
         name="locations"
         options={{
           title: "Locations",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="location.fill" color={color} />
+          tabBarIcon: ({ focused }) => (
+            <IconSymbol
+              size={28}
+              name="location.fill"
+              color={
+                focused
+                  ? Colors[colorScheme ?? "light"].tabIconSelected
+                  : Colors[colorScheme ?? "light"].tabIconDefault
+              }
+            />
           ),
         }}
       />
@@ -69,8 +93,16 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="gearshape.fill" color={color} />
+          tabBarIcon: ({ focused }) => (
+            <IconSymbol
+              size={28}
+              name="gearshape.fill"
+              color={
+                focused
+                  ? Colors[colorScheme ?? "light"].tabIconSelected
+                  : Colors[colorScheme ?? "light"].tabIconDefault
+              }
+            />
           ),
         }}
       />

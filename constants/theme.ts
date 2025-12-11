@@ -19,7 +19,7 @@ const LIGHT_MAIN = '#007AFF';        // iOS Blue
 const LIGHT_ACCENT = '#007AFF';      // iOS Blue
 const LIGHT_BACKGROUND = '#F5F6FA';  // Pale Mist
 const LIGHT_TEXT = '#101820';        // Dark Charcoal
-const LIGHT_SECONDARY = '#DADCE0';   // Soft Gray
+const LIGHT_SECONDARY = '#999999';   // Medium Gray
 const LIGHT_HIGHLIGHT = '#007AFF';   // iOS Blue
 
 // ========================================

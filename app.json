@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "subhanify-react",
+    "name": "Subhanify",
     "slug": "subhanify-react",
-    "version": "1.0.0",
+    "version": "1.0.1",
+    "description": "Your companion for Islamic prayers, adhkar, and spiritual reminders. Never miss your daily remembrance with location-based notifications and prayer time tracking.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "subhanifyreact",
@@ -22,10 +23,11 @@
         ]
       },
       "config": {
-        "googleMapsApiKey": "AIzaSyCDw4QycSxCmGs1o6GMvifFL32qAR6L5wc"
+        "googleMapsApiKey": "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8"
       }
     },
     "android": {
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -44,7 +46,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyCDw4QycSxCmGs1o6GMvifFL32qAR6L5wc"
+          "apiKey": "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8"
         }
       }
     },
@@ -91,7 +93,6 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
       "eas": {
         "projectId": "1298b47e-e2ba-46f8-afa9-70caf85dc5b7"
       }

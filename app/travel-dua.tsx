@@ -1,6 +1,6 @@
 /**
  * Travel Dua Display Screen
- * 
+ *
  * Shows travel duas when opened from notifications or manually.
  * Displays Arabic text, transliteration, translation, and reference.
  */
@@ -12,24 +12,25 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TravelDuaScreen() {
   const colorScheme = useColorScheme();
   const params = useLocalSearchParams();
-  
+
   const allDuas = getTravelDuas();
   const [currentDuaIndex, setCurrentDuaIndex] = useState(0);
-  
+
   // If opened from notification with specific dua ID
   React.useEffect(() => {
     if (params.duaId) {
-      const index = allDuas.findIndex(dua => dua.id === params.duaId);
+      const index = allDuas.findIndex((dua) => dua.id === params.duaId);
       if (index !== -1) {
         setCurrentDuaIndex(index);
       }
@@ -47,11 +48,12 @@ export default function TravelDuaScreen() {
   };
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       {/* Header */}
       <View
@@ -60,7 +62,10 @@ export default function TravelDuaScreen() {
           { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <Ionicons
             name="arrow-back"
             size={24}
@@ -68,7 +73,10 @@ export default function TravelDuaScreen() {
           />
         </TouchableOpacity>
         <Text
-          style={[styles.headerTitle, { color: Colors[colorScheme ?? "light"].text }]}
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
         >
           Travel Duas
         </Text>
@@ -146,7 +154,9 @@ export default function TravelDuaScreen() {
           <TouchableOpacity
             style={[
               styles.navButton,
-              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
             ]}
             onPress={previousDua}
           >
@@ -168,7 +178,9 @@ export default function TravelDuaScreen() {
           <TouchableOpacity
             style={[
               styles.navButton,
-              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
             ]}
             onPress={nextDua}
           >
@@ -216,13 +228,14 @@ export default function TravelDuaScreen() {
               { color: Colors[colorScheme ?? "light"].textSecondary },
             ]}
           >
-            These duas are recommended to be recited when beginning a journey. They seek Allah's protection and blessing for safe travel.
+            These duas are recommended to be recited when beginning a journey.
+            They seek Allah's protection and blessing for safe travel.
           </Text>
         </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -234,7 +247,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 16,
   },
   backButton: {
@@ -332,10 +345,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-
-
-
-
-
-
-

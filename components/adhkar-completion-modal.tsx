@@ -2,7 +2,15 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
-import { Animated, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface AdhkarCompletionModalProps {
   visible: boolean;
@@ -10,12 +18,16 @@ interface AdhkarCompletionModalProps {
   onClose: () => void;
 }
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
-export function AdhkarCompletionModal({ visible, category, onClose }: AdhkarCompletionModalProps) {
+export function AdhkarCompletionModal({
+  visible,
+  category,
+  onClose,
+}: AdhkarCompletionModalProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  
+
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -113,7 +125,7 @@ export function AdhkarCompletionModal({ visible, category, onClose }: AdhkarComp
 
   const confettiRotation = confettiAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: ["0deg", "360deg"],
   });
 
   const confettiScale = confettiAnim.interpolate({
@@ -138,86 +150,86 @@ export function AdhkarCompletionModal({ visible, category, onClose }: AdhkarComp
           styles.centeredView,
           {
             opacity: fadeAnim,
+            backgroundColor: isDark
+              ? "rgba(0, 0, 0, 0.6)"
+              : "rgba(0, 0, 0, 0.5)",
           },
         ]}
       >
-        {/* Confetti Animation */}
-        <Animated.View
-          style={[
-            styles.confetti,
-            {
-              transform: [
-                { rotate: confettiRotation },
-                { scale: confettiScale },
-              ],
-            },
-          ]}
-        >
-          <Text style={styles.confettiText}>🎉</Text>
-          <Text style={[styles.confettiText, styles.confettiText2]}>✨</Text>
-          <Text style={[styles.confettiText, styles.confettiText3]}>🌟</Text>
-          <Text style={[styles.confettiText, styles.confettiText4]}>💫</Text>
-        </Animated.View>
-
         {/* Main Modal */}
         <Animated.View
           style={[
             styles.modalView,
             {
-              backgroundColor: isDark ? Colors.dark.cardBackground : Colors.light.cardBackground,
+              backgroundColor: isDark
+                ? Colors.dark.cardBackground
+                : Colors.light.cardBackground,
               transform: [{ scale: scaleAnim }],
             },
           ]}
         >
           {/* Sparkle Animation */}
           <Animated.View
-            style={[
-              styles.sparkleContainer,
-              { opacity: sparkleOpacity },
-            ]}
+            style={[styles.sparkleContainer, { opacity: sparkleOpacity }]}
           >
             <Text style={styles.sparkle}>✨</Text>
           </Animated.View>
 
           {/* Completion Icon */}
           <View style={styles.iconContainer}>
-            <Text style={styles.celebrationEmoji}>{getCategoryEmoji(category)}</Text>
+            <Text style={styles.celebrationEmoji}>
+              {getCategoryEmoji(category)}
+            </Text>
             <View style={styles.checkmarkContainer}>
-              <Ionicons
-                name="checkmark-circle"
-                size={40}
-                color="#4CAF50"
-              />
+              <Ionicons name="checkmark-circle" size={40} color="#4CAF50" />
             </View>
           </View>
 
           {/* Completion Message */}
-          <Text style={[
-            styles.completionTitle,
-            { color: isDark ? Colors.dark.text : Colors.light.text }
-          ]}>
+          <Text
+            style={[
+              styles.completionTitle,
+              { color: isDark ? Colors.dark.text : Colors.light.text },
+            ]}
+          >
             Masha'Allah!
           </Text>
-          
-          <Text style={[
-            styles.completionMessage,
-            { color: isDark ? Colors.dark.textSecondary : Colors.light.textSecondary }
-          ]}>
+
+          <Text
+            style={[
+              styles.completionMessage,
+              { color: isDark ? Colors.dark.text : Colors.light.text },
+            ]}
+          >
             {getCategoryMessage(category)}
           </Text>
 
           {/* Motivational Quote */}
-          <View style={styles.quoteContainer}>
-            <Text style={[
-              styles.quoteText,
-              { color: isDark ? Colors.dark.textSecondary : Colors.light.textSecondary }
-            ]}>
+          <View
+            style={[
+              styles.quoteContainer,
+              {
+                backgroundColor: isDark
+                  ? "rgba(76, 175, 80, 0.15)"
+                  : "rgba(76, 175, 80, 0.08)",
+                borderLeftColor: "#4CAF50",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.quoteText,
+                { color: isDark ? Colors.dark.text : Colors.light.text },
+              ]}
+            >
               "And remember Allah often, that you may succeed."
             </Text>
-            <Text style={[
-              styles.quoteReference,
-              { color: isDark ? Colors.dark.textSecondary : Colors.light.textSecondary }
-            ]}>
+            <Text
+              style={[
+                styles.quoteReference,
+                { color: isDark ? Colors.dark.textSecondary : "#666666" },
+              ]}
+            >
               - Quran 8:45
             </Text>
           </View>
@@ -226,12 +238,14 @@ export function AdhkarCompletionModal({ visible, category, onClose }: AdhkarComp
           <TouchableOpacity
             style={[
               styles.continueButton,
-              { backgroundColor: isDark ? Colors.dark.tint : Colors.light.tint }
+              {
+                backgroundColor: isDark ? Colors.dark.tint : Colors.light.tint,
+              },
             ]}
             onPress={onClose}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={20} color="white" />
+            <Ionicons name="arrow-forward" size={18} color="white" />
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>
@@ -244,67 +258,42 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
   modalView: {
     margin: 20,
-    borderRadius: 24,
-    padding: 32,
+    borderRadius: 20,
+    padding: 28,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
     width: width * 0.85,
-    maxWidth: 400,
+    maxWidth: 380,
     position: "relative",
-  },
-  confetti: {
-    position: "absolute",
-    top: -50,
-    left: -50,
-    right: -50,
-    bottom: -50,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  confettiText: {
-    fontSize: 30,
-    position: "absolute",
-  },
-  confettiText2: {
-    top: 20,
-    left: 40,
-    fontSize: 25,
-  },
-  confettiText3: {
-    bottom: 30,
-    right: 30,
-    fontSize: 28,
-  },
-  confettiText4: {
-    top: 60,
-    right: 20,
-    fontSize: 22,
   },
   sparkleContainer: {
     position: "absolute",
-    top: 20,
-    right: 20,
+    top: 16,
+    right: 16,
   },
   sparkle: {
-    fontSize: 24,
+    fontSize: 20,
   },
   iconContainer: {
     marginBottom: 20,
     position: "relative",
+    width: 80,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
   },
   celebrationEmoji: {
-    fontSize: 60,
+    fontSize: 56,
     textAlign: "center",
   },
   checkmarkContainer: {
@@ -313,32 +302,37 @@ const styles = StyleSheet.create({
     right: -5,
     backgroundColor: "white",
     borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   completionTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 26,
+    fontWeight: "700",
     marginBottom: 8,
     textAlign: "center",
   },
   completionMessage: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: "center",
     marginBottom: 20,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   quoteContainer: {
-    backgroundColor: "rgba(76, 175, 80, 0.1)",
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
-    marginBottom: 24,
+    marginBottom: 20,
     width: "100%",
+    borderLeftWidth: 3,
   },
   quoteText: {
-    fontSize: 14,
+    fontSize: 13,
     fontStyle: "italic",
     textAlign: "center",
-    marginBottom: 8,
-    lineHeight: 20,
+    marginBottom: 6,
+    lineHeight: 19,
   },
   quoteReference: {
     fontSize: 12,
@@ -348,15 +342,16 @@ const styles = StyleSheet.create({
   continueButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 20,
+    gap: 6,
+    width: "100%",
+    justifyContent: "center",
   },
   continueButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
 });
-

@@ -1,10 +1,13 @@
-import { PlaceAutocomplete, PlaceSelection } from "@/components/PlaceAutocomplete";
+import {
+  PlaceAutocomplete,
+  PlaceSelection,
+} from "@/components/PlaceAutocomplete";
 import { Colors } from "@/constants/theme";
 import duasData from "@/data/duas.json";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    getCurrentLocation,
-    restartGeofencing,
+  getCurrentLocation,
+  restartGeofencing,
 } from "@/services/geofence-service";
 import { LocationCategory, SavedLocation } from "@/types/location";
 import { getLocationById, saveLocation } from "@/utils/location-db";
@@ -13,22 +16,19 @@ import Slider from "@react-native-community/slider";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Animated,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Animated,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import MapView, {
-    Circle,
-    Marker,
-    PROVIDER_GOOGLE
-} from "react-native-maps";
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Dua {
   id: string;
@@ -63,6 +63,7 @@ const categoryColors: Record<LocationCategory, string> = {
 
 export default function LocationDetailScreen() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const params = useLocalSearchParams();
   const mode = params.mode as "add" | "edit";
   const locationId = params.locationId as string | undefined;
@@ -84,22 +85,24 @@ export default function LocationDetailScreen() {
   const allDuas = duasData as Dua[];
 
   // Get duas by category
-  const getDuasByCategory = (cat: LocationCategory): { entry: Dua[]; exit: Dua[] } => {
+  const getDuasByCategory = (
+    cat: LocationCategory
+  ): { entry: Dua[]; exit: Dua[] } => {
     switch (cat) {
       case "home":
         return {
-          entry: allDuas.filter(d => d.id === "entering-house"),
-          exit: allDuas.filter(d => d.id === "leaving-house"),
+          entry: allDuas.filter((d) => d.id === "entering-house"),
+          exit: allDuas.filter((d) => d.id === "leaving-house"),
         };
       case "mosque":
         return {
-          entry: allDuas.filter(d => d.id === "entering-mosque"),
-          exit: allDuas.filter(d => d.id === "leaving-mosque"),
+          entry: allDuas.filter((d) => d.id === "entering-mosque"),
+          exit: allDuas.filter((d) => d.id === "leaving-mosque"),
         };
       case "work":
       case "other":
         return {
-          entry: allDuas.filter(d => d.id === "destination"),
+          entry: allDuas.filter((d) => d.id === "destination"),
           exit: [], // No exit dua for work/other
         };
       default:
@@ -119,8 +122,8 @@ export default function LocationDetailScreen() {
   // Automatically set duas when category changes
   useEffect(() => {
     const duas = getDuasByCategory(category);
-    setEntryAdhkarIds(duas.entry.map(d => d.id));
-    setExitAdhkarIds(duas.exit.map(d => d.id));
+    setEntryAdhkarIds(duas.entry.map((d) => d.id));
+    setExitAdhkarIds(duas.exit.map((d) => d.id));
   }, [category, allDuas]);
 
   const initialize = async () => {
@@ -164,7 +167,12 @@ export default function LocationDetailScreen() {
   };
 
   const handlePlaceSelect = (place: PlaceSelection) => {
-    console.log('[LocationDetail] Place selected:', place.label);
+    console.log("[LocationDetail] Place selected:", place.label);
+    console.log(
+      "[LocationDetail] Coordinates:",
+      place.latitude,
+      place.longitude
+    );
     setName(place.label);
     setLatitude(place.latitude);
     setLongitude(place.longitude);
@@ -177,10 +185,13 @@ export default function LocationDetailScreen() {
   };
 
   // Handle when map dragging stops
-  const handleRegionChangeComplete = (region: { latitude: number; longitude: number }) => {
-    console.log('[MapModal] Map dragging stopped at:', region);
+  const handleRegionChangeComplete = (region: {
+    latitude: number;
+    longitude: number;
+  }) => {
+    console.log("[MapModal] Map dragging stopped at:", region);
     setIsMapDragging(false);
-    
+
     // Update the location to the center of the map
     setLatitude(region.latitude);
     setLongitude(region.longitude);
@@ -201,7 +212,6 @@ export default function LocationDetailScreen() {
       }),
     ]).start();
   };
-
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -263,11 +273,12 @@ export default function LocationDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
+        edges={["top"]}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -289,16 +300,18 @@ export default function LocationDetailScreen() {
           >
             {mode === "add" ? "Add a new place" : "Edit place"}
           </Text>
-          <TouchableOpacity 
-            onPress={handleSave} 
+          <TouchableOpacity
+            onPress={handleSave}
             disabled={isLoading}
             style={styles.saveButtonContainer}
           >
             <Text
               style={[
                 styles.saveButtonText,
-                { 
-                  color: isLoading ? Colors[colorScheme ?? "light"].textSecondary : "#007AFF",
+                {
+                  color: isLoading
+                    ? Colors[colorScheme ?? "light"].textSecondary
+                    : "#007AFF",
                 },
               ]}
             >
@@ -408,7 +421,8 @@ export default function LocationDetailScreen() {
                   style={[
                     styles.customNameInput,
                     {
-                      backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                      backgroundColor:
+                        Colors[colorScheme ?? "light"].cardBackground,
                       color: Colors[colorScheme ?? "light"].text,
                       borderColor: Colors[colorScheme ?? "light"].border,
                     },
@@ -416,7 +430,9 @@ export default function LocationDetailScreen() {
                   value={name}
                   onChangeText={setName}
                   placeholder="Enter location name..."
-                  placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
+                  placeholderTextColor={
+                    Colors[colorScheme ?? "light"].textSecondary
+                  }
                 />
               </View>
             )}
@@ -437,7 +453,8 @@ export default function LocationDetailScreen() {
                 style={[
                   styles.nameInput,
                   {
-                    backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                    backgroundColor:
+                      Colors[colorScheme ?? "light"].cardBackground,
                     color: Colors[colorScheme ?? "light"].text,
                     borderColor: Colors[colorScheme ?? "light"].border,
                   },
@@ -445,7 +462,9 @@ export default function LocationDetailScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder="Enter a name for this location..."
-                placeholderTextColor={Colors[colorScheme ?? "light"].textSecondary}
+                placeholderTextColor={
+                  Colors[colorScheme ?? "light"].textSecondary
+                }
               />
             </View>
           )}
@@ -461,12 +480,14 @@ export default function LocationDetailScreen() {
               >
                 Location Preview
               </Text>
-              
+
               {/* Mini Map Preview */}
               <View style={styles.mapPreviewContainer}>
                 <MapView
                   style={styles.mapPreview}
-                  provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+                  provider={
+                    Platform.OS === "android" ? PROVIDER_GOOGLE : undefined
+                  }
                   region={{
                     latitude,
                     longitude,
@@ -477,6 +498,9 @@ export default function LocationDetailScreen() {
                   zoomEnabled={false}
                   rotateEnabled={false}
                   pitchEnabled={false}
+                  loadingEnabled={true}
+                  loadingIndicatorColor="#666666"
+                  loadingBackgroundColor="#ffffff"
                 >
                   <Marker coordinate={{ latitude, longitude }} />
                   <Circle
@@ -487,7 +511,7 @@ export default function LocationDetailScreen() {
                     strokeWidth={2}
                   />
                 </MapView>
-                
+
                 {/* Map overlay button */}
                 <TouchableOpacity
                   style={styles.mapPreviewOverlay}
@@ -530,7 +554,9 @@ export default function LocationDetailScreen() {
                   value={radius}
                   onValueChange={setRadius}
                   minimumTrackTintColor={categoryColors[category]}
-                  maximumTrackTintColor={Colors[colorScheme ?? "light"].textSecondary}
+                  maximumTrackTintColor={
+                    Colors[colorScheme ?? "light"].textSecondary
+                  }
                   thumbTintColor={categoryColors[category]}
                 />
                 <View style={styles.radiusLabels}>
@@ -690,16 +716,26 @@ export default function LocationDetailScreen() {
           animationType="slide"
           onRequestClose={() => setShowMapModal(false)}
         >
-          <View style={styles.mapModalContainer}>
+          <View
+            style={[
+              styles.mapModalContainer,
+              { backgroundColor: Colors[colorScheme ?? "light"].background },
+            ]}
+          >
             {/* Map Modal Header */}
-            <View style={styles.mapModalHeader}>
+            <View
+              style={[
+                styles.mapModalHeader,
+                { backgroundColor: Colors[colorScheme ?? "light"].background },
+              ]}
+            >
               <TouchableOpacity
                 onPress={() => setShowMapModal(false)}
                 style={styles.backButton}
               >
                 <Ionicons
                   name="close"
-                  size={28}
+                  size={24}
                   color={Colors[colorScheme ?? "light"].text}
                 />
               </TouchableOpacity>
@@ -715,7 +751,7 @@ export default function LocationDetailScreen() {
                 <Text
                   style={[
                     styles.saveButton,
-                    { color: "#007AFF" },
+                    { color: isDark ? "#0A84FF" : "#007AFF" },
                   ]}
                 >
                   Done
@@ -737,6 +773,9 @@ export default function LocationDetailScreen() {
               onRegionChangeComplete={handleRegionChangeComplete}
               showsUserLocation
               showsMyLocationButton
+              loadingEnabled={true}
+              loadingIndicatorColor="#666666"
+              loadingBackgroundColor="#ffffff"
             >
               {/* Only show circle when NOT dragging */}
               {!isMapDragging && (
@@ -775,7 +814,8 @@ export default function LocationDetailScreen() {
               style={[
                 styles.radiusOverlay,
                 {
-                  backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
                 },
               ]}
             >
@@ -795,13 +835,15 @@ export default function LocationDetailScreen() {
                 value={radius}
                 onValueChange={setRadius}
                 minimumTrackTintColor={categoryColors[category]}
-                maximumTrackTintColor={Colors[colorScheme ?? "light"].textSecondary}
+                maximumTrackTintColor={
+                  Colors[colorScheme ?? "light"].textSecondary
+                }
                 thumbTintColor={categoryColors[category]}
               />
             </View>
           </View>
         </Modal>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -814,20 +856,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
     gap: 12,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
     flex: 1,
   },
   saveButtonContainer: {
     padding: 4,
+  },
+  saveButton: {
+    fontSize: 17,
+    fontWeight: "600",
   },
   saveButtonText: {
     fontSize: 16,
@@ -1037,10 +1083,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: Platform.OS === "ios" ? 60 : 16,
+    paddingBottom: 20,
     gap: 12,
-    backgroundColor: "#FFFFFF",
   },
   fullMap: {
     flex: 1,

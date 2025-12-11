@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const FEEDBACK_CATEGORIES = [
   { id: "bug", label: "Bug Report", icon: "bug-outline" },
@@ -71,18 +72,19 @@ export default function SupportScreen() {
   };
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
-      
+
       {/* Header */}
       <View
         style={[
@@ -236,7 +238,8 @@ export default function SupportScreen() {
               style={[
                 styles.textInputContainer,
                 {
-                  backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
                   borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
                 },
               ]}
@@ -290,7 +293,7 @@ export default function SupportScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -302,7 +305,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 20,
   },
   backButton: {
@@ -312,8 +315,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
     flex: 1,
     marginLeft: 8,
   },

@@ -45,6 +45,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const TRAVEL_DETECTION_KEY = "@travel_detection_enabled";
 const MOTION_NOTIFICATIONS_KEY = "@motion_notifications_enabled";
@@ -186,11 +187,12 @@ export default function PrivacySettingsScreen() {
   };
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <View
         style={[
@@ -501,7 +503,7 @@ export default function PrivacySettingsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -590,7 +592,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 16,
   },
   backButton: {

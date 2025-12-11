@@ -6,10 +6,9 @@ import {
   loadAdhkarCompletionHistory,
 } from "@/services/adhkar-completion-service";
 import {
-  LevelSettings,
-  getLevelSettings,
   checkAndUpdateLevel,
-  resetLevelData,
+  getLevelSettings,
+  LevelSettings,
 } from "@/services/level-settings-service";
 import { loadStreakData } from "@/services/streak-service";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +23,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface StreakData {
   currentStreak: number;
@@ -72,14 +72,17 @@ export default function StreakDetailsScreen() {
       // Check if today is a perfect day (all 3 adhkar completed)
       const today = new Date().toISOString().split("T")[0];
       const todayCompletion = adhkarHistory[today];
-      const completedAllToday = todayCompletion && todayCompletion.completedCategories.length === 3;
+      const completedAllToday =
+        todayCompletion && todayCompletion.completedCategories.length === 3;
 
       // If all 3 adhkar are completed today, ensure level is updated
       if (completedAllToday) {
-        console.log("🎉 All 3 adhkar completed today! Ensuring level is updated...");
+        console.log(
+          "🎉 All 3 adhkar completed today! Ensuring level is updated..."
+        );
         const levelUpdate = await checkAndUpdateLevel(true);
         console.log("Level update result:", levelUpdate);
-        
+
         // Reload level settings after update
         const updatedLevels = await getLevelSettings();
         setLevelSettings(updatedLevels);
@@ -444,11 +447,12 @@ export default function StreakDetailsScreen() {
         onClose={closeModal}
       />
 
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
+        edges={["top"]}
       >
         {/* Header - Fixed */}
         <View
@@ -481,7 +485,7 @@ export default function StreakDetailsScreen() {
         <View
           style={[
             styles.tabContainer,
-            { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
+            { backgroundColor: Colors[colorScheme ?? "light"].cardBackground },
           ]}
         >
           <TouchableOpacity
@@ -491,9 +495,7 @@ export default function StreakDetailsScreen() {
               {
                 backgroundColor:
                   activeTab === "overview"
-                    ? isDark
-                      ? "#2C2C2E"
-                      : "#FFFFFF"
+                    ? Colors[colorScheme ?? "light"].main
                     : "transparent",
               },
             ]}
@@ -503,7 +505,12 @@ export default function StreakDetailsScreen() {
               style={[
                 styles.tabText,
                 activeTab === "overview" && styles.activeTabText,
-                { color: isDark ? "#FFFFFF" : "#000000" },
+                {
+                  color:
+                    activeTab === "overview"
+                      ? "#FFFFFF"
+                      : Colors[colorScheme ?? "light"].text,
+                },
               ]}
             >
               Overview
@@ -516,9 +523,7 @@ export default function StreakDetailsScreen() {
               {
                 backgroundColor:
                   activeTab === "progress"
-                    ? isDark
-                      ? "#2C2C2E"
-                      : "#FFFFFF"
+                    ? Colors[colorScheme ?? "light"].main
                     : "transparent",
               },
             ]}
@@ -528,7 +533,12 @@ export default function StreakDetailsScreen() {
               style={[
                 styles.tabText,
                 activeTab === "progress" && styles.activeTabText,
-                { color: isDark ? "#FFFFFF" : "#000000" },
+                {
+                  color:
+                    activeTab === "progress"
+                      ? "#FFFFFF"
+                      : Colors[colorScheme ?? "light"].text,
+                },
               ]}
             >
               Progress
@@ -630,7 +640,10 @@ export default function StreakDetailsScreen() {
                 <View
                   style={[
                     styles.statCard,
-                    { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
+                    {
+                      backgroundColor:
+                        Colors[colorScheme ?? "light"].cardBackground,
+                    },
                   ]}
                 >
                   <Text
@@ -663,7 +676,10 @@ export default function StreakDetailsScreen() {
                 <View
                   style={[
                     styles.statCard,
-                    { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
+                    {
+                      backgroundColor:
+                        Colors[colorScheme ?? "light"].cardBackground,
+                    },
                   ]}
                 >
                   <Text
@@ -697,7 +713,10 @@ export default function StreakDetailsScreen() {
               <View
                 style={[
                   styles.weekCard,
-                  { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
+                  {
+                    backgroundColor:
+                      Colors[colorScheme ?? "light"].cardBackground,
+                  },
                 ]}
               >
                 <Text
@@ -1143,7 +1162,7 @@ export default function StreakDetailsScreen() {
             </>
           )}
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -1156,7 +1175,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 20,
     gap: 12,
   },

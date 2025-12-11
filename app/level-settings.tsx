@@ -3,26 +3,27 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    AdhkarLevel,
-    getLevelDescription,
-    getLevelIcon,
-    getLevelSettings,
-    LevelSettings,
-    saveLevelSettings
+  AdhkarLevel,
+  getLevelDescription,
+  getLevelIcon,
+  getLevelSettings,
+  LevelSettings,
+  saveLevelSettings,
 } from "@/services/level-settings-service";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LevelSettingsScreen() {
   const router = useRouter();
@@ -78,16 +79,17 @@ export default function LevelSettingsScreen() {
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
 
       {/* Header */}
@@ -107,7 +109,12 @@ export default function LevelSettingsScreen() {
             color={Colors[colorScheme ?? "light"].text}
           />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: Colors[colorScheme ?? "light"].text }]}>
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
+        >
           Level System
         </Text>
         <View style={{ width: 40 }} />
@@ -136,14 +143,12 @@ export default function LevelSettingsScreen() {
             color={isDark ? "#0A84FF" : "#007AFF"}
           />
           <Text
-            style={[
-              styles.infoText,
-              { color: isDark ? "#0A84FF" : "#007AFF" },
-            ]}
+            style={[styles.infoText, { color: isDark ? "#0A84FF" : "#007AFF" }]}
           >
-            The level system helps you progress gradually through adhkar, starting with
-            essentials and building up to comprehensive practice. When you select a level,
-            you'll see adhkar for that level and all previous levels.
+            The level system helps you progress gradually through adhkar,
+            starting with essentials and building up to comprehensive practice.
+            When you select a level, you'll see adhkar for that level and all
+            previous levels.
           </Text>
         </View>
 
@@ -274,7 +279,10 @@ export default function LevelSettingsScreen() {
                         <Text
                           style={[
                             styles.levelDescription,
-                            { color: Colors[colorScheme ?? "light"].textSecondary },
+                            {
+                              color:
+                                Colors[colorScheme ?? "light"].textSecondary,
+                            },
                           ]}
                         >
                           {getLevelDescription(level.value)}
@@ -317,11 +325,7 @@ export default function LevelSettingsScreen() {
             ]}
             onPress={() => setShowLevelUpPreview(true)}
           >
-            <IconSymbol
-              name="arrow.up.circle.fill"
-              size={24}
-              color="#34C759"
-            />
+            <IconSymbol name="arrow.up.circle.fill" size={24} color="#34C759" />
             <Text
               style={[
                 styles.previewButtonText,
@@ -386,8 +390,8 @@ export default function LevelSettingsScreen() {
                 { color: Colors[colorScheme ?? "light"].textSecondary },
               ]}
             >
-              <Text style={{ fontWeight: "600" }}>Level 1:</Text> Start with the most
-              essential adhkar for daily practice
+              <Text style={{ fontWeight: "600" }}>Level 1:</Text> Start with the
+              most essential adhkar for daily practice
             </Text>
           </View>
 
@@ -399,8 +403,8 @@ export default function LevelSettingsScreen() {
                 { color: Colors[colorScheme ?? "light"].textSecondary },
               ]}
             >
-              <Text style={{ fontWeight: "600" }}>Level 2:</Text> Includes Level 1 plus additional adhkar
-              as you build consistency
+              <Text style={{ fontWeight: "600" }}>Level 2:</Text> Includes Level
+              1 plus additional adhkar as you build consistency
             </Text>
           </View>
 
@@ -412,8 +416,8 @@ export default function LevelSettingsScreen() {
                 { color: Colors[colorScheme ?? "light"].textSecondary },
               ]}
             >
-              <Text style={{ fontWeight: "600" }}>Level 3:</Text> Includes Levels 1 & 2 plus the complete
-              collection of all adhkar
+              <Text style={{ fontWeight: "600" }}>Level 3:</Text> Includes
+              Levels 1 & 2 plus the complete collection of all adhkar
             </Text>
           </View>
         </View>
@@ -435,7 +439,7 @@ export default function LevelSettingsScreen() {
         isLevelUp={false}
         onClose={() => setShowLevelDownPreview(false)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -448,7 +452,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 20,
   },
   backButton: {

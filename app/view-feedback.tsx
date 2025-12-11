@@ -8,7 +8,7 @@ import {
 } from "@/services/feedback-service";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Alert,
   RefreshControl,
@@ -20,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const CATEGORY_LABELS: Record<string, string> = {
   bug: "Bug Report",
@@ -124,7 +125,9 @@ export default function ViewFeedbackScreen() {
         .map((item, index) => {
           const date = new Date(item.timestamp).toLocaleString();
           const category = CATEGORY_LABELS[item.category || "other"] || "Other";
-          return `\n${index + 1}. ${category} - ${date}\n${item.message}\n${"-".repeat(50)}`;
+          return `\n${index + 1}. ${category} - ${date}\n${
+            item.message
+          }\n${"-".repeat(50)}`;
         })
         .join("\n");
 
@@ -153,16 +156,17 @@ export default function ViewFeedbackScreen() {
   };
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
 
       {/* Header */}
@@ -265,7 +269,8 @@ export default function ViewFeedbackScreen() {
               style={[
                 styles.feedbackCard,
                 {
-                  backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
                   borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
                 },
               ]}
@@ -322,9 +327,7 @@ export default function ViewFeedbackScreen() {
                   onPress={() => handleDelete(item)}
                 >
                   <Ionicons name="trash-outline" size={16} color="#FF3B30" />
-                  <Text
-                    style={[styles.deleteButtonText, { color: "#FF3B30" }]}
-                  >
+                  <Text style={[styles.deleteButtonText, { color: "#FF3B30" }]}>
                     Delete
                   </Text>
                 </TouchableOpacity>
@@ -333,7 +336,7 @@ export default function ViewFeedbackScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -345,7 +348,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 20,
   },
   backButton: {

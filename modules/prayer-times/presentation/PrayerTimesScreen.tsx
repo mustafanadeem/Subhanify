@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { PrayerTimesRepository } from "../data/repository";
 import { TodayPrayerTimes, UserSettings } from "../domain/entities";
 
@@ -144,7 +145,6 @@ function WeekCalendar({
         </TouchableOpacity>
       </View>
 
-      {/* Week Days */}
       <View style={weekCalendarStyles.weekContainer}>
         {weekDays.map((date, index) => {
           const today = isToday(date);
@@ -307,16 +307,17 @@ export default function PrayerTimesScreen() {
 
   if (loading) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
+        edges={["top"]}
       >
         <StatusBar
           barStyle={isDark ? "light-content" : "dark-content"}
           backgroundColor="transparent"
-          translucent
+          translucent={false}
         />
         {/* Header */}
         <View
@@ -352,22 +353,23 @@ export default function PrayerTimesScreen() {
           <ActivityIndicator />
           <Text style={textColor}>Loading Prayer Times…</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
+        edges={["top"]}
       >
         <StatusBar
           barStyle={isDark ? "light-content" : "dark-content"}
           backgroundColor="transparent"
-          translucent
+          translucent={false}
         />
         {/* Header */}
         <View
@@ -402,23 +404,24 @@ export default function PrayerTimesScreen() {
         >
           <Text style={textColor}>Error: {error}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!data) return null;
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
       {/* Header */}
       <View
@@ -583,41 +586,6 @@ export default function PrayerTimesScreen() {
           </View>
         </View>
 
-        {/* Forbidden Prayer Times */}
-        <View style={[styles.sectionWrapper, { paddingTop: 16 }]}>
-          <TouchableOpacity
-            style={[
-              styles.forbiddenTimesCard,
-              { backgroundColor: isDark ? "#222222" : "#FFFFFF" },
-            ]}
-            activeOpacity={0.7}
-          >
-            <View style={styles.forbiddenTimesLeft}>
-              <View
-                style={[
-                  styles.forbiddenTimesIcon,
-                  { backgroundColor: "#FF3B30" },
-                ]}
-              >
-                <Ionicons name="close" size={28} color="#FFF" />
-              </View>
-              <Text
-                style={[
-                  styles.forbiddenTimesTitle,
-                  { color: isDark ? "#FFF" : "#000" },
-                ]}
-              >
-                Forbidden Prayer Times
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-down"
-              size={24}
-              color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"}
-            />
-          </TouchableOpacity>
-        </View>
-
         {data.offline && (
           <View style={styles.sectionWrapper}>
             <Text
@@ -632,10 +600,9 @@ export default function PrayerTimesScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -644,7 +611,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 20,
     gap: 12,
   },
@@ -673,11 +640,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   locationText: {
     fontSize: 18,
@@ -695,11 +657,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 8,
     marginBottom: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   prayerTimeRow: {
     flexDirection: "row",
@@ -742,11 +699,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   specialTimeLabel: {
     fontSize: 15,
@@ -761,11 +713,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   settingsTitle: {
     fontSize: 16,
@@ -775,36 +722,6 @@ const styles = StyleSheet.create({
   settingsText: {
     fontSize: 14,
     marginBottom: 6,
-  },
-  forbiddenTimesCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  forbiddenTimesLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  forbiddenTimesIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  forbiddenTimesTitle: {
-    fontSize: 16,
-    fontWeight: "600",
   },
   offlineText: {
     fontSize: 13,

@@ -7,17 +7,18 @@ import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
-    Animated,
-    Modal,
-    PanResponder,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Modal,
+  PanResponder,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type ArabicFontDisplay = "KFGQPC Hafs" | "PDMS Saleem Quran";
 type ThemeMode = "light" | "dark" | "auto";
@@ -35,9 +36,12 @@ function DraggableThemeSelector({
   const selectedIndex = themes.indexOf(value);
   const containerWidth = 300; // approximate width
   const itemWidth = containerWidth / 3;
-  
-  const slideAnim = useRef(new Animated.Value(selectedIndex * itemWidth)).current;
-  const [containerWidthState, setContainerWidthState] = useState(containerWidth);
+
+  const slideAnim = useRef(
+    new Animated.Value(selectedIndex * itemWidth)
+  ).current;
+  const [containerWidthState, setContainerWidthState] =
+    useState(containerWidth);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -52,18 +56,21 @@ function DraggableThemeSelector({
       },
       onPanResponderRelease: (_, gestureState) => {
         slideAnim.flattenOffset();
-        
-        const currentPosition = selectedIndex * (containerWidthState / 3) + gestureState.dx;
-        const newIndex = Math.round(currentPosition / (containerWidthState / 3));
+
+        const currentPosition =
+          selectedIndex * (containerWidthState / 3) + gestureState.dx;
+        const newIndex = Math.round(
+          currentPosition / (containerWidthState / 3)
+        );
         const clampedIndex = Math.max(0, Math.min(2, newIndex));
-        
+
         Animated.spring(slideAnim, {
           toValue: clampedIndex * (containerWidthState / 3),
           useNativeDriver: true,
           tension: 100,
           friction: 10,
         }).start();
-        
+
         onChange(themes[clampedIndex]);
       },
     })
@@ -100,7 +107,7 @@ function DraggableThemeSelector({
           {
             backgroundColor: isDark ? "#0A84FF" : "#007AFF",
             transform: [{ translateX: slideAnim }],
-            width: `${100 / 3}%`,
+            width: `${100 / 3 - 4}%`,
           },
         ]}
         {...panResponder.panHandlers}
@@ -126,7 +133,8 @@ function DraggableThemeSelector({
             style={[
               styles.themeSliderText,
               {
-                color: value === theme ? "#FFFFFF" : isDark ? "#8E8E93" : "#8E8E93",
+                color:
+                  value === theme ? "#FFFFFF" : isDark ? "#8E8E93" : "#8E8E93",
               },
             ]}
           >
@@ -182,16 +190,17 @@ export default function AppearanceSettingsScreen() {
   };
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
       {/* Header */}
       <View
@@ -220,7 +229,6 @@ export default function AppearanceSettingsScreen() {
         >
           Appearance
         </Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -233,7 +241,7 @@ export default function AppearanceSettingsScreen() {
           <Text
             style={[
               styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
+              { color: Colors[colorScheme ?? "light"].text, marginBottom: 12 },
             ]}
           >
             Theme
@@ -250,7 +258,7 @@ export default function AppearanceSettingsScreen() {
           <Text
             style={[
               styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
+              { color: Colors[colorScheme ?? "light"].text, marginBottom: 12 },
             ]}
           >
             Arabic Font
@@ -288,7 +296,7 @@ export default function AppearanceSettingsScreen() {
           <Text
             style={[
               styles.sectionTitle,
-              { color: Colors[colorScheme ?? "light"].text },
+              { color: Colors[colorScheme ?? "light"].text, marginBottom: 12 },
             ]}
           >
             Display Options
@@ -675,7 +683,7 @@ export default function AppearanceSettingsScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -685,23 +693,19 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    flex: 1,
-    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "600",
+    marginLeft: 16,
   },
   backButton: {
-    padding: 4,
-  },
-  headerSpacer: {
-    width: 36,
+    padding: 8,
+    marginRight: 8,
   },
   scrollView: {
     flex: 1,
@@ -733,18 +737,18 @@ const styles = StyleSheet.create({
   },
   themeSliderContainer: {
     flexDirection: "row",
-    height: 70,
+    height: 72,
     borderRadius: 16,
-    padding: 4,
     position: "relative",
     overflow: "hidden",
   },
   themeSliderIndicator: {
     position: "absolute",
-    height: "100%",
-    borderRadius: 14,
-    top: 0,
-    left: 4,
+    height: 60,
+    borderRadius: 12,
+    top: 6,
+    left: 6,
+    right: 6,
   },
   themeSliderOption: {
     flex: 1,

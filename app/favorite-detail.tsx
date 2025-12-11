@@ -10,16 +10,18 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Modal,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -35,6 +37,7 @@ export default function FavoriteDetailScreen() {
 
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const [textSize, setTextSize] = useState(17);
+  const [iconLoaded, setIconLoaded] = useState(false);
   const slideAnim = useState(new Animated.Value(SCREEN_WIDTH))[0];
 
   if (!adhkar) {
@@ -64,16 +67,17 @@ export default function FavoriteDetailScreen() {
   };
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
+      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent
+        translucent={false}
       />
 
       {/* Header */}
@@ -89,10 +93,17 @@ export default function FavoriteDetailScreen() {
           style={styles.headerButton}
           onPress={() => router.back()}
         >
+          {!iconLoaded && (
+            <ActivityIndicator
+              size="small"
+              color={Colors[colorScheme ?? "light"].text}
+            />
+          )}
           <IconSymbol
             name="chevron.left"
             size={24}
             color={Colors[colorScheme ?? "light"].text}
+            onLoad={() => setIconLoaded(true)}
           />
         </TouchableOpacity>
 
@@ -105,10 +116,12 @@ export default function FavoriteDetailScreen() {
             style={styles.headerButton}
             onPress={handleRemoveFavorite}
           >
+            {!iconLoaded && <ActivityIndicator size="small" color="#FF375F" />}
             <IconSymbol
               name="heart.slash.fill"
               size={22}
               color="#FF375F"
+              onLoad={() => setIconLoaded(true)}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -373,7 +386,7 @@ export default function FavoriteDetailScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -386,7 +399,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 16,
   },
   headerButton: {
@@ -572,4 +585,3 @@ const styles = StyleSheet.create({
     height: 40,
   },
 });
-

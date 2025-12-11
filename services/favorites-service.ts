@@ -4,7 +4,7 @@
  * Manages user's favorite adhkar with folder organization
  */
 
-import { AdhkarItem } from '@/types/adhkar';
+import { AdhkarItem, DuaItem } from '@/types/adhkar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FAVORITES_KEY = '@user_favorites';
@@ -24,10 +24,12 @@ export interface FavoriteAdhkar {
 }
 
 /**
- * Generate unique ID for an adhkar
+ * Generate unique ID for an adhkar based on content (not category)
+ * This allows the same adhkar from different categories to be treated as one item
  */
 function generateAdhkarId(adhkar: AdhkarItem): string {
-  return `${adhkar.Category}_${adhkar.Adhkar}_${adhkar.quantity}`;
+  // Use adhkar text and quantity to create ID (excluding category)
+  return `adhkar_${adhkar.Adhkar}_${adhkar.quantity}`;
 }
 
 /**
@@ -36,12 +38,16 @@ function generateAdhkarId(adhkar: AdhkarItem): string {
 export async function loadFavorites(): Promise<FavoriteAdhkar[]> {
   try {
     const data = await AsyncStorage.getItem(FAVORITES_KEY);
+    console.log('[FavoritesService] Raw favorites data from storage:', data);
     if (data) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      console.log('[FavoritesService] Parsed favorites:', parsed.length, 'items');
+      return parsed;
     }
   } catch (error) {
     console.error('[FavoritesService] Error loading favorites:', error);
   }
+  console.log('[FavoritesService] Returning empty favorites array');
   return [];
 }
 
@@ -174,12 +180,16 @@ export async function getFavoritesByCategory(): Promise<{
 export async function loadFolders(): Promise<FavoriteFolder[]> {
   try {
     const data = await AsyncStorage.getItem(FOLDERS_KEY);
+    console.log('[FavoritesService] Raw folders data from storage:', data);
     if (data) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      console.log('[FavoritesService] Parsed folders:', parsed.length, 'items');
+      return parsed;
     }
   } catch (error) {
     console.error('[FavoritesService] Error loading folders:', error);
   }
+  console.log('[FavoritesService] Returning empty folders array');
   return [];
 }
 
@@ -264,4 +274,119 @@ export async function getFavoritesByFolder(folderId: string | null): Promise<Fav
   const favorites = await loadFavorites();
   return favorites.filter(fav => fav.folderId === folderId);
 }
+
+/**
+ * Add multiple adhkars to a folder
+ */
+export async function addFavoritesToFolder(folderId: string, adhkars: AdhkarItem[]): Promise<boolean> {
+  try {
+    console.log('[FavoritesService] addFavoritesToFolder called with:', {
+      folderId,
+      adhkarsCount: adhkars.length,
+    });
+    
+    const favorites = await loadFavorites();
+    console.log('[FavoritesService] Loaded favorites:', favorites.length);
+    
+    // Group adhkars by their content (same text, different categories)
+    const adhkarGroups = new Map<string, AdhkarItem[]>();
+    for (const adhkar of adhkars) {
+      const adhkarId = generateAdhkarId(adhkar);
+      if (!adhkarGroups.has(adhkarId)) {
+        adhkarGroups.set(adhkarId, []);
+      }
+      adhkarGroups.get(adhkarId)!.push(adhkar);
+    }
+    
+    // Add each unique adhkar to the folder
+    for (const [adhkarId, adhkarList] of adhkarGroups) {
+      const existingFav = favorites.find(fav => fav.id === adhkarId);
+      
+      // Collect all unique categories for this adhkar
+      const allCategories = new Set<string>();
+      adhkarList.forEach(a => allCategories.add(a.Category));
+      
+      if (existingFav) {
+        // Update existing favorite to be in this folder
+        existingFav.folderId = folderId;
+        // Update categories to include all unique categories
+        const existingCategories = new Set<string>();
+        if (existingFav.adhkar.Category.includes(',')) {
+          existingFav.adhkar.Category.split(',').forEach(c => existingCategories.add(c.trim()));
+        } else {
+          existingCategories.add(existingFav.adhkar.Category);
+        }
+        allCategories.forEach(c => existingCategories.add(c));
+        existingFav.adhkar.Category = Array.from(existingCategories).join(', ');
+        console.log('[FavoritesService] Updated existing favorite with categories:', adhkarId, existingFav.adhkar.Category);
+      } else {
+        // Use the first adhkar as the base, but update category to include all
+        const baseAdhkar = { ...adhkarList[0] };
+        baseAdhkar.Category = Array.from(allCategories).join(', ');
+        
+        // Add as new favorite in this folder
+        favorites.push({
+          id: adhkarId,
+          adhkar: baseAdhkar,
+          favoritedAt: new Date().toISOString(),
+          folderId,
+        });
+        console.log('[FavoritesService] Added new favorite with categories:', adhkarId, baseAdhkar.Category);
+      }
+    }
+    
+    console.log('[FavoritesService] Saving', favorites.length, 'favorites');
+    await saveFavorites(favorites);
+    console.log('[FavoritesService] Successfully saved favorites to folder');
+    return true;
+  } catch (error) {
+    console.error('[FavoritesService] Error adding favorites to folder:', error);
+    return false;
+  }
+}
+
+/**
+ * Add multiple duas to a folder
+ */
+export async function addDuasToFolder(folderId: string, duas: DuaItem[]): Promise<boolean> {
+  try {
+    console.log('[FavoritesService] addDuasToFolder called with:', {
+      folderId,
+      duasCount: duas.length,
+    });
+    
+    const favorites = await loadFavorites();
+    console.log('[FavoritesService] Loaded favorites:', favorites.length);
+    
+    // Add each dua to the folder if not already a favorite
+    for (const dua of duas) {
+      const duaId = `dua_${dua.id}`;
+      const existingFav = favorites.find(fav => fav.id === duaId);
+      
+      if (existingFav) {
+        // Update existing favorite to be in this folder
+        existingFav.folderId = folderId;
+        console.log('[FavoritesService] Updated existing dua:', duaId);
+      } else {
+        // Add as new favorite in this folder (store dua as object in adhkar field)
+        favorites.push({
+          id: duaId,
+          adhkar: dua as any, // Store dua in adhkar field for simplicity
+          favoritedAt: new Date().toISOString(),
+          folderId,
+        });
+        console.log('[FavoritesService] Added new dua:', duaId);
+      }
+    }
+    
+    console.log('[FavoritesService] Saving', favorites.length, 'favorites');
+    await saveFavorites(favorites);
+    console.log('[FavoritesService] Successfully saved duas to folder');
+    return true;
+  } catch (error) {
+    console.error('[FavoritesService] Error adding duas to folder:', error);
+    return false;
+  }
+}
+
 
