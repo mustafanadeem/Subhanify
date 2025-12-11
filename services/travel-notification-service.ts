@@ -129,14 +129,7 @@ export async function sendTravelStartNotification(): Promise<void> {
       return;
     }
 
-    // Check Do Not Disturb status (iOS)
-    if (Platform.OS === 'ios') {
-      const settings = await Notifications.getNotificationSettingsAsync();
-      if (settings.authorizationStatus === Notifications.IosAuthorizationStatus.DENIED) {
-        console.log('[TravelNotifications] Notifications denied by user');
-        return;
-      }
-    }
+    // Permissions already checked above, no need for additional iOS-specific check
 
     // Select random travel dua
     const selectedDua = TRAVEL_DUAS[Math.floor(Math.random() * TRAVEL_DUAS.length)];
@@ -321,19 +314,45 @@ export function getTravelDuas() {
  * For testing purposes - sends a test travel notification.
  */
 export async function sendTestTravelNotification(): Promise<void> {
-  console.log('[TravelNotifications] Sending test notification...');
-  
-  // Temporarily bypass time check for testing
-  const originalTime = await getLastTravelNotificationTime();
-  await saveLastTravelNotificationTime(0);
-  
-  await sendTravelStartNotification();
-  
-  // Restore original time if it existed
-  if (originalTime) {
-    await saveLastTravelNotificationTime(originalTime);
+  try {
+    console.log('[TravelNotifications] Sending test notification...');
+    
+    // Check notification permissions
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('[TravelNotifications] Requesting permissions...');
+      const { status: newStatus } = await Notifications.requestPermissionsAsync();
+      if (newStatus !== 'granted') {
+        throw new Error('Notification permissions not granted');
+      }
+    }
+
+    // Select random travel dua
+    const selectedDua = TRAVEL_DUAS[Math.floor(Math.random() * TRAVEL_DUAS.length)];
+
+    // Schedule immediate notification
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🚗 Travel Dua (Test)',
+        body: `${selectedDua.transliteration}\n\n"${selectedDua.translation}"`,
+        data: {
+          type: 'travel_start',
+          duaId: selectedDua.id,
+          isTest: true,
+        },
+        categoryIdentifier: 'travel_dua',
+        sound: 'default',
+      },
+      trigger: null, // Send immediately
+    });
+
+    console.log('[TravelNotifications] Test notification sent successfully');
+  } catch (error) {
+    console.error('[TravelNotifications] Error sending test notification:', error);
+    throw error;
   }
 }
+
 
 
 

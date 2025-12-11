@@ -1,5 +1,6 @@
 import { PrayerStructureCard } from "@/components/prayer-structure-card";
 import { Colors } from "@/constants/theme";
+import prayerStructureData from "@/data/prayer-structure.json";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -34,10 +35,8 @@ function WeekCalendar({
   data: TodayPrayerTimes | null;
 }) {
   const [weekStart, setWeekStart] = useState(() => {
-    const date = new Date(selectedDate);
-    const day = date.getDay();
-    const diff = date.getDate() - day;
-    return new Date(date.setDate(diff));
+    // Start from today, not from Sunday of the week
+    return new Date();
   });
 
   const isDark = colorScheme === "dark";
@@ -58,23 +57,23 @@ function WeekCalendar({
 
   const goToPreviousWeek = () => {
     const newWeekStart = new Date(weekStart);
-    newWeekStart.setDate(weekStart.getDate() - 7);
+    newWeekStart.setDate(weekStart.getDate() - 1);
     setWeekStart(newWeekStart);
 
-    // Update selected date to the same day of week in the previous week
+    // Update selected date
     const newSelectedDate = new Date(selectedDate);
-    newSelectedDate.setDate(selectedDate.getDate() - 7);
+    newSelectedDate.setDate(selectedDate.getDate() - 1);
     onDateChange(newSelectedDate);
   };
 
   const goToNextWeek = () => {
     const newWeekStart = new Date(weekStart);
-    newWeekStart.setDate(weekStart.getDate() + 7);
+    newWeekStart.setDate(weekStart.getDate() + 1);
     setWeekStart(newWeekStart);
 
-    // Update selected date to the same day of week in the next week
+    // Update selected date
     const newSelectedDate = new Date(selectedDate);
-    newSelectedDate.setDate(selectedDate.getDate() + 7);
+    newSelectedDate.setDate(selectedDate.getDate() + 1);
     onDateChange(newSelectedDate);
   };
 
@@ -247,6 +246,7 @@ export default function PrayerTimesScreen() {
   const [settings, setSettings] = useState<UserSettings>(repo.loadSettings());
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [expandedForbidden, setExpandedForbidden] = useState(false);
 
   const load = useCallback(async (date: Date = new Date()) => {
     setLoading(true);
@@ -304,6 +304,14 @@ export default function PrayerTimesScreen() {
 
   const textColor = { color: Colors[colorScheme ?? "light"].text };
   const isDark = colorScheme === "dark";
+
+  // Function to get suggested rakats/structure for each prayer
+  const getSuggestedRakats = (prayerKey: string): string[] => {
+    const prayerData: any = prayerStructureData[prayerKey as keyof typeof prayerStructureData];
+    if (!prayerData || !prayerData.structure) return [];
+    
+    return prayerData.structure.map((unit: any) => `${unit.label}: ${unit.rakats} rakats`);
+  };
 
   if (loading) {
     return (
@@ -491,6 +499,7 @@ export default function PrayerTimesScreen() {
               icon="partly-sunny-outline"
               colorScheme={colorScheme}
               isPrimary={true}
+              suggestedPrayers={getSuggestedRakats("fajr")}
             />
             <PrayerTimeRow
               label="Sunrise"
@@ -505,6 +514,7 @@ export default function PrayerTimesScreen() {
               icon="sunny"
               colorScheme={colorScheme}
               isPrimary={true}
+              suggestedPrayers={getSuggestedRakats("dhuhr")}
             />
             <PrayerTimeRow
               label="Asr"
@@ -512,6 +522,7 @@ export default function PrayerTimesScreen() {
               icon="partly-sunny"
               colorScheme={colorScheme}
               isPrimary={true}
+              suggestedPrayers={getSuggestedRakats("asr")}
             />
             <PrayerTimeRow
               label="Maghrib"
@@ -519,6 +530,7 @@ export default function PrayerTimesScreen() {
               icon="moon-outline"
               colorScheme={colorScheme}
               isPrimary={true}
+              suggestedPrayers={getSuggestedRakats("maghrib")}
             />
             <PrayerTimeRow
               label="Isha"
@@ -526,6 +538,7 @@ export default function PrayerTimesScreen() {
               icon="moon"
               colorScheme={colorScheme}
               isPrimary={true}
+              suggestedPrayers={getSuggestedRakats("isha")}
             />
           </View>
         </View>
@@ -670,6 +683,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
+  prayerTimeRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
   prayerIconContainer: {
     marginRight: 12,
     width: 42,
@@ -688,6 +706,18 @@ const styles = StyleSheet.create({
   prayerTime: {
     fontSize: 17,
     fontWeight: "600",
+  },
+  suggestedPrayersContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  suggestedPrayerItem: {
+    fontSize: 13,
+    marginBottom: 4,
+    paddingHorizontal: 8,
   },
   specialTimesContainer: {
     flexDirection: "row",
@@ -738,6 +768,7 @@ interface PrayerTimeRowProps {
   isPrimary?: boolean;
   isSecondary?: boolean;
   isInfo?: boolean;
+  suggestedPrayers?: string[];
 }
 
 function getPrayerIcon(prayerName: string) {
@@ -760,8 +791,11 @@ function PrayerTimeRow({
   isPrimary = false,
   isSecondary = false,
   isInfo = false,
+  suggestedPrayers = [],
 }: PrayerTimeRowProps) {
   const isDark = colorScheme === "dark";
+  const [expanded, setExpanded] = useState(false);
+  
   const getTextColor = () => {
     if (isInfo) {
       return isDark ? "#8E8E93" : "#8E8E93";
@@ -773,23 +807,72 @@ function PrayerTimeRow({
   const prayerName = label.split(" ")[0];
   const iconSource = getPrayerIcon(prayerName);
 
+  // Default suggested prayers based on prayer name
+  const defaultSuggestions: Record<string, string[]> = {
+    Fajr: ["Make Dua", "Read Quran", "Remember Allah"],
+    Dhuhr: ["Make Dua", "Read Quran", "Dhikr"],
+    Asr: ["Make Dua", "Read Quran", "Reflection"],
+    Maghrib: ["Make Dua", "Read Quran", "Dhikr"],
+    Isha: ["Make Dua", "Read Quran", "Night Prayer"],
+  };
+
+  const prayers = suggestedPrayers.length > 0 ? suggestedPrayers : defaultSuggestions[prayerName] || [];
+
   return (
-    <View style={styles.prayerTimeRow}>
-      <View style={styles.prayerTimeLeft}>
-        <View style={styles.prayerIconContainer}>
-          <Image
-            source={iconSource}
-            style={styles.prayerIcon}
-            contentFit="contain"
-          />
+    <View>
+      <TouchableOpacity 
+        style={styles.prayerTimeRow}
+        onPress={() => prayers.length > 0 && setExpanded(!expanded)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.prayerTimeLeft}>
+          <View style={styles.prayerIconContainer}>
+            <Image
+              source={iconSource}
+              style={styles.prayerIcon}
+              contentFit="contain"
+            />
+          </View>
+          <Text style={[styles.prayerLabel, { color: getTextColor() }]}>
+            {label}
+          </Text>
         </View>
-        <Text style={[styles.prayerLabel, { color: getTextColor() }]}>
-          {label}
-        </Text>
-      </View>
-      <Text style={[styles.prayerTime, { color: getTextColor() }]}>
-        {value}
-      </Text>
+        <View style={styles.prayerTimeRight}>
+          <Text style={[styles.prayerTime, { color: getTextColor() }]}>
+            {value}
+          </Text>
+          {prayers.length > 0 && (
+            <Ionicons
+              name={expanded ? "chevron-up" : "chevron-down"}
+              size={16}
+              color={getTextColor()}
+              style={{ marginLeft: 8 }}
+            />
+          )}
+        </View>
+      </TouchableOpacity>
+
+      {/* Expanded Suggested Prayers */}
+      {expanded && prayers.length > 0 && (
+        <View
+          style={[
+            styles.suggestedPrayersContainer,
+            { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)" },
+          ]}
+        >
+          {prayers.map((prayer, index) => (
+            <Text
+              key={index}
+              style={[
+                styles.suggestedPrayerItem,
+                { color: isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.6)" },
+              ]}
+            >
+              • {prayer}
+            </Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }

@@ -195,6 +195,21 @@ export default function DuaListScreen() {
                 >
                   {dua.title}
                 </Text>
+                {dua.translation && (
+                  <Text
+                    style={[
+                      styles.duaSubtitle,
+                      {
+                        color: Colors[colorScheme ?? "light"].textSecondary,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {dua.translation.length > 80 
+                      ? dua.translation.substring(0, 80) + '...' 
+                      : dua.translation}
+                  </Text>
+                )}
               </View>
             </TouchableOpacity>
           ))
@@ -278,5 +293,10 @@ const styles = StyleSheet.create({
   duaTitle: {
     fontSize: 16,
     lineHeight: 22,
+    marginBottom: 4,
+  },
+  duaSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

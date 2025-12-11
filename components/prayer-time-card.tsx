@@ -166,6 +166,7 @@ export function PrayerTimeCard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<TodayPrayerTimes | null>(null);
   const [settings, setSettings] = useState<UserSettings>(repo.loadSettings());
+  const [countdown, setCountdown] = useState<string>("--h --m");
 
   const loadPrayerTimes = useCallback(async () => {
     try {
@@ -181,6 +182,36 @@ export function PrayerTimeCard() {
   useEffect(() => {
     loadPrayerTimes();
   }, [loadPrayerTimes]);
+
+  // Update countdown timer
+  useEffect(() => {
+    if (!data || !settings) return;
+
+    const updateCountdown = () => {
+      const { next } = getCurrentAndNextPrayer(data, settings);
+      if (!next) return;
+
+      const now = new Date().getTime();
+      const nextTime = new Date(next.timeIso).getTime();
+      const diff = nextTime - now;
+
+      if (diff <= 0) {
+        setCountdown("00h 00m");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      setCountdown(
+        `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`
+      );
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000);
+    return () => clearInterval(interval);
+  }, [data, settings]);
 
   const handlePress = () => {
     router.push("/(tabs)/prayer-times");
@@ -208,7 +239,7 @@ export function PrayerTimeCard() {
 
   if (!current || !next) return null;
 
-  // Get background image based on next prayer
+  // Get background image based on current prayer
   const getPrayerBackground = (prayerName: string) => {
     const name = prayerName.toLowerCase();
     switch (name) {
@@ -234,7 +265,7 @@ export function PrayerTimeCard() {
       activeOpacity={0.8}
     >
       <ImageBackground
-        source={getPrayerBackground(next.name)}
+        source={getPrayerBackground(current.name)}
         style={styles.backgroundImage}
         imageStyle={styles.backgroundImageStyle}
         resizeMode="cover"
@@ -244,9 +275,16 @@ export function PrayerTimeCard() {
 
         <View style={styles.cardContent}>
           <View style={styles.leftContent}>
-            <Text style={styles.nextPrayerLabel}>Next Prayer in 1:35:12</Text>
+            <Text style={styles.currentPrayerLabel}>
+              {current.name}
+            </Text>
 
-            <Text style={styles.currentTime}>
+            <View style={styles.countdownContainer}>
+              <Text style={styles.countdownLabel}>Next in</Text>
+              <Text style={styles.countdown}>{countdown}</Text>
+            </View>
+
+            <Text style={styles.nextPrayerTime}>
               {next.time} {next.name}
             </Text>
 
@@ -307,6 +345,36 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 12,
     fontWeight: "600",
+    opacity: 0.9,
+  },
+  currentPrayerLabel: {
+    fontSize: 56,
+    color: "#FFFFFF",
+    marginBottom: 12,
+    fontWeight: "700",
+    opacity: 0.95,
+  },
+  countdownContainer: {
+    marginBottom: 8,
+  },
+  countdownLabel: {
+    fontSize: 10,
+    color: "#FFFFFF",
+    fontWeight: "400",
+    opacity: 0.75,
+    marginBottom: 2,
+  },
+  countdown: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+  nextPrayerTime: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    marginBottom: 4,
     opacity: 0.9,
   },
   hijriDate: {

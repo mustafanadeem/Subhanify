@@ -242,106 +242,165 @@ export default function TravelDuaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F0F9FF',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+  },
+  emoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  intensityBadge: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 16,
   },
-  backButton: {
-    marginRight: 16,
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    flex: 1,
-  },
-  headerRight: {
-    alignItems: "flex-end",
-  },
-  duaCounter: {
+  intensityText: {
     fontSize: 14,
-    fontWeight: "500",
-  },
-  content: {
-    flex: 1,
-    padding: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
   duaCard: {
-    borderRadius: 16,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginBottom: 16,
     padding: 24,
-    marginBottom: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  arabicContainer: {
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  arabicText: {
-    fontSize: 28,
-    lineHeight: 44,
-    textAlign: "center",
-    fontFamily: "System", // You can use Arabic font here
-  },
-  transliterationContainer: {
+  duaLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginBottom: 16,
+    textAlign: 'center',
   },
-  transliterationText: {
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-  translationContainer: {
+  duaArabic: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
     marginBottom: 16,
+    lineHeight: 48,
   },
-  translationText: {
+  duaTransliteration: {
     fontSize: 18,
-    lineHeight: 28,
-    textAlign: "center",
+    fontStyle: 'italic',
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 12,
   },
-  referenceContainer: {
-    alignItems: "center",
+  duaTranslation: {
+    fontSize: 18,
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  meaningCard: {
+    backgroundColor: '#EFF6FF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 12,
+  },
+  meaningTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 12,
+  },
+  meaningText: {
+    fontSize: 15,
+    color: '#1E3A8A',
+    lineHeight: 24,
+    marginBottom: 12,
+  },
+  referenceCard: {
+    backgroundColor: '#FEF3C7',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  referenceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 8,
   },
   referenceText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  navigationContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  navButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  navButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  infoCard: {
-    borderRadius: 12,
-    padding: 16,
-  },
-  infoHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  infoText: {
-    fontSize: 14,
+    fontSize: 13,
+    color: '#78350F',
     lineHeight: 20,
+  },
+  additionalDuas: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  additionalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0C4A6E',
+    marginBottom: 12,
+  },
+  additionalDuaCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  additionalArabic: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 32,
+  },
+  additionalTranslation: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  closeButton: {
+    backgroundColor: '#3B82F6',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  footer: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#64748B',
+    textAlign: 'center',
   },
 });

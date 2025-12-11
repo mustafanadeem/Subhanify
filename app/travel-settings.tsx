@@ -120,21 +120,8 @@ export default function TravelSettingsScreen() {
     });
   };
 
-  const handleTestNotification = async () => {
-    Alert.alert(
-      "Test Travel Notification",
-      "This will send a test travel dua notification.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send Test",
-          onPress: async () => {
-            await sendTestTravelNotification();
-            Alert.alert("Test Sent", "Check your notifications!");
-          },
-        },
-      ]
-    );
+  const handleTestNotification = () => {
+    router.push("/travel-dua");
   };
 
   const handleExportLogs = async () => {
@@ -751,21 +738,11 @@ export default function TravelSettingsScreen() {
               )}
 
               <TouchableOpacity
-                style={styles.debugButton}
+                style={styles.testButton}
                 onPress={handleTestNotification}
               >
-                <Ionicons
-                  name="notifications-outline"
-                  size={20}
-                  color={Colors[colorScheme ?? "light"].tint}
-                />
-                <Text
-                  style={[
-                    styles.debugButtonText,
-                    { color: Colors[colorScheme ?? "light"].tint },
-                  ]}
-                >
-                  Test Notification
+                <Text style={styles.testButtonText}>
+                  Send Test Notification
                 </Text>
               </TouchableOpacity>
 
@@ -912,6 +889,19 @@ const styles = StyleSheet.create({
   analyticsContainer: { marginBottom: 16 },
   analyticsTitle: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
   analyticsText: { fontSize: 14, marginBottom: 4 },
+  testButton: {
+    backgroundColor: "#3B82F6",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  testButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
   debugButton: {
     flexDirection: "row",
     alignItems: "center",

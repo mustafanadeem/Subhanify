@@ -1,6 +1,4 @@
-import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
-import { useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getFavoritesByFolder } from "@/services/favorites-service";
 import { AdhkarItem, DuaItem } from "@/types/adhkar";
@@ -17,12 +15,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export default function DuaDetailScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -166,17 +164,10 @@ export default function DuaDetailScreen() {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: Colors[colorScheme ?? "light"].background },
-      ]}
-    >
-      <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor="transparent"
-        translucent
-      />
+    <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F0F9FF' }]}>
+      <TouchableOpacity style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]} onPress={() => router.back()}>
+        <Text style={[styles.backArrow, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>←</Text>
+      </TouchableOpacity>
 
       {/* Header */}
       <View
@@ -229,13 +220,14 @@ export default function DuaDetailScreen() {
 
       {/* Main Scroll View for Items */}
       <ScrollView
-        ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
+        onMomentumScrollEnd={(event) => {
+          const newIndex = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+          setCurrentIndex(newIndex);
+        }}
         scrollEventThrottle={16}
-        style={styles.mainScrollView}
       >
         {itemsList.map((item) => {
           const isDua = isDuaItem(item);
@@ -516,10 +508,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
   },
-  referenceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  referenceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 8,
   },
   referenceText: {
     fontSize: 13,

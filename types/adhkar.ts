@@ -32,6 +32,7 @@ export interface DuaItem {
   translation: string;
   reference: string;
   commentary: string | null;
+  category?: string;
 }
 
 

@@ -69,6 +69,7 @@ export default function LocationsScreen() {
     useState<Location.LocationObject | null>(null);
   const [geofencingActive, setGeofencingActive] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [expandedLocationId, setExpandedLocationId] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState({
     latitude: 51.5074,
     longitude: -0.1278,
@@ -441,8 +442,8 @@ export default function LocationsScreen() {
           ]}
           onPress={() => router.push("/manage-places")}
         >
-          <Ionicons name="location" size={24} color="#FFFFFF" />
-          <Text style={styles.managePlacesText}>Manage Places</Text>
+          <Ionicons name="moon" size={24} color="#FFFFFF" />
+          <Text style={styles.managePlacesText}>Nearby Mosques</Text>
         </TouchableOpacity>
 
         {/* Locations List */}
@@ -472,7 +473,7 @@ export default function LocationsScreen() {
           </View>
         ) : (
           locations.map((location) => (
-            <TouchableOpacity
+            <View
               key={location.id}
               style={[
                 styles.locationCard,
@@ -481,53 +482,57 @@ export default function LocationsScreen() {
                     Colors[colorScheme ?? "light"].cardBackground,
                 },
               ]}
-              onPress={() => handleEditLocation(location)}
             >
-              <View
-                style={[
-                  styles.locationIcon,
-                  { backgroundColor: categoryColors[location.category] },
-                ]}
-              >
-                <Ionicons
-                  name={categoryIcons[location.category] as any}
-                  size={24}
-                  color="white"
-                />
-              </View>
-
-              <View style={styles.locationInfo}>
-                <Text
-                  style={[
-                    styles.locationName,
-                    { color: Colors[colorScheme ?? "light"].text },
-                  ]}
-                >
-                  {location.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.locationAddress,
-                    {
-                      color: isDark
-                        ? Colors[colorScheme ?? "light"].textSecondary
-                        : "#8E8E93",
-                    },
-                  ]}
-                >
-                  {`${location.latitude.toFixed(
-                    4
-                  )}, ${location.longitude.toFixed(4)}`}
-                </Text>
-              </View>
-
               <TouchableOpacity
-                onPress={() => handleEditLocation(location)}
-                style={styles.locationMoreButton}
+                style={styles.locationMainContent}
+                onPress={() =>
+                  setExpandedLocationId(
+                    expandedLocationId === location.id ? null : location.id
+                  )
+                }
               >
+                <View
+                  style={[
+                    styles.locationIcon,
+                    { backgroundColor: categoryColors[location.category] },
+                  ]}
+                >
+                  <Ionicons
+                    name={categoryIcons[location.category] as any}
+                    size={24}
+                    color="white"
+                  />
+                </View>
+
+                <View style={styles.locationInfo}>
+                  <Text
+                    style={[
+                      styles.locationName,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    {location.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.locationAddress,
+                      {
+                        color: isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93",
+                      },
+                    ]}
+                  >
+                    {location.category.charAt(0).toUpperCase() +
+                      location.category.slice(1)}
+                    {" • "}
+                    {location.radius}m radius
+                  </Text>
+                </View>
+
                 <Ionicons
-                  name="ellipsis-horizontal"
-                  size={24}
+                  name={expandedLocationId === location.id ? "chevron-up" : "chevron-down"}
+                  size={20}
                   color={
                     isDark
                       ? Colors[colorScheme ?? "light"].textSecondary
@@ -535,7 +540,90 @@ export default function LocationsScreen() {
                   }
                 />
               </TouchableOpacity>
-            </TouchableOpacity>
+
+              {/* Action Buttons - Show when expanded */}
+              {expandedLocationId === location.id && (
+                <View style={styles.locationActions}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleEditLocation(location)}
+                  >
+                    <Ionicons
+                      name="pencil"
+                      size={20}
+                      color={colorScheme === "dark" ? "#0A84FF" : "#007AFF"}
+                    />
+                    <Text
+                      style={[
+                        styles.actionButtonText,
+                        {
+                          color: colorScheme === "dark" ? "#0A84FF" : "#007AFF",
+                        },
+                      ]}
+                    >
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() =>
+                      handleToggleLocation(location, !location.enabled)
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        location.enabled
+                          ? "notifications"
+                          : "notifications-off"
+                      }
+                      size={20}
+                      color={
+                        location.enabled
+                          ? colorScheme === "dark"
+                            ? "#0A84FF"
+                            : "#007AFF"
+                          : isDark
+                          ? Colors[colorScheme ?? "light"].textSecondary
+                          : "#8E8E93"
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.actionButtonText,
+                        {
+                          color: location.enabled
+                            ? colorScheme === "dark"
+                              ? "#0A84FF"
+                              : "#007AFF"
+                            : isDark
+                            ? Colors[colorScheme ?? "light"].textSecondary
+                            : "#8E8E93",
+                        },
+                      ]}
+                    >
+                      {location.enabled ? "Enabled" : "Disabled"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleDeleteLocation(location)}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={20}
+                      color="#FF3B30"
+                    />
+                    <Text
+                      style={[styles.actionButtonText, { color: "#FF3B30" }]}
+                    >
+                      Delete
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           ))
         )}
       </ScrollView>
@@ -649,12 +737,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   locationCard: {
-    flexDirection: "row",
-    alignItems: "center",
     marginHorizontal: 16,
     marginBottom: 12,
-    padding: 16,
     borderRadius: 12,
+    overflow: "hidden",
+  },
+  locationMainContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
   },
   locationIcon: {
     width: 48,
@@ -670,6 +761,27 @@ const styles = StyleSheet.create({
   locationName: {
     fontSize: 18,
     fontWeight: "600",
+  },
+  locationAddress: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  locationActions: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.1)",
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   locationDetails: {
     fontSize: 14,

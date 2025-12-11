@@ -23,3 +23,4 @@ if (!GOOGLE_PLACES_API_KEY || !GOOGLE_MAPS_API_KEY) {
   console.warn('⚠️  Google Maps API key not found. Make sure .env file exists with EXPO_PUBLIC_GOOGLE_MAPS_API_KEY');
 }
 
+

@@ -197,6 +197,18 @@ export default function StreakDetailsScreen() {
     const checkDate = new Date(dateString + "T00:00:00");
     if (checkDate > today) return false;
 
+    // TEST DATA: Show specific pattern for testing
+    const todayDay = today.getDate();
+    const currentMonthNum = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    if (currentMonth.getMonth() === currentMonthNum && currentMonth.getFullYear() === currentYear) {
+      // Last 3 days: green (completed)
+      if (day === todayDay || day === todayDay - 1 || day === todayDay - 2) {
+        return true; // Green - completed
+      }
+    }
+
     // Check if all 3 adhkar categories were completed on this date
     // This will be checked asynchronously when loading calendar data
     if (adhkarCompletionData[dateString]) {
@@ -204,6 +216,44 @@ export default function StreakDetailsScreen() {
     }
 
     return false;
+  };
+  
+  // Helper function to check completion status (for orange/red states)
+  const getDateCompletionStatus = (day: number): 'complete' | 'partial' | 'missed' | 'none' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayDay = today.getDate();
+    const currentMonthNum = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    const dateToCheck = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+    const checkDate = new Date(dateToCheck);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    // If in future, return none
+    if (checkDate > today) return 'none';
+    
+    // TEST DATA: Show specific pattern for testing
+    if (currentMonth.getMonth() === currentMonthNum && currentMonth.getFullYear() === currentYear) {
+      // Last 3 days: complete (green)
+      if (day === todayDay || day === todayDay - 1 || day === todayDay - 2) {
+        return 'complete';
+      }
+      // 3 days ago: missed (red)
+      if (day === todayDay - 3) {
+        return 'missed';
+      }
+      // 4 days ago: partial (orange)
+      if (day === todayDay - 4) {
+        return 'partial';
+      }
+    }
+    
+    return 'none';
   };
 
   const wasAppInstalled = (day: number): boolean => {
@@ -329,70 +379,258 @@ export default function StreakDetailsScreen() {
     return { completed: false, progress: 0, progressPercent: 0, total: 10 };
   };
 
+  // Helper to get completion count for a day (0, 1, 2, or 3)
+  const getAdhkarCompletionCount = (day: number): number => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentMonthNum = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    const dateToCheck = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+    const checkDate = new Date(dateToCheck);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    // If in future, return 0
+    if (checkDate > today) return 0;
+    
+    // TEST DATA: Show specific pattern for testing in November 2025
+    if (currentMonth.getMonth() === 10 && currentMonth.getFullYear() === 2025) {
+      // Day 18: Red (missed)
+      if (day === 18) {
+        return 0;
+      }
+      // Day 19: Orange (partial)
+      if (day === 19) {
+        return 1;
+      }
+      // Days 20-27: 8-day green streak crossing rows
+      // Nov 20 (Thu) to Nov 27 (Thu)
+      if (day >= 20 && day <= 27) {
+        return 3; // Green - completed
+      }
+    }
+    
+    // Check real data
+    const dateString = dateToCheck.toISOString().split("T")[0];
+    if (adhkarCompletionData[dateString]) {
+      return adhkarCompletionData[dateString].completedCategories.length;
+    }
+    
+    return 0;
+  };
+
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentMonth);
     const firstDay = getFirstDayOfMonth(currentMonth);
-    const days = [];
-
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
-      days.push(
-        <View key={`empty-${i}`} style={styles.dayCell}>
-          <View style={styles.emptyDay} />
+    const totalCells = firstDay + daysInMonth;
+    const rows = Math.ceil(totalCells / 7);
+    
+    const calendarRows = [];
+    
+    for (let row = 0; row < rows; row++) {
+      const startCell = row * 7;
+      
+      // Build array of day info for this row (all 7 columns)
+      const rowDays: Array<{day: number; col: number; isGreen: boolean}> = [];
+      for (let col = 0; col < 7; col++) {
+        const cell = startCell + col;
+        const day = cell - firstDay + 1;
+        
+        if (day >= 1 && day <= daysInMonth) {
+          const count = getAdhkarCompletionCount(day);
+          const isGreen = count === 3;
+          rowDays.push({day, col, isGreen});
+        } else {
+          rowDays.push({day: -1, col, isGreen: false});
+        }
+      }
+      
+      // Detect all streaks in this row
+      const rowStreaks: Array<{
+        startCol: number;
+        endCol: number;
+        startDay: number;
+        endDay: number;
+      }> = [];
+      
+      let currentStreakStart: number | null = null;
+      let currentStreakStartDay: number | null = null;
+      
+      for (let i = 0; i < rowDays.length; i++) {
+        const {day, col, isGreen} = rowDays[i];
+        
+        if (isGreen && day >= 1) {
+          // Start or continue a streak
+          if (currentStreakStart === null) {
+            currentStreakStart = col;
+            currentStreakStartDay = day;
+          }
+          // If last column or last day, close the streak
+          if (i === rowDays.length - 1 || col === 6) {
+            rowStreaks.push({
+              startCol: currentStreakStart,
+              endCol: col,
+              startDay: currentStreakStartDay!,
+              endDay: day,
+            });
+            currentStreakStart = null;
+            currentStreakStartDay = null;
+          }
+        } else {
+          // Not green, close any open streak
+          if (currentStreakStart !== null && currentStreakStartDay !== null) {
+            rowStreaks.push({
+              startCol: currentStreakStart,
+              endCol: i - 1,
+              startDay: currentStreakStartDay,
+              endDay: rowDays[i - 1].day,
+            });
+            currentStreakStart = null;
+            currentStreakStartDay = null;
+          }
+        }
+      }
+      
+      // Render this row
+      calendarRows.push(
+        <View key={`row-${row}`} style={styles.calendarRow}>
+          {/* Streak background strips */}
+          {rowStreaks.map((streak, idx) => {
+            const streakLength = streak.endCol - streak.startCol + 1;
+            
+            // Check if this streak connects to previous row
+            const prevDay = streak.startDay - 1;
+            const connectsPrevRow = streak.startCol === 0 && 
+              prevDay >= 1 && 
+              getAdhkarCompletionCount(prevDay) === 3;
+            
+            // Check if this streak connects to next row
+            const nextDay = streak.endDay + 1;
+            const connectsNextRow = streak.endCol === 6 && 
+              nextDay <= daysInMonth && 
+              getAdhkarCompletionCount(nextDay) === 3;
+            
+            // Show background if:
+            // - 2+ consecutive days in row, OR
+            // - Single day that connects from previous row, OR
+            // - Single day that connects to next row
+            const shouldShow = streakLength >= 2 || connectsPrevRow || connectsNextRow;
+            
+            if (!shouldShow) return null;
+            
+            // Determine rounding
+            // Round left edge only if NOT continuing from previous row
+            const roundLeft = !connectsPrevRow;
+            // Round right edge only if NOT continuing to next row
+            const roundRight = !connectsNextRow;
+            
+            // Calculate positioning
+            const cellWidthPercent = 100 / 7;
+            
+            // Calculate cell width in pixels
+            // 14.28% of container width, accounting for the circle position
+            const cellWidth = 100 / 7; // percentage
+            
+            return (
+              <View
+                key={`streak-${row}-${idx}`}
+                style={[
+                  styles.streakBackground,
+                  {
+                    left: `${streak.startCol * cellWidth}%`,
+                    right: `${(6 - streak.endCol) * cellWidth}%`,
+                    marginLeft: roundLeft ? '6.14%' : 0,
+                    marginRight: roundRight ? '6.14%' : 0,
+                    borderTopLeftRadius: roundLeft ? 100 : 0,
+                    borderBottomLeftRadius: roundLeft ? 100 : 0,
+                    borderTopRightRadius: roundRight ? 100 : 0,
+                    borderBottomRightRadius: roundRight ? 100 : 0,
+                    borderWidth: 3,
+                    borderColor: '#2BD157',
+                    // Remove right border when continuing to next row
+                    borderRightWidth: connectsNextRow ? 0 : 3,
+                    // Remove left border when continuing from previous row
+                    borderLeftWidth: connectsPrevRow ? 0 : 3,
+                  }
+                ]}
+              />
+            );
+          })}
+          
+          {/* Day cells */}
+          {rowDays.map(({day, col}) => {
+            if (day < 1 || day > daysInMonth) {
+              return (
+                <View key={`empty-${row}-${col}`} style={styles.dayCell}>
+                  <View style={styles.emptyDay} />
+                </View>
+              );
+            }
+            
+            const count = getAdhkarCompletionCount(day);
+            const isToday =
+              day === new Date().getDate() &&
+              currentMonth.getMonth() === new Date().getMonth() &&
+              currentMonth.getFullYear() === new Date().getFullYear();
+            
+            const dayDate = new Date(
+              currentMonth.getFullYear(),
+              currentMonth.getMonth(),
+              day
+            );
+            const isPast = dayDate <= new Date();
+            
+            // Check if this day is part of a streak
+            const prevDayCount = day > 1 ? getAdhkarCompletionCount(day - 1) : 0;
+            const nextDayCount = day < daysInMonth ? getAdhkarCompletionCount(day + 1) : 0;
+            
+            const isStreakStart = count === 3 && prevDayCount !== 3;
+            const isStreakEnd = count === 3 && nextDayCount !== 3;
+            const isStreakMiddle = count === 3 && prevDayCount === 3 && nextDayCount === 3;
+            
+            let dayStyle = styles.day;
+            let textStyle = [styles.dayText];
+            
+            if (count === 3) {
+              if (isStreakMiddle) {
+                // Middle of streak - just show background, no circle
+                dayStyle = styles.streakMiddleDay;
+                textStyle = [styles.completedDayText, { color: isDark ? "#FFFFFF" : "#000000" }];
+              } else {
+                // Start or end of streak - show green circle
+                dayStyle = styles.completedDay;
+                textStyle = [styles.completedDayText, { color: isDark ? "#FFFFFF" : "#000000" }];
+              }
+            } else if (count >= 1) {
+              dayStyle = styles.partialDay;
+              textStyle = [styles.partialDayText, { color: isDark ? "#FFFFFF" : "#000000" }];
+            } else if (count === 0 && isPast && !isToday) {
+              dayStyle = styles.missedDay;
+              textStyle = [styles.missedDayText, { color: isDark ? "#FFFFFF" : "#000000" }];
+            }
+            
+            return (
+              <View key={`day-${row}-${day}`} style={styles.dayCell}>
+                <TouchableOpacity
+                  style={dayStyle}
+                  onPress={() => handleDayPress(day)}
+                  disabled={!isPast}
+                  activeOpacity={isPast ? 0.7 : 1}
+                >
+                  <Text style={textStyle}>{day}</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
         </View>
       );
     }
-
-    // Add cells for each day of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const isCompleted = isDateCompleted(day);
-      const appWasInstalled = wasAppInstalled(day);
-      const isToday =
-        day === new Date().getDate() &&
-        currentMonth.getMonth() === new Date().getMonth() &&
-        currentMonth.getFullYear() === new Date().getFullYear();
-
-      // Check if day is in the past (can be tapped)
-      const dayDate = new Date(
-        currentMonth.getFullYear(),
-        currentMonth.getMonth(),
-        day
-      );
-      const isPast = dayDate <= new Date();
-
-      // Only show as missed if app was installed AND day is in past AND not completed
-      const isMissed = isPast && !isCompleted && !isToday && appWasInstalled;
-
-      days.push(
-        <View key={day} style={styles.dayCell}>
-          <TouchableOpacity
-            style={[
-              styles.day,
-              isCompleted && styles.completedDay,
-              isToday && isCompleted && styles.todayDay,
-              // Today but not completed - no styling (just text will be styled)
-              isMissed && styles.missedDay,
-            ]}
-            onPress={() => handleDayPress(day)}
-            disabled={!isPast}
-            activeOpacity={isPast ? 0.7 : 1}
-          >
-            <Text
-              style={[
-                styles.dayText,
-                isCompleted && styles.completedDayText,
-                isToday && !isCompleted && styles.todayTextIncomplete,
-                isMissed && styles.missedDayText,
-              ]}
-            >
-              {day}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    return days;
+    
+    return calendarRows;
   };
 
   const monthNames = [
@@ -557,7 +795,7 @@ export default function StreakDetailsScreen() {
               {/* Calendar Section */}
               <View style={styles.calendarSection}>
                 {/* Month Navigation */}
-                <View style={styles.monthNavigation}>
+                <View style={[styles.monthNavigation, {paddingHorizontal: 16}]}>
                   <TouchableOpacity
                     onPress={previousMonth}
                     style={styles.navButton}
@@ -603,7 +841,7 @@ export default function StreakDetailsScreen() {
                 </View>
 
                 {/* Day Labels */}
-                <View style={styles.dayLabels}>
+                <View style={[styles.dayLabels, {paddingHorizontal: 16}]}>
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sun"].map(
                     (day, index) => (
                       <View key={index} style={styles.dayLabelCell}>
@@ -731,38 +969,22 @@ export default function StreakDetailsScreen() {
                 {/* Week Days Chart */}
                 <View style={styles.weekChart}>
                   {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => {
-                    // Calculate the date for this day of the week
-                    const today = new Date();
-                    const currentDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
-                    // Adjust to make Monday = 0
-                    const adjustedCurrentDay =
-                      currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
-                    const daysBack = adjustedCurrentDay - index;
-                    const dateForThisDay = new Date(today);
-                    dateForThisDay.setDate(today.getDate() - daysBack);
-                    dateForThisDay.setHours(0, 0, 0, 0);
-
-                    // Get date string for checking adhkar completion
-                    const dateString = dateForThisDay
-                      .toISOString()
-                      .split("T")[0];
-
-                    // Check if all 3 adhkars were completed on this day
-                    const adhkarCompletion = adhkarCompletionData[dateString];
-                    const isCompleted =
-                      adhkarCompletion &&
-                      adhkarCompletion.completedCategories.length === 3;
-
-                    // Check if day is in the future
-                    const isFuture = dateForThisDay > today;
-
-                    // Determine bar height and color
-                    const barHeight = isFuture ? 0 : isCompleted ? 80 : 20;
-                    const barColor = isFuture
-                      ? "transparent"
-                      : isCompleted
-                      ? "#2BD157"
-                      : "#E74C3C";
+                    // TEST DATA: Showing specific pattern for testing
+                    // M=60%, T=70%, W=50%(orange), T=20%(red), F=80%(green), S=90%(green), S=100%(green)
+                    const testPattern = [60, 70, 50, 20, 80, 90, 100];
+                    const completionPercent = testPattern[index];
+                    
+                    // Determine bar height (scale 0-80) and color based on percentage
+                    let barHeight = (completionPercent / 100) * 80;
+                    let barColor;
+                    
+                    if (completionPercent >= 80) {
+                      barColor = "#2BD157"; // Green
+                    } else if (completionPercent >= 50) {
+                      barColor = "#FF9800"; // Orange
+                    } else {
+                      barColor = "#E74C3C"; // Red
+                    }
 
                     return (
                       <View key={index} style={styles.weekDayContainer}>
@@ -1186,7 +1408,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   calendarSection: {
-    paddingHorizontal: 16,
+    // No horizontal padding - let streak backgrounds extend to screen edges
   },
   backButton: {
     padding: 4,
@@ -1290,63 +1512,118 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     marginBottom: 20,
+    paddingHorizontal: 16,
+  },
+  calendarRow: {
+    flexDirection: "row",
+    position: "relative",
+    height: 52,
+    marginBottom: 6,
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+  },
+  streakBackground: {
+    position: "absolute",
+    top: 6,
+    height: 40,
+    backgroundColor: "rgba(43, 209, 87, 0.2)",
+    zIndex: 0,
   },
   dayCell: {
     width: "14.28%",
-    aspectRatio: 1,
-    padding: 2,
-  },
-  day: {
-    flex: 1,
+    height: 52,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 20,
+    zIndex: 1,
+  },
+  day: {
+    width: 38,
+    height: 38,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 19,
   },
   emptyDay: {
-    flex: 1,
+    width: 38,
+    height: 38,
   },
   completedDay: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: "#2BD157",
-    borderWidth: 2,
-    borderColor: "#2BD157",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  streakMiddleDay: {
+    width: 38,
+    height: 38,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
   todayDay: {
-    borderWidth: 2,
-    borderColor: "#2BD157",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: "#2BD157",
+    justifyContent: "center",
+    alignItems: "center",
   },
   todayIncomplete: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: "#E74C3C",
+    borderWidth: 3,
+    borderColor: "#B62527",
+    justifyContent: "center",
+    alignItems: "center",
   },
   missedDay: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: "#E74C3C",
+    borderWidth: 3,
+    borderColor: "#B62527",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  partialDay: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "transparent",
+    borderWidth: 3,
+    borderColor: "#D5602E",
+    justifyContent: "center",
+    alignItems: "center",
   },
   dayText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#444444",
+    color: "#999999",
   },
   completedDayText: {
-    color: "#FFFFFF",
+    fontSize: 15,
     fontWeight: "700",
   },
+  partialDayText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
   todayText: {
-    color: "#E74C3C",
+    color: "#B62527",
     fontWeight: "700",
   },
   todayTextIncomplete: {
-    color: "#FFFFFF",
+    color: "#B62527",
     fontWeight: "700",
   },
   missedDayText: {
-    color: "#E74C3C",
+    fontSize: 15,
     fontWeight: "600",
   },
   weekChart: {

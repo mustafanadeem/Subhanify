@@ -6,7 +6,7 @@ export type AdhkarPeriod = 'morning' | 'evening' | 'night' | 'none';
  * Determines which Adhkar period is currently active based on prayer times
  * Morning: From Fajr to Sunrise
  * Evening: From Asr (user's chosen time) to Maghrib
- * Night: From Maghrib to Fajr (next day)
+ * Night: From Maghrib to Midnight (calculated as midpoint between Maghrib and Fajr)
  */
 export function getCurrentAdhkarPeriod(
   prayerTimes: TodayPrayerTimes | null,
@@ -22,6 +22,7 @@ export function getCurrentAdhkarPeriod(
   const fajrTime = new Date(prayerTimes.fajr.timeIso);
   const sunriseTime = new Date(prayerTimes.sunrise.timeIso);
   const maghribTime = new Date(prayerTimes.maghrib.timeIso);
+  const midnightTime = new Date(prayerTimes.midnight.timeIso);
   
   // Get Asr time based on user's school preference
   const asrTime = settings.schoolPrimary === 0 
@@ -38,9 +39,8 @@ export function getCurrentAdhkarPeriod(
     return 'evening';
   }
 
-  // Check if we're in Night period (Maghrib to next Fajr)
-  // This is true if current time is after Maghrib OR before Fajr
-  if (now >= maghribTime || now < fajrTime) {
+  // Check if we're in Night period (Maghrib to Midnight)
+  if (now >= maghribTime && now < midnightTime) {
     return 'night';
   }
 
@@ -83,7 +83,7 @@ export function getAdhkarTimeRange(
     }
     
     case 'night':
-      return `${formatTime(prayerTimes.maghrib.timeIso)} - ${formatTime(prayerTimes.fajr.timeIso)}`;
+      return `${formatTime(prayerTimes.maghrib.timeIso)} - ${formatTime(prayerTimes.midnight.timeIso)}`;
     
     default:
       return null;
@@ -100,7 +100,7 @@ export function getAdhkarTimeDescription(category: string): string | null {
     case 'evening':
       return 'After Asr until Maghrib';
     case 'night':
-      return 'After Maghrib until Fajr';
+      return 'After Maghrib until Midnight';
     default:
       return null;
   }

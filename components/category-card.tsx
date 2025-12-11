@@ -118,7 +118,11 @@ export function CategoryCard({
 
           <View style={styles.textContainer}>
             <ThemedText style={styles.title}>{title}</ThemedText>
-            <ThemedText style={styles.subtitle}>{subtitle}</ThemedText>
+            {timeRange ? (
+              <ThemedText style={styles.timeRange}>{timeRange}</ThemedText>
+            ) : (
+              <ThemedText style={styles.subtitle}>{subtitle}</ThemedText>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -156,7 +160,11 @@ export function CategoryCard({
 
         <View style={styles.textContainer}>
           <ThemedText style={styles.title}>{title}</ThemedText>
-          <ThemedText style={styles.subtitle}>{subtitle}</ThemedText>
+          {timeRange ? (
+            <ThemedText style={styles.timeRange}>{timeRange}</ThemedText>
+          ) : (
+            <ThemedText style={styles.subtitle}>{subtitle}</ThemedText>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -255,6 +263,22 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     letterSpacing: -0.2,
     fontWeight: "400",
+  },
+  timeRange: {
+    fontSize: 15,
+    opacity: 0.5,
+    letterSpacing: -0.2,
+    fontWeight: "400",
+  },
+  viewButtonContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    alignItems: "flex-end",
+  },
+  viewButton: {
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   subtitleHighlighted: {
     fontSize: 16,
