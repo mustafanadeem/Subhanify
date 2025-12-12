@@ -48,10 +48,16 @@ export default function NearbyMosquesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObject | null>(null);
+  const [viewMode, setViewMode] = useState<"saved" | "mosques">("saved");
+  const [locations, setLocations] = useState<any[]>([]);
 
   useEffect(() => {
     initialize();
   }, []);
+
+  const handleAddLocation = () => {
+    router.push("/location-detail");
+  };
 
   const initialize = async () => {
     try {
