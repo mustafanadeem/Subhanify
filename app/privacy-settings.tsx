@@ -7,6 +7,7 @@
  * - Travel detection
  * - Notifications
  * - Privacy disclosures
+ * - Notification testing
  */
 
 import { Colors } from "@/constants/theme";
@@ -30,6 +31,7 @@ import {
   sendTestTravelNotification,
   setTravelNotificationsEnabled,
 } from "@/services/travel-notification-service";
+import { sendTestAdhkarNotification } from "@/services/notification-handler";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -45,6 +47,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import adhkarData from "@/data/adkar_dua.json";
 
 const TRAVEL_DETECTION_KEY = "@travel_detection_enabled";
 const MOTION_NOTIFICATIONS_KEY = "@motion_notifications_enabled";
@@ -183,6 +186,31 @@ export default function PrivacySettingsScreen() {
         },
       ]
     );
+  };
+
+  const handleTestAdhkarNotification = async (eventType: 'entry' | 'exit' = 'entry') => {
+    try {
+      // Get a random adhkar from the data
+      const adhkarList = adhkarData.Sheet1 as any[];
+      const randomAdhkar = adhkarList[Math.floor(Math.random() * adhkarList.length)];
+      
+      const locationName = eventType === 'entry' ? 'Mosque' : 'Home';
+      
+      await sendTestAdhkarNotification(
+        randomAdhkar,
+        locationName,
+        eventType
+      );
+      
+      Alert.alert(
+        'Test Notification Sent',
+        `Location: ${locationName}\nEvent: ${eventType === 'entry' ? 'Entering' : 'Leaving'}\n\nTap the notification to view the full adhkar!`,
+        [{ text: 'OK', style: 'cancel' }]
+      );
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      Alert.alert('Error', 'Failed to send test notification. Please check notification permissions.');
+    }
   };
 
   return (
@@ -499,6 +527,62 @@ export default function PrivacySettingsScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Test Adhkar Notifications Section */}
+        <View style={styles.section}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: isDark
+                  ? Colors[colorScheme ?? "light"].textSecondary
+                  : "#8E8E93",
+              },
+            ]}
+          >
+            TEST NOTIFICATIONS
+          </Text>
+
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.testDescription,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Test location-based adhkar notifications. Tap the notification to view the full adhkar!
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.testAdhkarButton,
+                { backgroundColor: Colors[colorScheme ?? "light"].tint },
+              ]}
+              onPress={() => handleTestAdhkarNotification('entry')}
+            >
+              <Ionicons name="enter" size={18} color="white" />
+              <Text style={styles.testButtonText}>Test Entry Notification</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.testAdhkarButton,
+                { backgroundColor: Colors[colorScheme ?? "light"].tint, marginTop: 8 },
+              ]}
+              onPress={() => handleTestAdhkarNotification('exit')}
+            >
+              <Ionicons name="exit" size={18} color="white" />
+              <Text style={styles.testButtonText}>Test Exit Notification</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -743,5 +827,18 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 15,
     fontWeight: "600",
+  },
+  testDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  testAdhkarButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 10,
+    gap: 8,
   },
 });

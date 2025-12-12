@@ -115,18 +115,26 @@ export async function showAdhkarNotification(
       content: {
         title: `${eventType === 'entry' ? 'Entering' : 'Leaving'} ${locationName}`,
         body: adhkar.Adhkar,
+        sound: 'default',
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        categoryIdentifier: 'location-adhkar',
         data: {
           adhkar: adhkar,
           locationName,
           eventType,
+          type: 'LOCATION_ADHKAR',
         },
-        sound: 'default',
-        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: null, // Show immediately
     });
+    
+    console.log('[NotificationService] Adhkar notification scheduled:', {
+      location: locationName,
+      event: eventType,
+      adhkar: adhkar.Adhkar?.substring(0, 50),
+    });
   } catch (error) {
-    console.error('Error showing adhkar notification:', error);
+    console.error('[NotificationService] Error showing adhkar notification:', error);
   }
 }
 

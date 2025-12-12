@@ -21,6 +21,7 @@ import {
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -308,17 +309,61 @@ export default function LocationsScreen() {
   const handleToggleGeofencing = async (value: boolean) => {
     try {
       if (value) {
+        // Request background location permission before enabling geofencing
+        const foreground = await Location.requestForegroundPermissionsAsync();
+        
+        if (foreground.status !== 'granted') {
+          Alert.alert(
+            'Location Permission Required',
+            'Location access is required to monitor your location for adhkar reminders.'
+          );
+          return;
+        }
+        
+        // Request background permission (CRITICAL for background monitoring)
+        const background = await Location.requestBackgroundPermissionsAsync();
+        
+        if (background.status !== 'granted') {
+          Alert.alert(
+            'Background Location Permission',
+            'Please select "Always Allow" (or "Allow all the time") to enable background location monitoring. This allows notifications even when the app is closed.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Try Again', 
+                onPress: () => handleToggleGeofencing(true) 
+              },
+            ]
+          );
+          return;
+        }
+        
+        // Request notification permission as well
+        const notification = await Notifications.requestPermissionsAsync();
+        if (notification.granted) {
+          console.log('Notification permissions granted');
+        }
+        
+        // Now start geofencing with both permissions granted
         await restartGeofencing();
         const status = await getGeofencingStatus();
         setGeofencingActive(status.isMonitoring);
-        Alert.alert("Success", `Monitoring ${status.regionsCount} locations`);
+        
+        Alert.alert(
+          'Success',
+          `✅ Location monitoring active\n\nNow monitoring ${status.regionsCount} locations.\n\nYou will receive notifications when entering/leaving these places, even if the app is closed.`
+        );
       } else {
         await stopGeofencingMonitoring();
         setGeofencingActive(false);
-        Alert.alert("Success", "Location monitoring stopped");
+        Alert.alert('Success', 'Location monitoring stopped');
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to toggle location monitoring");
+      console.error('Error toggling geofencing:', error);
+      Alert.alert(
+        'Error',
+        'Failed to toggle location monitoring. Please check your location and notification settings.'
+      );
     }
   };
 

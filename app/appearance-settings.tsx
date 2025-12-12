@@ -5,9 +5,10 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
     Animated,
+    Alert,
     Modal,
     PanResponder,
     ScrollView,
@@ -18,6 +19,9 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
+import { checkLocationPermissions, checkNotificationPermissions, openAppSettings } from "@/services/permissions-manager";
 
 type ArabicFontDisplay = "KFGQPC Hafs" | "PDMS Saleem Quran";
 type ThemeMode = "light" | "dark" | "auto";
@@ -158,6 +162,37 @@ export default function AppearanceSettingsScreen() {
   // Modal state
   const [showFontModal, setShowFontModal] = useState(false);
 
+  // Permission state
+  const [locationPermissions, setLocationPermissions] = useState({
+    foreground: false,
+    background: false,
+  });
+  const [notificationPermission, setNotificationPermission] = useState(false);
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
+
+  // Load permission status on component mount
+  useEffect(() => {
+    loadPermissionStatuses();
+  }, []);
+
+  const loadPermissionStatuses = async () => {
+    try {
+      setPermissionsLoading(true);
+      const locationStatus = await checkLocationPermissions();
+      const notificationStatus = await checkNotificationPermissions();
+      
+      setLocationPermissions({
+        foreground: locationStatus.foreground,
+        background: locationStatus.background,
+      });
+      setNotificationPermission(notificationStatus.granted);
+    } catch (error) {
+      console.error("Error loading permission statuses:", error);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
+
   // Map internal font names to display names
   const getFontDisplayName = (font: FontType): ArabicFontDisplay => {
     return font === "Hafs" ? "KFGQPC Hafs" : "PDMS Saleem Quran";
@@ -179,6 +214,78 @@ export default function AppearanceSettingsScreen() {
       default:
         return "System Default";
     }
+  };
+
+  // Permission management handlers
+  const handleRequestLocationPermission = async () => {
+    try {
+      const foregroundPerm = await Location.requestForegroundPermissionsAsync();
+      
+      if (foregroundPerm.status !== "granted") {
+        Alert.alert(
+          "Location Permission Denied",
+          "Location permission is required for adhkar reminders based on your location.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: openAppSettings },
+          ]
+        );
+        return;
+      }
+
+      // Request background location
+      const backgroundPerm = await Location.requestBackgroundPermissionsAsync();
+      
+      setLocationPermissions({
+        foreground: foregroundPerm.status === "granted",
+        background: backgroundPerm.status === "granted",
+      });
+
+      const message = backgroundPerm.status === "granted"
+        ? "Location permissions granted! You'll receive adhkar reminders in the background."
+        : "Foreground location permission granted. Background location is optional for notifications when app is closed.";
+      
+      Alert.alert("Success", message);
+    } catch (error) {
+      console.error("Error requesting location permission:", error);
+      Alert.alert("Error", "Failed to request location permission.");
+    }
+  };
+
+  const handleRequestNotificationPermission = async () => {
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      
+      setNotificationPermission(status === "granted");
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Notification Permission Denied",
+          "Notification permission is required to receive adhkar reminders.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: openAppSettings },
+          ]
+        );
+        return;
+      }
+
+      Alert.alert("Success", "Notification permission granted!");
+    } catch (error) {
+      console.error("Error requesting notification permission:", error);
+      Alert.alert("Error", "Failed to request notification permission.");
+    }
+  };
+
+  const getPermissionStatusColor = (granted: boolean): string => {
+    if (isDark) {
+      return granted ? "#4CAF50" : "#FF5252";
+    }
+    return granted ? "#4CAF50" : "#FF5252";
+  };
+
+  const getPermissionStatusIcon = (granted: boolean): string => {
+    return granted ? "checkmark-circle" : "close-circle";
   };
 
   return (
@@ -598,6 +705,245 @@ export default function AppearanceSettingsScreen() {
             )}
           </View>
         </View>
+
+        {/* Permissions Section */}
+        <View style={styles.section}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: Colors[colorScheme ?? "light"].text },
+            ]}
+          >
+            Permissions
+          </Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+              },
+            ]}
+          >
+            {/* Location Permission */}
+            <View
+              style={[
+                styles.permissionRow,
+                {
+                  borderBottomWidth: 1,
+                  borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                },
+              ]}
+            >
+              <View style={styles.permissionInfo}>
+                <View style={styles.permissionHeader}>
+                  <Text
+                    style={[
+                      styles.permissionTitle,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    Location
+                  </Text>
+                  <View style={styles.statusBadges}>
+                    {locationPermissions.foreground && (
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor: isDark ? "#1C2C1F" : "#E8F5E9",
+                          },
+                        ]}
+                      >
+                        <Text style={styles.statusBadgeText}>Foreground</Text>
+                      </View>
+                    )}
+                    {locationPermissions.background && (
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor: isDark ? "#1C2C1F" : "#E8F5E9",
+                          },
+                        ]}
+                      >
+                        <Text style={styles.statusBadgeText}>Background</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <Text
+                  style={[
+                    styles.permissionDescription,
+                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                  ]}
+                >
+                  Required for location-based adhkar reminders
+                </Text>
+              </View>
+              <Ionicons
+                name={getPermissionStatusIcon(locationPermissions.foreground)}
+                size={24}
+                color={getPermissionStatusColor(locationPermissions.foreground)}
+              />
+            </View>
+
+            {/* Notification Permission */}
+            <View
+              style={[
+                styles.permissionRow,
+                {
+                  borderBottomWidth: 1,
+                  borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                },
+              ]}
+            >
+              <View style={styles.permissionInfo}>
+                <Text
+                  style={[
+                    styles.permissionTitle,
+                    { color: Colors[colorScheme ?? "light"].text },
+                  ]}
+                >
+                  Notifications
+                </Text>
+                <Text
+                  style={[
+                    styles.permissionDescription,
+                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                  ]}
+                >
+                  Required to receive adhkar reminders
+                </Text>
+              </View>
+              <Ionicons
+                name={getPermissionStatusIcon(notificationPermission)}
+                size={24}
+                color={getPermissionStatusColor(notificationPermission)}
+              />
+            </View>
+
+            {/* Request Permissions Button */}
+            <View style={styles.permissionActionsRow}>
+              <TouchableOpacity
+                style={[
+                  styles.permissionButton,
+                  {
+                    backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+                    opacity: !locationPermissions.foreground ? 1 : 0.6,
+                  },
+                ]}
+                onPress={handleRequestLocationPermission}
+                disabled={locationPermissions.foreground}
+              >
+                <Ionicons name="location" size={16} color="white" />
+                <Text style={styles.permissionButtonText}>
+                  {locationPermissions.foreground ? "Location Granted" : "Grant Location"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.permissionButton,
+                  {
+                    backgroundColor: isDark ? "#0A84FF" : "#007AFF",
+                    opacity: !notificationPermission ? 1 : 0.6,
+                  },
+                ]}
+                onPress={handleRequestNotificationPermission}
+                disabled={notificationPermission}
+              >
+                <Ionicons name="notifications" size={16} color="white" />
+                <Text style={styles.permissionButtonText}>
+                  {notificationPermission ? "Notifications Granted" : "Grant Notifications"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Settings Link */}
+            <TouchableOpacity
+              style={[
+                styles.settingsLinkRow,
+                {
+                  borderTopWidth: 1,
+                  borderTopColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                },
+              ]}
+              onPress={openAppSettings}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={18}
+                color={Colors[colorScheme ?? "light"].tint}
+              />
+              <Text
+                style={[
+                  styles.settingsLinkText,
+                  { color: Colors[colorScheme ?? "light"].tint },
+                ]}
+              >
+                Manage in System Settings
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={Colors[colorScheme ?? "light"].textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <Text
+            style={[
+              styles.permissionHint,
+              { color: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
+          >
+            Background location tracking allows the app to send you reminders even when not actively using it. This requires "Always Allow" permission on your device.
+          </Text>
+        </View>
+
+        {/* Test Notifications Section */}
+        <View style={styles.section}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: Colors[colorScheme ?? "light"].text },
+            ]}
+          >
+            Test Notifications
+          </Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.testDescription,
+                { color: Colors[colorScheme ?? "light"].text },
+              ]}
+            >
+              Test location-based adhkar notifications. Tap the notification to view the full adhkar!
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.testAdhkarButton,
+                { backgroundColor: Colors[colorScheme ?? "light"].tint },
+              ]}
+              onPress={() => handleTestAdhkarNotification('entry')}
+            >
+              <Ionicons name="enter" size={18} color="white" />
+              <Text style={styles.testButtonText}>Test Entry Notification</Text>
+            </TouchableOpacity>
+
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Font Selection Modal */}
@@ -851,5 +1197,101 @@ const styles = StyleSheet.create({
   modalOptionText: {
     fontSize: 17,
     fontWeight: "500",
+  },
+  permissionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+  },
+  permissionInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  permissionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  permissionTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  statusBadges: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#4CAF50",
+  },
+  permissionDescription: {
+    fontSize: 13,
+    fontWeight: "400",
+  },
+  permissionActionsRow: {
+    flexDirection: "row",
+    gap: 8,
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2C2C2E",
+  },
+  permissionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
+    color: "white",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  settingsLinkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+  },
+  settingsLinkText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  permissionHint: {
+    fontSize: 12,
+    fontWeight: "400",
+    marginTop: 12,
+    paddingHorizontal: 4,
+    lineHeight: 16,
+  },
+  testDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  testAdhkarButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 10,
+    gap: 8,
+  },
+  testButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
