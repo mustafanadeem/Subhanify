@@ -29,8 +29,8 @@ import { getAdhkarByCategory } from "@/utils/adhkar-utils";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useMemo, useRef, useState };
 import {
     Animated,
     Dimensions,
@@ -81,6 +81,26 @@ export default function AdhkarDetailScreen() {
     };
     loadAdhkarList();
   }, [categoryKey]);
+
+  // Reload adhkar list when screen is focused (to reflect level changes)
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadAdhkarList = async () => {
+        try {
+          setIsLoading(true);
+          const list = await getAdhkarByCategory(categoryKey);
+          setAdhkarList(list);
+        } catch (error) {
+          console.error("Error loading adhkar:", error);
+          setAdhkarList([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadAdhkarList();
+      return () => {};
+    }, [categoryKey])
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);

@@ -292,6 +292,70 @@ export default function LevelSettingsScreen() {
                 </TouchableOpacity>
               );
             })}
+
+            {/* Quick Level Test */}
+            <View
+              style={[
+                styles.section,
+                {
+                  backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                  borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                  marginTop: 24,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.settingTitle,
+                  { color: Colors[colorScheme ?? "light"].text, marginBottom: 12 },
+                ]}
+              >
+                Quick Test
+              </Text>
+              <Text
+                style={[
+                  styles.settingDescription,
+                  { color: Colors[colorScheme ?? "light"].textSecondary, marginBottom: 16 },
+                ]}
+              >
+                Quickly switch levels to test adhkar availability
+              </Text>
+              <View style={styles.quickTestButtons}>
+                {levels.map((level) => (
+                  <TouchableOpacity
+                    key={level.value}
+                    style={[
+                      styles.quickTestButton,
+                      {
+                        backgroundColor:
+                          settings.currentLevel === level.value
+                            ? Colors[colorScheme ?? "light"].tint
+                            : isDark
+                            ? "#2C2C2E"
+                            : "#F2F2F7",
+                      },
+                    ]}
+                    onPress={() => updateSettings({ currentLevel: level.value })}
+                  >
+                    <Text
+                      style={[
+                        styles.quickTestButtonText,
+                        {
+                          color:
+                            settings.currentLevel === level.value
+                              ? "#FFFFFF"
+                              : Colors[colorScheme ?? "light"].text,
+                          fontWeight:
+                            settings.currentLevel === level.value ? "700" : "600",
+                        },
+                      ]}
+                    >
+                      Level {level.value}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
           </>
         )}
 
@@ -589,5 +653,20 @@ const styles = StyleSheet.create({
   previewButtonText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  quickTestButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  quickTestButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickTestButtonText: {
+    fontSize: 15,
   },
 });

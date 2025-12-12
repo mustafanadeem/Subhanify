@@ -940,8 +940,6 @@ export default function AppearanceSettingsScreen() {
               <Ionicons name="enter" size={18} color="white" />
               <Text style={styles.testButtonText}>Test Entry Notification</Text>
             </TouchableOpacity>
-
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
