@@ -508,13 +508,45 @@ export default function AdhkarDetailScreen() {
         translucent
       />
 
-      {/* Floating Back Button */}
-      <TouchableOpacity 
-        style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]} 
-        onPress={() => router.back()}
+      {/* Header/App Bar */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
+            paddingTop: insets.top,
+          },
+        ]}
       >
-        <Text style={[styles.backArrow, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>←</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => router.back()}
+        >
+          <IconSymbol
+            name="chevron.left"
+            size={24}
+            color={Colors[colorScheme ?? "light"].text}
+          />
+        </TouchableOpacity>
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: Colors[colorScheme ?? "light"].text },
+          ]}
+        >
+          {categoryTitle}
+        </Text>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => setShowQuickSettings(true)}
+        >
+          <IconSymbol
+            name="ellipsis"
+            size={24}
+            color={Colors[colorScheme ?? "light"].text}
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Related Articles Modal */}
       <Modal
@@ -1469,17 +1501,6 @@ export default function AdhkarDetailScreen() {
 
         <TouchableOpacity
           style={styles.bottomNavButton}
-          onPress={() => setShowQuickSettings(true)}
-        >
-          <IconSymbol
-            name="gearshape.fill"
-            size={26}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.bottomNavButton}
           onPress={handleToggleFavorite}
         >
           <IconSymbol
@@ -1522,6 +1543,26 @@ export default function AdhkarDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: 12,
+  },
+  headerButton: {
+    padding: 8,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    flex: 1,
+    textAlign: "center",
   },
   backButton: {
     position: 'absolute',
