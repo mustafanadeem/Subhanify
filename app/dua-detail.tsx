@@ -1,19 +1,16 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { getFavoritesByFolder } from "@/services/favorites-service";
-import { AdhkarItem, DuaItem } from "@/types/adhkar";
-import { getDuaById, getDuasByCategory } from "@/utils/adhkar-utils";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { DuaItem } from "@/types/adhkar";
+import { getDuasByCategory } from "@/utils/adhkar-utils";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
+import { useEffect, useState, useLayoutEffect } from "react";
 import {
-  Dimensions,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -24,141 +21,60 @@ export default function DuaDetailScreen() {
   const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { getFontFamily, arabicTextSize } = useFont();
-  const insets = useSafeAreaInsets();
 
   // Get the category from params
   const categoryTitle = (params.title as string) || "Home";
   const categoryKey = (params.category as string)?.toLowerCase() || "home";
-  const duaId = params.duaId as string | undefined;
-  const folderId = params.folderId as string | undefined;
+  const initialIndex = params.initialIndex ? parseInt(params.initialIndex as string, 10) : 0;
 
-  // State for items list (duas and adhkars mixed)
-  const [itemsList, setItemsList] = useState<(DuaItem | AdhkarItem)[]>([]);
+  // State for duas list
+  const [duasList, setDuasList] = useState<DuaItem[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const totalCount = itemsList.length;
-  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Set navigation options once
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: categoryTitle,
+      headerBackTitle: 'Back',
+      presentation: 'modal',
+    });
+  }, [navigation, categoryTitle]);
 
   useEffect(() => {
-    const loadItemsList = async () => {
+    const loadDuasList = () => {
       try {
         setIsLoading(true);
-        // If folderId is provided (from folder context), load all items from folder
-        if (folderId) {
-          const favorites = await getFavoritesByFolder(folderId);
-          const items = favorites.map((fav) => fav.adhkar);
-          setItemsList(items);
-
-          // Find the index of the current item in the list
-          if (duaId) {
-            const index = items.findIndex((item) => item.id === duaId);
-            if (index >= 0) {
-              setCurrentIndex(index);
-              // Scroll to the correct position after list loads
-              setTimeout(() => {
-                scrollViewRef.current?.scrollTo({
-                  x: index * SCREEN_WIDTH,
-                  animated: false,
-                });
-              }, 100);
-            }
-          }
-        } else if (duaId) {
-          // If duaId is provided without folderId, load just that dua
-          const dua = getDuaById(duaId);
-          if (dua) {
-            setItemsList([dua]);
-          } else {
-            setItemsList([]);
-          }
-        } else {
-          // Otherwise, load the entire category
-          const list = getDuasByCategory(categoryKey);
-          setItemsList(list);
-        }
+        const list = getDuasByCategory(categoryKey);
+        setDuasList(list);
       } catch (error) {
-        console.error("Error loading items:", error);
-        setItemsList([]);
+        console.error("Error loading duas:", error);
+        setDuasList([]);
       } finally {
         setIsLoading(false);
       }
     };
-    loadItemsList();
-  }, [categoryKey, duaId, folderId]);
+    loadDuasList();
+  }, [categoryKey]);
 
-  // Helper function to check if item is a Dua
-  const isDuaItem = (
-    item: DuaItem | AdhkarItem | undefined
-  ): item is DuaItem => {
-    return item ? "arabic" in item && !("Adhkar" in item) : false;
-  };
+  const currentDua: DuaItem | undefined = duasList[currentIndex];
 
-  // Get the current item
-  const currentItem: DuaItem | AdhkarItem | undefined = itemsList[currentIndex];
-
-  // Handle scroll to track current index
-  const handleScroll = (event: any) => {
-    const xOffset = event.nativeEvent.contentOffset.x;
-    const index = Math.round(xOffset / SCREEN_WIDTH);
-    if (index !== currentIndex && index >= 0 && index < totalCount) {
-      setCurrentIndex(index);
+  const nextDua = () => {
+    if (currentIndex < duasList.length - 1) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
-  // Navigate to specific item
-  const goToIndex = (index: number) => {
-    if (scrollViewRef.current && index >= 0 && index < totalCount) {
-      scrollViewRef.current.scrollTo({
-        x: index * SCREEN_WIDTH,
-        animated: true,
-      });
-      setCurrentIndex(index);
+  const previousDua = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !currentDua || duasList.length === 0) {
     return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: Colors[colorScheme ?? "light"].background },
-        ]}
-      >
-        <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor="transparent"
-          translucent
-        />
-        <View style={styles.loadingContainer}>
-          <ThemedText>Loading items...</ThemedText>
-        </View>
-      </View>
-    );
-  }
-
-  if (itemsList.length === 0) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: Colors[colorScheme ?? "light"].background },
-        ]}
-      >
-        <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor="transparent"
-          translucent
-        />
-        <View style={styles.loadingContainer}>
-          <ThemedText>No items found for this category.</ThemedText>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <ThemedText>Go Back</ThemedText>
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F0F9FF', justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={[styles.title, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>Loading...</Text>
       </View>
     );
   }
@@ -169,56 +85,6 @@ export default function DuaDetailScreen() {
         <Text style={[styles.backArrow, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>←</Text>
       </TouchableOpacity>
 
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + 10,
-            backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons
-            name="chevron-back"
-            size={28}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text
-            style={[
-              styles.headerTitle,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            {categoryTitle}
-          </Text>
-          <Text
-            style={[
-              styles.headerSubtitle,
-              { color: isDark ? "#8E8E93" : "#666666" },
-            ]}
-          >
-            {currentIndex + 1} of {totalCount}
-          </Text>
-        </View>
-
-        <TouchableOpacity style={styles.settingsButton} onPress={() => {}}>
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={24}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Main Scroll View for Items */}
       <ScrollView
         horizontal
         pagingEnabled
@@ -229,212 +95,45 @@ export default function DuaDetailScreen() {
         }}
         scrollEventThrottle={16}
       >
-        {itemsList.map((item) => {
-          const isDua = isDuaItem(item);
-
-          return (
-            <View key={item.id} style={styles.itemPage}>
-              <ScrollView
-                style={styles.itemPageScroll}
-                contentContainerStyle={styles.itemPageContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.itemContainer}>
-                  {/* Title (for duas) or Category (for adhkars) */}
-                  {isDua ? (
-                    <View
-                      style={[
-                        styles.card,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.titleText,
-                          { color: Colors[colorScheme ?? "light"].text },
-                        ]}
-                      >
-                        {item.title}
-                      </Text>
-                    </View>
-                  ) : null}
-
-                  {/* Main Text (Arabic) */}
-                  <View
-                    style={[
-                      styles.card,
-                      {
-                        backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                        borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                      },
-                    ]}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.arabicText,
-                        {
-                          fontFamily: getFontFamily(),
-                          fontSize: arabicTextSize,
-                          lineHeight: arabicTextSize * 2,
-                        },
-                      ]}
-                    >
-                      {isDua ? item.arabic : (item as AdhkarItem).Adhkar}
-                    </ThemedText>
-                  </View>
-
-                  {/* Transliteration (for duas) */}
-                  {isDua && item.transliteration && (
-                    <View
-                      style={[
-                        styles.card,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.transliterationText,
-                          { color: isDark ? "#8E8E93" : "#666666" },
-                        ]}
-                      >
-                        {item.transliteration}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Translation */}
-                  {((isDua && item.translation) ||
-                    (!isDua && (item as AdhkarItem).translation)) && (
-                    <View
-                      style={[
-                        styles.card,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.translationText,
-                          { color: Colors[colorScheme ?? "light"].text },
-                        ]}
-                      >
-                        {isDua
-                          ? item.translation
-                          : (item as AdhkarItem).translation}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Reference */}
-                  {((isDua && item.reference) ||
-                    (!isDua && (item as AdhkarItem).Reference)) && (
-                    <View
-                      style={[
-                        styles.card,
-                        {
-                          backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                          borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                        },
-                      ]}
-                    >
-                      <View style={styles.referenceHeader}>
-                        <Ionicons
-                          name="book"
-                          size={16}
-                          color={isDark ? "#8E8E93" : "#666666"}
-                        />
-                        <Text
-                          style={[
-                            styles.referenceText,
-                            { color: isDark ? "#8E8E93" : "#666666" },
-                          ]}
-                        >
-                          {isDua
-                            ? item.reference
-                            : (item as AdhkarItem).Reference}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-
-                  {/* Commentary (if available) - add at end for duas */}
-                  {isDua && item.commentary && (
-                    <View
-                      style={[
-                        styles.card,
-                        {
-                          backgroundColor: isDark
-                            ? "rgba(10, 132, 255, 0.12)"
-                            : "rgba(0, 122, 255, 0.08)",
-                          borderColor: isDark ? "#0A84FF" : "#007AFF",
-                        },
-                      ]}
-                    >
-                      <View style={styles.commentaryHeader}>
-                        <Ionicons
-                          name="information-circle"
-                          size={20}
-                          color={isDark ? "#0A84FF" : "#007AFF"}
-                        />
-                        <Text
-                          style={[
-                            styles.commentaryTitle,
-                            { color: isDark ? "#0A84FF" : "#007AFF" },
-                          ]}
-                        >
-                          Commentary
-                        </Text>
-                      </View>
-                      <Text
-                        style={[
-                          styles.commentaryText,
-                          { color: Colors[colorScheme ?? "light"].text },
-                        ]}
-                      >
-                        {item.commentary}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </ScrollView>
+        {duasList.map((dua, index) => (
+          <ScrollView key={`${dua.id}-${index}`} style={styles.duaPage} showsVerticalScrollIndicator={false}>
+            <View style={styles.header}>
+              <Text style={[styles.categoryTitle, { color: isDark ? '#94A3B8' : '#64748B' }]}>{categoryTitle}</Text>
+              <Text style={[styles.title, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>{dua.title}</Text>
+              <View style={[styles.countBadge, { backgroundColor: isDark ? '#1E40AF' : '#3B82F6' }]}>
+                <Text style={styles.countText}>
+                  {index + 1} of {duasList.length}
+                </Text>
+              </View>
             </View>
-          );
-        })}
-      </ScrollView>
 
-      {/* Navigation Dots */}
-      {totalCount > 1 && (
-        <View style={styles.dotsContainer}>
-          {itemsList.map((_, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => goToIndex(index)}
-              style={[
-                styles.dot,
-                {
-                  backgroundColor:
-                    index === currentIndex
-                      ? isDark
-                        ? "#0A84FF"
-                        : "#007AFF"
-                      : isDark
-                      ? "#2C2C2E"
-                      : "#E5E5EA",
-                  width: index === currentIndex ? 24 : 8,
-                },
-              ]}
-            />
-          ))}
-        </View>
-      )}
+            <View style={[styles.duaCard, { backgroundColor: isDark ? '#1E293B' : '#fff' }]}>
+              <Text style={[styles.duaLabel, { color: isDark ? '#94A3B8' : '#6B7280' }]}>Dua</Text>
+              <Text style={[styles.duaArabic, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>{dua.arabic}</Text>
+              <Text style={[styles.duaTransliteration, { color: isDark ? '#94A3B8' : '#475569' }]}>{dua.transliteration}</Text>
+              <Text style={[styles.duaTranslation, { color: isDark ? '#CBD5E1' : '#1E293B' }]}>{dua.translation}</Text>
+            </View>
+
+            <View style={[styles.referenceCard, { backgroundColor: isDark ? '#422006' : '#FEF3C7' }]}>
+              <Text style={[styles.referenceTitle, { color: isDark ? '#FDE68A' : '#92400E' }]}>Reference</Text>
+              <Text style={[styles.referenceText, { color: isDark ? '#FCD34D' : '#78350F' }]}>{dua.reference}</Text>
+            </View>
+
+            {dua.commentary && (
+              <View style={[styles.meaningCard, { backgroundColor: isDark ? '#0A0A0A' : '#EFF6FF' }]}>
+                <Text style={[styles.meaningTitle, { color: isDark ? '#60A5FA' : '#1E40AF' }]}>Commentary</Text>
+                <Text style={[styles.meaningText, { color: isDark ? '#93C5FD' : '#1E3A8A' }]}>{dua.commentary}</Text>
+              </View>
+            )}
+
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
+                May Allah accept our duas
+              </Text>
+            </View>
+          </ScrollView>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -442,71 +141,133 @@ export default function DuaDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
+    backgroundColor: '#F0F9FF',
   },
   backButton: {
-    padding: 8,
-    marginLeft: -8,
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  settingsButton: {
-    padding: 8,
-    marginRight: -8,
+  backArrow: {
+    fontSize: 24,
+    color: '#0C4A6E',
+    fontWeight: '600',
   },
-  mainScrollView: {
-    flex: 1,
+  duaPage: {
+    width: SCREEN_WIDTH,
   },
-  itemPage: {
-    width: Dimensions.get("window").width,
+  header: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    paddingTop: 80,
   },
-  itemPageScroll: {
-    flex: 1,
-  },
-  itemPageContent: {
-    padding: 20,
-    paddingBottom: 80,
-  },
-  itemContainer: {
-    gap: 16,
-  },
-  card: {
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: "600",
-    lineHeight: 24,
-  },
-  arabicText: {
-    textAlign: "right",
-  },
-  transliterationText: {
+  categoryTitle: {
     fontSize: 14,
-    lineHeight: 20,
-    fontStyle: "italic",
+    fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  translationText: {
-    fontSize: 16,
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  countBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
+  },
+  countText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  duaCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 24,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  duaLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  duaArabic: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 48,
+  },
+  duaTransliteration: {
+    fontSize: 18,
+    fontStyle: 'italic',
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  duaTranslation: {
+    fontSize: 18,
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  meaningCard: {
+    backgroundColor: '#EFF6FF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 12,
+  },
+  meaningTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 12,
+  },
+  meaningText: {
+    fontSize: 15,
+    color: '#1E3A8A',
     lineHeight: 24,
+    marginBottom: 12,
+  },
+  referenceCard: {
+    backgroundColor: '#FEF3C7',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
   },
   referenceTitle: {
     fontSize: 14,
@@ -516,35 +277,18 @@ const styles = StyleSheet.create({
   },
   referenceText: {
     fontSize: 13,
-  },
-  commentaryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  commentaryTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  commentaryText: {
-    fontSize: 14,
+    color: '#78350F',
     lineHeight: 20,
   },
-  dotsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 16,
-    gap: 8,
+  footer: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  footerText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#64748B',
+    textAlign: 'center',
   },
 });

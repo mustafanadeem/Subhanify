@@ -1,27 +1,26 @@
 import { AdhkarCompletionModal } from "@/components/adhkar-completion-modal";
 import {
-  FavoriteFolder,
-  FavoritesFolderModal,
+    FavoriteFolder,
+    FavoritesFolderModal,
 } from "@/components/favorites-folder-modal";
 import { LevelChangeModal } from "@/components/level-change-modal";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useFont } from "@/contexts/FontContext";
-import { useTheme } from "@/contexts/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import {
-  TodayPrayerTimes,
-  UserSettings,
+    TodayPrayerTimes,
+    UserSettings,
 } from "@/modules/prayer-times/domain/entities";
 import { markAdhkarCompleted } from "@/services/adhkar-completion-service";
 import {
-  addToFavorites,
-  createFolder,
-  isFavorite,
-  loadFolders,
-  removeFromFavorites,
+    addToFavorites,
+    createFolder,
+    isFavorite,
+    loadFolders,
+    removeFromFavorites,
 } from "@/services/favorites-service";
 import { markIndividualAdhkarCompleted } from "@/services/individual-adhkar-progress-service";
 import { LevelChangeResult } from "@/services/level-settings-service";
@@ -33,23 +32,19 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  Share,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Modal,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -63,69 +58,19 @@ export default function AdhkarDetailScreen() {
   const insets = useSafeAreaInsets();
 
   // Get the category from params
-  const headerTitle = (params.title as string) || "Morning"; // Header/folder name
-  const itemTitle = (params.itemTitle as string) || ""; // Item title (dua/adhkar title for display)
-  const categoryTitle = itemTitle || headerTitle; // Use itemTitle if provided, otherwise use headerTitle
+  const categoryTitle = (params.title as string) || "Morning";
   const categoryKey = (params.category as string)?.toLowerCase() || "morning";
-  const folderId = (params.folderId as string) || null; // Get folder ID if coming from folder view
-  const adhkarId = (params.adhkarId as string) || null; // Get adhkar ID if navigating from folder
-  const initialIndex = params.initialIndex
-    ? parseInt(params.initialIndex as string, 10)
-    : 0; // Get initial index from dua-list
 
   // State for adhkar list
   const [adhkarList, setAdhkarList] = useState<AdhkarItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [startingIndex, setStartingIndex] = useState(0);
   const totalCount = adhkarList.length;
 
   useEffect(() => {
     const loadAdhkarList = async () => {
       try {
         setIsLoading(true);
-        let list: AdhkarItem[] = [];
-
-        if (folderId) {
-          // Load from folder - get ALL items (adhkars AND duas)
-          const { getFavoritesByFolder } = await import(
-            "@/services/favorites-service"
-          );
-          const favorites = await getFavoritesByFolder(folderId);
-
-          // Map all items - convert duas to adhkar-compatible format
-          list = favorites.map((fav) => {
-            const item = fav.adhkar;
-
-            // If it's a dua, convert it to adhkar format for display in this UI
-            if ("title" in item && !("Adhkar" in item)) {
-              return {
-                ...item,
-                Adhkar: item.arabic, // Arabic text goes here
-                Arabic: item.arabic, // Also set Arabic field for consistency
-                Category: "Dua", // Use "Dua" as category for duas in folder
-                Reference: item.reference,
-                quantity: 1,
-                "group id": 0,
-              } as AdhkarItem;
-            }
-
-            return item as AdhkarItem;
-          });
-
-          // Find the starting index if navigating from a specific item
-          if (adhkarId) {
-            const index = list.findIndex((item) => item.id === adhkarId);
-            setStartingIndex(index >= 0 ? index : 0);
-          }
-        } else {
-          // Load from category - only adhkars
-          list = await getAdhkarByCategory(categoryKey);
-          // Use initialIndex if provided (from dua-list or other category views)
-          if (initialIndex > 0 && initialIndex < list.length) {
-            setStartingIndex(initialIndex);
-          }
-        }
-
+        const list = await getAdhkarByCategory(categoryKey);
         setAdhkarList(list);
       } catch (error) {
         console.error("Error loading adhkar:", error);
@@ -135,7 +80,7 @@ export default function AdhkarDetailScreen() {
       }
     };
     loadAdhkarList();
-  }, [categoryKey, folderId, adhkarId]);
+  }, [categoryKey]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -147,29 +92,14 @@ export default function AdhkarDetailScreen() {
   const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "auto">(
     "auto"
   );
-  const { themeMode, setThemeMode } = useTheme();
   const slideAnim2 = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const [showRelatedArticles, setShowRelatedArticles] = useState(false);
-
+  
   // Track touch for differentiating tap vs scroll
   const touchStartY = useRef<number | null>(null);
   const touchStartTime = useRef<number | null>(null);
   const isScrolling = useRef<boolean>(false);
   const [isScrollingState, setIsScrollingState] = useState<boolean>(false);
-  const shareStartTime = useRef<number | null>(null);
-
-  // When list loads from folder, scroll to the starting index
-  useEffect(() => {
-    if (!isLoading && adhkarList.length > 0 && startingIndex > 0) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          x: startingIndex * SCREEN_WIDTH,
-          animated: false,
-        });
-        setCurrentIndex(startingIndex);
-      }, 100);
-    }
-  }, [isLoading, adhkarList.length, startingIndex]);
 
   const currentAdhkar: AdhkarItem | undefined = adhkarList[currentIndex];
 
@@ -566,75 +496,24 @@ export default function AdhkarDetailScreen() {
   };
 
   return (
-    <SafeAreaView
+    <View
       style={[
         styles.container,
         { backgroundColor: isDark ? '#000000' : '#F0F9FF' },
       ]}
-      edges={["top"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
-        translucent={false}
+        translucent
       />
 
       {/* Floating Back Button */}
-      <View
-        style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]}
+      <TouchableOpacity 
+        style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]} 
+        onPress={() => router.back()}
       >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-
-        <ThemedText style={styles.headerTitle}>{headerTitle}</ThemedText>
-
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => setShowQuickSettings(true)}
-        >
-          <IconSymbol
-            name="ellipsis"
-            size={22}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Related Articles Button */}
-      <TouchableOpacity
-        style={[
-          styles.relatedArticlesButton,
-          {
-            backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
-            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-          },
-        ]}
-        onPress={() => setShowRelatedArticles(true)}
-      >
-        <View style={styles.relatedArticlesContent}>
-          <IconSymbol name="list.bullet.rectangle" size={20} color="#3B82F6" />
-          <Text
-            style={[
-              styles.relatedArticlesText,
-              { color: Colors[colorScheme ?? "light"].text },
-            ]}
-          >
-            {headerTitle}
-          </Text>
-        </View>
-        <IconSymbol
-          name="chevron.right"
-          size={16}
-          color={Colors[colorScheme ?? "light"].textSecondary}
-        />
+        <Text style={[styles.backArrow, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>←</Text>
       </TouchableOpacity>
 
       {/* Related Articles Modal */}
@@ -681,7 +560,7 @@ export default function AdhkarDetailScreen() {
                     { color: Colors[colorScheme ?? "light"].text },
                   ]}
                 >
-                  {headerTitle}
+                  {categoryTitle}
                 </Text>
               </View>
               <View style={{ width: 44 }} />
@@ -904,10 +783,7 @@ export default function AdhkarDetailScreen() {
                             : "#E5E5EA",
                       },
                     ]}
-                    onPress={() => {
-                      setSelectedTheme("light");
-                      setThemeMode("light");
-                    }}
+                    onPress={() => setSelectedTheme("light")}
                   >
                     <IconSymbol
                       name="sun.max.fill"
@@ -953,10 +829,7 @@ export default function AdhkarDetailScreen() {
                             : "#E5E5EA",
                       },
                     ]}
-                    onPress={() => {
-                      setSelectedTheme("dark");
-                      setThemeMode("dark");
-                    }}
+                    onPress={() => setSelectedTheme("dark")}
                   >
                     <IconSymbol
                       name="moon.fill"
@@ -1002,10 +875,7 @@ export default function AdhkarDetailScreen() {
                             : "#E5E5EA",
                       },
                     ]}
-                    onPress={() => {
-                      setSelectedTheme("auto");
-                      setThemeMode("auto");
-                    }}
+                    onPress={() => setSelectedTheme("auto")}
                   >
                     <IconSymbol
                       name="sparkles"
@@ -1155,18 +1025,11 @@ export default function AdhkarDetailScreen() {
                         touchStartTime.current !== null &&
                         !isScrolling.current
                       ) {
-                        const deltaY = Math.abs(
-                          e.nativeEvent.pageY - touchStartY.current
-                        );
+                        const deltaY = Math.abs(e.nativeEvent.pageY - touchStartY.current);
                         const deltaTime = Date.now() - touchStartTime.current;
-
+                        
                         // Only trigger if it was a tap (small movement, quick)
-                        // and share sheet is not currently open
-                        if (
-                          deltaY < 15 &&
-                          deltaTime < 300 &&
-                          shareStartTime.current === null
-                        ) {
+                        if (deltaY < 15 && deltaTime < 300) {
                           handleCount();
                         }
                       }
@@ -1176,278 +1039,238 @@ export default function AdhkarDetailScreen() {
                   >
                     {/* Title and Counter */}
                     <View style={styles.titleSection}>
-                      <ThemedText style={styles.title}>
-                        {displayItem.Category === "Dua"
-                          ? (displayItem as any).title
-                          : displayItem.Adhkar}
+                    <View style={styles.header}>
+                      <Text style={[styles.categoryTitle, { color: isDark ? '#94A3B8' : '#64748B' }]}>{categoryTitle}</Text>
+                      <ThemedText style={[styles.title, { color: isDark ? '#E0F2FE' : '#0C4A6E' }]}>
+                        {displayItem.Adhkar}
                       </ThemedText>
-
-                      {/* Group Indicator - only show when viewing this adhkar and it's grouped */}
-                      {index === currentIndex &&
-                        adhkar["group id"] !== 0 &&
-                        currentGroup.length > 1 && (
-                          <View style={styles.groupIndicatorContainer}>
-                            <View
-                              style={[
-                                styles.groupBadge,
-                                {
-                                  backgroundColor: isDark
-                                    ? "#1C1C1E"
-                                    : "#F2F2F7",
-                                  borderColor: isDark ? "#3B82F6" : "#007AFF",
-                                },
-                              ]}
-                            >
-                              <IconSymbol
-                                name="link"
-                                size={12}
-                                color={isDark ? "#0A84FF" : "#007AFF"}
-                              />
-                              <Text
-                                style={[
-                                  styles.groupBadgeText,
-                                  { color: isDark ? "#0A84FF" : "#007AFF" },
-                                ]}
-                              >
-                                Grouped Dhikr
-                              </Text>
-                            </View>
-
-                            {/* Group Progress Bar - Segmented by Quantity */}
-                            <View style={styles.groupProgressContainer}>
-                              <View style={styles.groupProgressBar}>
-                                {/* Render segments based on quantity */}
-                                {Array.from({
-                                  length: Math.floor(adhkar.quantity),
-                                }).map((_, segmentIndex) => {
-                                  const segmentWidth =
-                                    100 / Math.floor(adhkar.quantity);
-                                  const currentCycle =
-                                    Math.floor(adhkar.quantity) - count; // Which cycle we're on (0-indexed)
-                                  const isCurrentSegment =
-                                    segmentIndex === currentCycle;
-                                  const isCompletedSegment =
-                                    segmentIndex < currentCycle;
-
-                                  // Calculate fill percentage for current segment
-                                  let fillPercentage = 0;
-                                  if (isCompletedSegment) {
-                                    fillPercentage = 100; // Fully filled
-                                  } else if (isCurrentSegment) {
-                                    fillPercentage =
-                                      ((currentGroupItemIndex + 1) /
-                                        currentGroup.length) *
-                                      100;
-                                  }
-
-                                  return (
-                                    <View
-                                      key={segmentIndex}
-                                      style={[
-                                        styles.groupProgressSegment,
-                                        {
-                                          width: `${segmentWidth}%`,
-                                          backgroundColor: isDark
-                                            ? "#2C2C2E"
-                                            : "#E5E5EA",
-                                          borderRightWidth:
-                                            segmentIndex <
-                                            Math.floor(adhkar.quantity) - 1
-                                              ? 3
-                                              : 0,
-                                          borderRightColor: isDark
-                                            ? "#1C1C1E"
-                                            : "#D1D5DB",
-                                        },
-                                      ]}
-                                    >
-                                      <Animated.View
-                                        style={[
-                                          styles.groupProgressSegmentFill,
-                                          {
-                                            width: `${fillPercentage}%`,
-                                            backgroundColor: isDark
-                                              ? "#0A84FF"
-                                              : "#007AFF",
-                                          },
-                                        ]}
-                                      />
-                                    </View>
-                                  );
-                                })}
-                              </View>
-                              <Text
-                                style={[
-                                  styles.groupProgressText,
-                                  { color: isDark ? "#8E8E93" : "#8E8E93" },
-                                ]}
-                              >
-                                {currentGroupItemIndex + 1}/
-                                {currentGroup.length}
-                              </Text>
-                            </View>
-                          </View>
-                        )}
-
-                      <View style={styles.badgeRow}>
-                        <View
-                          style={[
-                            styles.counterBadge,
-                            {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                            },
-                          ]}
-                        >
-                          <ThemedText style={styles.counterText}>
-                            {index + 1}/{totalCount}
-                          </ThemedText>
-                        </View>
-                        {displayItem.quantity > 1 && (
-                          <View
-                            style={[
-                              styles.quantityBadge,
-                              {
-                                backgroundColor: isDark ? "#0A84FF" : "#007AFF",
-                              },
-                            ]}
-                          >
-                            <ThemedText style={styles.quantityText}>
-                              {displayItem.quantity}x
-                            </ThemedText>
-                          </View>
-                        )}
+                      <View style={[styles.countBadge, { backgroundColor: isDark ? '#1E40AF' : '#3B82F6' }]}>
+                        <Text style={styles.countText}>
+                          {index + 1} of {totalCount}
+                        </Text>
                       </View>
                     </View>
 
-                    {/* Animated Content Wrapper for Group Transitions */}
-                    <Animated.View
-                      style={[
-                        styles.animatedContentWrapper,
-                        index === currentIndex &&
-                          adhkar["group id"] !== 0 &&
-                          currentGroup.length > 1 && {
-                            transform: [{ translateX: groupSlideAnim }],
-                          },
-                      ]}
-                    >
-                      {/* Arabic Text */}
+                    {/* Group Indicator - only show when viewing this adhkar and it's grouped */}
+                    {index === currentIndex &&
+                      adhkar["group id"] !== 0 &&
+                      currentGroup.length > 1 && (
+                        <View style={styles.groupIndicatorContainer}>
+                          <View
+                            style={[
+                              styles.groupBadge,
+                              {
+                                backgroundColor: isDark ? "#1C1C1E" : "#F2F2F7",
+                                borderColor: isDark ? "#3B82F6" : "#007AFF",
+                              },
+                            ]}
+                          >
+                            <IconSymbol
+                              name="link"
+                              size={12}
+                              color={isDark ? "#0A84FF" : "#007AFF"}
+                            />
+                            <Text
+                              style={[
+                                styles.groupBadgeText,
+                                { color: isDark ? "#0A84FF" : "#007AFF" },
+                              ]}
+                            >
+                              Grouped Dhikr
+                            </Text>
+                          </View>
+
+                          {/* Group Progress Bar - Segmented by Quantity */}
+                          <View style={styles.groupProgressContainer}>
+                            <View style={styles.groupProgressBar}>
+                              {/* Render segments based on quantity */}
+                              {Array.from({
+                                length: Math.floor(adhkar.quantity),
+                              }).map((_, segmentIndex) => {
+                                const segmentWidth =
+                                  100 / Math.floor(adhkar.quantity);
+                                const currentCycle =
+                                  Math.floor(adhkar.quantity) - count; // Which cycle we're on (0-indexed)
+                                const isCurrentSegment =
+                                  segmentIndex === currentCycle;
+                                const isCompletedSegment =
+                                  segmentIndex < currentCycle;
+
+                                // Calculate fill percentage for current segment
+                                let fillPercentage = 0;
+                                if (isCompletedSegment) {
+                                  fillPercentage = 100; // Fully filled
+                                } else if (isCurrentSegment) {
+                                  fillPercentage =
+                                    ((currentGroupItemIndex + 1) /
+                                      currentGroup.length) *
+                                    100;
+                                }
+
+                                return (
+                                  <View
+                                    key={segmentIndex}
+                                    style={[
+                                      styles.groupProgressSegment,
+                                      {
+                                        width: `${segmentWidth}%`,
+                                        backgroundColor: isDark
+                                          ? "#2C2C2E"
+                                          : "#E5E5EA",
+                                        borderRightWidth:
+                                          segmentIndex <
+                                          Math.floor(adhkar.quantity) - 1
+                                            ? 3
+                                            : 0,
+                                        borderRightColor: isDark
+                                          ? "#1C1C1E"
+                                          : "#D1D5DB",
+                                      },
+                                    ]}
+                                  >
+                                    <Animated.View
+                                      style={[
+                                        styles.groupProgressSegmentFill,
+                                        {
+                                          width: `${fillPercentage}%`,
+                                          backgroundColor: isDark
+                                            ? "#0A84FF"
+                                            : "#007AFF",
+                                        },
+                                      ]}
+                                    />
+                                  </View>
+                                );
+                              })}
+                            </View>
+                            <Text
+                              style={[
+                                styles.groupProgressText,
+                                { color: isDark ? "#8E8E93" : "#8E8E93" },
+                              ]}
+                            >
+                              {currentGroupItemIndex + 1}/{currentGroup.length}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                    <View style={styles.badgeRow}>
                       <View
                         style={[
-                          styles.card,
+                          styles.counterBadge,
                           {
                             backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
                             borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
                           },
                         ]}
                       >
-                        <ThemedText
-                          style={[
-                            styles.arabicText,
-                            {
-                              fontFamily: getFontFamily(),
-                              fontSize: arabicTextSize,
-                              lineHeight: arabicTextSize * 2,
-                            },
-                          ]}
-                        >
-                          {displayItem.Arabic}
+                        <ThemedText style={styles.counterText}>
+                          {index + 1}/{totalCount}
                         </ThemedText>
                       </View>
-
-                      {/* Transliteration */}
-                      <View
-                        style={[
-                          styles.card,
-                          {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                          },
-                        ]}
-                      >
-                        <ThemedText
-                          style={[
-                            styles.transliteration,
-                            { fontSize: textSize },
-                          ]}
-                        >
-                          {displayItem.transliteration}
-                        </ThemedText>
-                      </View>
-
-                      {/* Translation */}
-                      {typeof displayItem.translation === "string" && (
+                      {displayItem.quantity > 1 && (
                         <View
                           style={[
-                            styles.card,
+                            styles.quantityBadge,
                             {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                              backgroundColor: isDark ? "#0A84FF" : "#007AFF",
                             },
                           ]}
                         >
-                          <ThemedText
-                            style={[styles.translation, { fontSize: textSize }]}
-                          >
-                            {displayItem.translation}
+                          <ThemedText style={styles.quantityText}>
+                            {displayItem.quantity}x
                           </ThemedText>
                         </View>
                       )}
-                    </Animated.View>
+                    </View>
+                  </View>
 
-                    {/* Virtue */}
-                    {displayItem.virtue && (
-                      <View
+                  {/* Animated Content Wrapper for Group Transitions */}
+                  <Animated.View
+                    style={[
+                      styles.animatedContentWrapper,
+                      index === currentIndex &&
+                        adhkar["group id"] !== 0 &&
+                        currentGroup.length > 1 && {
+                          transform: [{ translateX: groupSlideAnim }],
+                        },
+                    ]}
+                  >
+                    {/* Arabic Text */}
+                    <View
+                      style={[
+                        styles.adhkarCard,
+                        {
+                          backgroundColor: isDark ? '#1E293B' : '#fff',
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.duaLabel, { color: isDark ? '#94A3B8' : '#6B7280' }]}>Adhkar</Text>
+                      <ThemedText
                         style={[
-                          styles.virtueCard,
+                          styles.duaArabic,
                           {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                            fontSize: arabicTextSize,
+                            lineHeight: arabicTextSize * 2,
+                            color: isDark ? '#E0F2FE' : '#0C4A6E',
                           },
                         ]}
                       >
-                        <View style={styles.referenceHeader}>
-                          <IconSymbol
-                            name="star.fill"
-                            size={18}
-                            color={isDark ? "#FFD60A" : "#FFCC00"}
-                          />
-                          <ThemedText style={styles.referenceTitle}>
-                            Virtue
-                          </ThemedText>
-                        </View>
-                        <ThemedText style={styles.referenceText}>
-                          {displayItem.virtue}
-                        </ThemedText>
-                      </View>
-                    )}
-
-                    {/* Reference */}
-                    {displayItem.reference && (
-                      <View
-                        style={[
-                          styles.referenceCard,
-                          {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                          },
-                        ]}
+                        {displayItem.Arabic}
+                      </ThemedText>
+                      <ThemedText
+                        style={[styles.duaTransliteration, { fontSize: textSize, color: isDark ? '#94A3B8' : '#475569' }]}
                       >
-                        <View style={styles.referenceHeader}>
-                          <IconSymbol
-                            name="book.fill"
-                            size={18}
-                            color={isDark ? "#8E8E93" : "#8E8E93"}
-                          />
-                          <ThemedText style={styles.referenceTitle}>
-                            Reference
-                          </ThemedText>
-                        </View>
-                        <ThemedText style={styles.referenceText}>
-                          {displayItem.reference}
+                        {displayItem.transliteration}
+                      </ThemedText>
+                      {typeof displayItem.translation === "string" && (
+                        <ThemedText
+                          style={[styles.duaTranslation, { fontSize: textSize, color: isDark ? '#CBD5E1' : '#1E293B' }]}
+                        >
+                          {displayItem.translation}
                         </ThemedText>
-                      </View>
-                    )}
+                      )}
+                    </View>
+                  </Animated.View>
+
+                  {/* Virtue */}
+                  {displayItem.virtue && (
+                    <View
+                      style={[
+                        styles.meaningCard,
+                        {
+                          backgroundColor: isDark ? '#0A0A0A' : '#EFF6FF',
+                        },
+                      ]}
+                    >
+                      <ThemedText style={[styles.meaningTitle, { color: isDark ? '#60A5FA' : '#1E40AF' }]}>
+                        Virtue
+                      </ThemedText>
+                      <ThemedText style={[styles.meaningText, { color: isDark ? '#93C5FD' : '#1E3A8A' }]}>
+                        {displayItem.virtue}
+                      </ThemedText>
+                    </View>
+                  )}
+
+                  {/* Reference */}
+                  {displayItem.reference && (
+                    <View
+                      style={[
+                        styles.referenceCard,
+                        {
+                          backgroundColor: isDark ? '#422006' : '#FEF3C7',
+                        },
+                      ]}
+                    >
+                      <ThemedText style={[styles.referenceTitle, { color: isDark ? '#FDE68A' : '#92400E' }]}>
+                        Reference
+                      </ThemedText>
+                      <ThemedText style={[styles.referenceText, { color: isDark ? '#FCD34D' : '#78350F' }]}>
+                        {displayItem.reference}
+                      </ThemedText>
+                    </View>
+                  )}
                   </View>
                 </ScrollView>
               </View>
@@ -1518,83 +1341,53 @@ export default function AdhkarDetailScreen() {
                       {/* Arabic Text */}
                       <View
                         style={[
-                          styles.card,
+                          styles.adhkarCard,
                           {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                            backgroundColor: isDark ? '#1E293B' : '#fff',
                           },
                         ]}
                       >
+                        <Text style={[styles.duaLabel, { color: isDark ? '#94A3B8' : '#6B7280' }]}>Adhkar</Text>
                         <ThemedText
                           style={[
-                            styles.arabicText,
+                            styles.duaArabic,
                             {
-                              fontFamily: getFontFamily(),
                               fontSize: arabicTextSize,
                               lineHeight: arabicTextSize * 2,
+                              color: isDark ? '#E0F2FE' : '#0C4A6E',
                             },
                           ]}
                         >
                           {nextAdhkar.Arabic}
                         </ThemedText>
-                      </View>
-
-                      {/* Transliteration */}
-                      <View
-                        style={[
-                          styles.card,
-                          {
-                            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                            borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                          },
-                        ]}
-                      >
-                        <ThemedText style={styles.transliteration}>
+                        <ThemedText
+                          style={[styles.duaTransliteration, { fontSize: textSize, color: isDark ? '#94A3B8' : '#475569' }]}
+                        >
                           {nextAdhkar.transliteration}
                         </ThemedText>
-                      </View>
-
-                      {/* Translation */}
-                      {typeof nextAdhkar.translation === "string" && (
-                        <View
-                          style={[
-                            styles.card,
-                            {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
-                            },
-                          ]}
-                        >
-                          <ThemedText style={styles.translation}>
+                        {typeof nextAdhkar.translation === "string" && (
+                          <ThemedText
+                            style={[styles.duaTranslation, { fontSize: textSize, color: isDark ? '#CBD5E1' : '#1E293B' }]}
+                          >
                             {nextAdhkar.translation}
                           </ThemedText>
-                        </View>
-                      )}
+                        )}
+                      </View>
 
                       {/* Virtue */}
                       {nextAdhkar.virtue && (
                         <View
                           style={[
-                            styles.virtueCard,
+                            styles.meaningCard,
                             {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                              backgroundColor: isDark ? '#0A0A0A' : '#EFF6FF',
                             },
                           ]}
                         >
-                          <View style={styles.referenceHeader}>
-                            <IconSymbol
-                              name="star.fill"
-                              size={18}
-                              color={isDark ? "#FFD60A" : "#FFCC00"}
-                            />
-                            <ThemedText style={styles.referenceTitle}>
-                              Virtue
-                            </ThemedText>
-                          </View>
-                          <ThemedText style={styles.referenceText}>
+                          <Text style={[styles.meaningTitle, { color: isDark ? '#60A5FA' : '#1E40AF' }]}>Virtue</Text>
+                          <Text style={[styles.meaningText, { color: isDark ? '#93C5FD' : '#1E3A8A' }]}>
                             {nextAdhkar.virtue}
-                          </ThemedText>
+                          </Text>
                         </View>
                       )}
 
@@ -1604,24 +1397,14 @@ export default function AdhkarDetailScreen() {
                           style={[
                             styles.referenceCard,
                             {
-                              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                              borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                              backgroundColor: isDark ? '#422006' : '#FEF3C7',
                             },
                           ]}
                         >
-                          <View style={styles.referenceHeader}>
-                            <IconSymbol
-                              name="book.fill"
-                              size={18}
-                              color={isDark ? "#8E8E93" : "#8E8E93"}
-                            />
-                            <ThemedText style={styles.referenceTitle}>
-                              Reference
-                            </ThemedText>
-                          </View>
-                          <ThemedText style={styles.referenceText}>
+                          <Text style={[styles.referenceTitle, { color: isDark ? '#FDE68A' : '#92400E' }]}>Reference</Text>
+                          <Text style={[styles.referenceText, { color: isDark ? '#FCD34D' : '#78350F' }]}>
                             {nextAdhkar.reference}
-                          </ThemedText>
+                          </Text>
                         </View>
                       )}
                     </>
@@ -1674,21 +1457,22 @@ export default function AdhkarDetailScreen() {
         <TouchableOpacity
           style={styles.bottomNavButton}
           onPress={() => {
-            if (currentAdhkar) {
-              shareStartTime.current = Date.now();
-              const shareMessage = `${currentAdhkar.Arabic}\n\nTransliteration: ${currentAdhkar.transliteration}\n\nTranslation: ${currentAdhkar.translation}\n\nReference: ${currentAdhkar.reference}`;
-              Share.share({
-                message: shareMessage,
-                title: currentAdhkar.Adhkar,
-              }).finally(() => {
-                // Clear the timestamp when share completes or is cancelled
-                shareStartTime.current = null;
-              });
-            }
+            // Share functionality here
           }}
         >
           <IconSymbol
             name="square.and.arrow.up"
+            size={26}
+            color={Colors[colorScheme ?? "light"].text}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.bottomNavButton}
+          onPress={() => setShowQuickSettings(true)}
+        >
+          <IconSymbol
+            name="gearshape.fill"
             size={26}
             color={Colors[colorScheme ?? "light"].text}
           />
@@ -1731,21 +1515,13 @@ export default function AdhkarDetailScreen() {
         folders={folders}
         onCreateFolder={handleCreateFolder}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 20,
-    gap: 12,
   },
   backButton: {
     position: 'absolute',
@@ -1833,7 +1609,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 120,
+    paddingBottom: 40,
     flexGrow: 1,
   },
   titleSection: {
@@ -1880,50 +1656,82 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     minHeight: 100,
   },
-  arabicText: {
-    fontWeight: "400",
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
-  transliteration: {
-    fontSize: 16,
-    fontStyle: "italic",
-    lineHeight: 24,
-    textAlign: "left",
-  },
-  translation: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400",
-    textAlign: "left",
-  },
-  virtueCard: {
+  adhkarCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 24,
     borderRadius: 16,
-    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  duaLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  duaArabic: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 48,
+  },
+  duaTransliteration: {
+    fontSize: 18,
+    fontStyle: 'italic',
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 24,
+  },
+  duaTranslation: {
+    fontSize: 18,
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  meaningCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
     padding: 20,
+    borderRadius: 12,
+  },
+  meaningTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 12,
+  },
+  meaningText: {
+    fontSize: 15,
+    color: '#1E3A8A',
+    lineHeight: 24,
     marginBottom: 12,
   },
   referenceCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-    marginTop: 8,
-  },
-  referenceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
   },
   referenceTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    opacity: 0.8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 8,
   },
   referenceText: {
-    fontSize: 14,
-    lineHeight: 22,
-    opacity: 0.7,
+    fontSize: 13,
+    color: '#78350F',
+    lineHeight: 20,
   },
   bottomBar: {
     flexDirection: "row",
