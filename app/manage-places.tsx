@@ -48,7 +48,6 @@ export default function NearbyMosquesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObject | null>(null);
-  const [viewMode, setViewMode] = useState<"saved" | "mosques">("saved");
   const [locations, setLocations] = useState<any[]>([]);
 
   useEffect(() => {
@@ -73,7 +72,7 @@ export default function NearbyMosquesScreen() {
         const location = await Location.getCurrentPositionAsync({});
         setCurrentLocation(location);
 
-        // Calculate nearby mosques (within 5km)
+        // Calculate distances for all mosques and sort by distance
         const nearby = mosquesData
           .map((mosque) => ({
             ...mosque,
@@ -84,7 +83,6 @@ export default function NearbyMosquesScreen() {
               mosque.longitude
             ),
           }))
-          .filter((mosque) => mosque.distance <= 5)
           .sort((a, b) => a.distance - b.distance);
 
         setNearbyMosques(nearby);
@@ -192,82 +190,15 @@ export default function NearbyMosquesScreen() {
           >
             Nearby Mosques
           </Text>
-          {viewMode === "saved" && (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddLocation}
-            >
-              <Ionicons
-                name="add-circle"
-                size={24}
-                color={colorScheme === "dark" ? "#0A84FF" : "#007AFF"}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Toggle Tabs */}
-        <View style={styles.tabsContainer}>
           <TouchableOpacity
-            style={[
-              styles.tab,
-              viewMode === "saved" && styles.activeTab,
-              viewMode === "saved" && {
-                backgroundColor: colorScheme === "dark" ? "#0A84FF" : "#007AFF",
-              },
-            ]}
-            onPress={() => setViewMode("saved")}
+            style={styles.addButton}
+            onPress={handleAddLocation}
           >
             <Ionicons
-              name="location"
-              size={20}
-              color={
-                viewMode === "saved"
-                  ? "#FFFFFF"
-                  : Colors[colorScheme ?? "light"].text
-              }
+              name="add-circle"
+              size={24}
+              color={colorScheme === "dark" ? "#0A84FF" : "#007AFF"}
             />
-            <Text
-              style={[
-                styles.tabText,
-                viewMode === "saved"
-                  ? styles.activeTabText
-                  : { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Saved Locations ({locations.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              viewMode === "mosques" && styles.activeTab,
-              viewMode === "mosques" && {
-                backgroundColor: colorScheme === "dark" ? "#0A84FF" : "#007AFF",
-              },
-            ]}
-            onPress={() => setViewMode("mosques")}
-          >
-            <Ionicons
-              name="moon"
-              size={20}
-              color={
-                viewMode === "mosques"
-                  ? "#FFFFFF"
-                  : Colors[colorScheme ?? "light"].text
-              }
-            />
-            <Text
-              style={[
-                styles.tabText,
-                viewMode === "mosques"
-                  ? styles.activeTabText
-                  : { color: Colors[colorScheme ?? "light"].text },
-              ]}
-            >
-              Nearby Mosques ({nearbyMosques.length})
-            </Text>
           </TouchableOpacity>
         </View>
 
@@ -298,7 +229,7 @@ export default function NearbyMosquesScreen() {
                   },
                 ]}
               >
-                No nearby mosques found
+                No mosques found
               </Text>
               <Text
                 style={[
@@ -310,7 +241,7 @@ export default function NearbyMosquesScreen() {
                   },
                 ]}
               >
-                Mosques within 5km will appear here
+                All available mosques will appear here
               </Text>
             </View>
           ) : (
