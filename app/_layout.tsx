@@ -52,6 +52,10 @@ function RootNavigator() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="level-settings"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
           name="rain-alert-settings"
           options={{ headerShown: false }}
         />

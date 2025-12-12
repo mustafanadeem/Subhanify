@@ -30,7 +30,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState };
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -71,6 +71,7 @@ export default function AdhkarDetailScreen() {
       try {
         setIsLoading(true);
         const list = await getAdhkarByCategory(categoryKey);
+        console.log(`[AdhkarDetail] Loaded ${list.length} adhkar for category: ${categoryKey}`);
         setAdhkarList(list);
       } catch (error) {
         console.error("Error loading adhkar:", error);

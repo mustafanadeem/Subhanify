@@ -1,3 +1,26 @@
+/**
+ * Level Settings Screen
+ * 
+ * TESTING THE LEVELS SYSTEM:
+ * 
+ * 1. Go to Settings → Level System
+ * 2. Use the "Quick Test" buttons to switch between Level 1, 2, 3
+ * 3. Check the console for debug logs:
+ *    - Shows current level and adhkar count per category
+ *    - Format: "[AdhkarUtils] Level X - Y/Z adhkar for category"
+ * 4. Use "Reset to Level 1" button to go back to beginning
+ * 5. Use "Enable/Disable System" to toggle level filtering on/off
+ * 
+ * ADHKAR DISTRIBUTION:
+ * - Level 1: 27 essential adhkar
+ * - Level 2: Includes Level 1 + 14 additional (41 total)
+ * - Level 3: Includes Levels 1 & 2 + 5 advanced (46 total)
+ * 
+ * HOW IT WORKS:
+ * When you change the level and go back to an adhkar category,
+ * the app will reload and show only adhkar matching your level.
+ */
+
 import { LevelChangeModal } from "@/components/level-change-modal";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
@@ -355,6 +378,75 @@ export default function LevelSettingsScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+
+              {/* Debug Info */}
+              <View
+                style={[
+                  styles.debugInfo,
+                  {
+                    backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                    borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.debugLabel,
+                    { color: Colors[colorScheme ?? "light"].textSecondary },
+                  ]}
+                >
+                  Current Level: <Text style={{ fontWeight: "700", color: Colors[colorScheme ?? "light"].text }}>Level {settings.currentLevel}</Text>
+                </Text>
+                <Text
+                  style={[
+                    styles.debugLabel,
+                    { color: Colors[colorScheme ?? "light"].textSecondary, marginTop: 8 },
+                  ]}
+                >
+                  System Status: <Text style={{ fontWeight: "700", color: settings.enabled ? "#34C759" : "#FF3B30" }}>
+                    {settings.enabled ? "Enabled" : "Disabled"}
+                  </Text>
+                </Text>
+              </View>
+
+              {/* Quick Actions */}
+              <View style={styles.quickActionsContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.quickActionButton,
+                    {
+                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                    },
+                  ]}
+                  onPress={() => updateSettings({ currentLevel: 1 })}
+                >
+                  <Ionicons name="refresh" size={16} color={Colors[colorScheme ?? "light"].text} />
+                  <Text style={[styles.quickActionText, { color: Colors[colorScheme ?? "light"].text }]}>
+                    Reset to Level 1
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.quickActionButton,
+                    {
+                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                    },
+                  ]}
+                  onPress={() => updateSettings({ enabled: !settings.enabled })}
+                >
+                  <Ionicons 
+                    name={settings.enabled ? "eye-off" : "eye"} 
+                    size={16} 
+                    color={Colors[colorScheme ?? "light"].text} 
+                  />
+                  <Text style={[styles.quickActionText, { color: Colors[colorScheme ?? "light"].text }]}>
+                    {settings.enabled ? "Disable System" : "Enable System"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </>
         )}
@@ -668,5 +760,35 @@ const styles = StyleSheet.create({
   },
   quickTestButtonText: {
     fontSize: 15,
+  },
+  debugInfo: {
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    borderWidth: 1,
+  },
+  debugLabel: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  quickActionsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  quickActionText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

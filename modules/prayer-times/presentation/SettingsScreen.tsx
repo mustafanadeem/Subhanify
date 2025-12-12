@@ -59,6 +59,12 @@ export default function SettingsScreen() {
       route: "/appearance-settings",
     },
     {
+      id: "level-system",
+      title: "Level System",
+      icon: "layers",
+      route: "/level-settings",
+    },
+    {
       id: "notifications",
       title: "Notifications",
       icon: "notifications",

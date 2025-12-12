@@ -14,13 +14,17 @@ export const getAdhkarByCategory = async (category: string): Promise<AdhkarItem[
   );
   
   if (!levelSettings.enabled) {
+    console.log(`[AdhkarUtils] Level system disabled - returning all ${categoryAdhkar.length} adhkar for ${category}`);
     return categoryAdhkar;
   }
   
-  return categoryAdhkar.filter((item) => {
+  const filtered = categoryAdhkar.filter((item) => {
     const adhkarLevel = item.Level || 1;
     return adhkarLevel <= levelSettings.currentLevel;
   });
+  
+  console.log(`[AdhkarUtils] Level ${levelSettings.currentLevel} - ${filtered.length}/${categoryAdhkar.length} adhkar for ${category}`);
+  return filtered;
 };
 
 export const getAdhkarByCategoryAndLevel = (
