@@ -306,19 +306,9 @@ export default function LocationDetailScreen() {
             disabled={isLoading}
             style={styles.saveButtonContainer}
           >
-            <Text
-              style={[
-                styles.saveButtonText,
-                {
-                  color: isLoading
-                    ? Colors[colorScheme ?? "light"].textSecondary
-                    : "#007AFF",
-                },
-              ]}
-            >
-              <Text style={{ color: "#007AFF", fontSize: 16, fontWeight: "600" }}>
-                Back
-              </Text>
+            <Text style={{ color: "#007AFF", fontSize: 16, fontWeight: "600" }}>
+              Back
+            </Text>
             </TouchableOpacity>
           )}
           {step === 2 && (

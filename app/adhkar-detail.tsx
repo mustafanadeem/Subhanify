@@ -336,12 +336,6 @@ export default function AdhkarDetailScreen() {
       </View>
     );
   }
-          </View>
-          <View style={styles.headerActions} />
-        </View>
-      </View>
-    );
-  }
 
   const handleCount = async () => {
     const isGrouped = currentAdhkar && currentAdhkar["group id"] !== 0;
@@ -586,9 +580,8 @@ export default function AdhkarDetailScreen() {
       />
 
       {/* Floating Back Button */}
-      <TouchableOpacity 
-        style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]} 
-        onPress={() => router.back()}
+      <View
+        style={[styles.backButton, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]}
       >
         <TouchableOpacity
           style={styles.backButton}
