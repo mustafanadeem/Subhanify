@@ -2,26 +2,26 @@ import { Colors } from "@/constants/theme";
 import { ArabicFont as FontType, useFont } from "@/contexts/FontContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { checkLocationPermissions, checkNotificationPermissions, openAppSettings } from "@/services/permissions-manager";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import { useRouter } from "expo-router";
-import { useRef, useState, useEffect } from "react";
-import {
-    Animated,
-    Alert,
-    Modal,
-    PanResponder,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
-import { checkLocationPermissions, checkNotificationPermissions, openAppSettings } from "@/services/permissions-manager";
+import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Animated,
+  Modal,
+  PanResponder,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type ArabicFontDisplay = "KFGQPC Hafs" | "PDMS Saleem Quran";
 type ThemeMode = "light" | "dark" | "auto";

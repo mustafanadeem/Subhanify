@@ -5,9 +5,9 @@
  * and routes them to the appropriate screen (dua, adhkar, etc.)
  */
 
+import adhkarData from '@/data/adkar_dua.json';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
-import adhkarData from '@/data/adkar_dua.json';
 
 export interface AdhkarNotificationData {
   adhkar?: {

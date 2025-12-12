@@ -1,35 +1,35 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-  getCurrentLocation,
-  getGeofencingStatus,
-  requestLocationPermissions,
-  restartGeofencing,
-  stopGeofencingMonitoring,
+    getCurrentLocation,
+    getGeofencingStatus,
+    requestLocationPermissions,
+    restartGeofencing,
+    stopGeofencingMonitoring,
 } from "@/services/geofence-service";
 import { requestNotificationPermissions } from "@/services/notification-service";
 import { LocationCategory, SavedLocation } from "@/types/location";
 import {
-  deleteLocation,
-  getAllLocations,
-  initDatabase,
-  toggleLocationEnabled,
+    deleteLocation,
+    getAllLocations,
+    initDatabase,
+    toggleLocationEnabled,
 } from "@/utils/location-db";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-  Modal,
+    ActivityIndicator,
+    Alert,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 

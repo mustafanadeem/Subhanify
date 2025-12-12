@@ -1,9 +1,8 @@
-import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { DuaItem } from "@/types/adhkar";
 import { getDuasByCategory } from "@/utils/adhkar-utils";
-import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
-import { useEffect, useState, useLayoutEffect } from "react";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
     Dimensions,
     ScrollView,

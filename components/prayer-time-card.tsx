@@ -3,17 +3,17 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  ImageBackground,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ImageBackground,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { PrayerTimesRepository } from "../modules/prayer-times/data/repository";
 import {
-  TodayPrayerTimes,
-  UserSettings,
+    TodayPrayerTimes,
+    UserSettings,
 } from "../modules/prayer-times/domain/entities";
 
 const repo = new PrayerTimesRepository();

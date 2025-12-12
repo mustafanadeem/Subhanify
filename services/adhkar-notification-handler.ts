@@ -5,9 +5,9 @@
  * Works alongside rain alert notifications with a unified handler
  */
 
+import adhkarData from '@/data/adkar_dua.json';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import adhkarData from '@/data/adkar_dua.json';
 import { RainAlertBackendClient } from './rain-alert-backend-client';
 import { RainAlertService } from './rain-alert-service';
 

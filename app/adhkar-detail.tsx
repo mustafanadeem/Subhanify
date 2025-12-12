@@ -1,7 +1,7 @@
 import { AdhkarCompletionModal } from "@/components/adhkar-completion-modal";
 import {
-    FavoriteFolder,
-    FavoritesFolderModal,
+  FavoriteFolder,
+  FavoritesFolderModal,
 } from "@/components/favorites-folder-modal";
 import { LevelChangeModal } from "@/components/level-change-modal";
 import { ThemedText } from "@/components/themed-text";
@@ -11,38 +11,37 @@ import { useFont } from "@/contexts/FontContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import {
-    TodayPrayerTimes,
-    UserSettings,
+  TodayPrayerTimes,
+  UserSettings,
 } from "@/modules/prayer-times/domain/entities";
 import { markAdhkarCompleted } from "@/services/adhkar-completion-service";
 import {
-    addToFavorites,
-    createFolder,
-    isFavorite,
-    loadFolders,
-    removeFromFavorites,
+  addToFavorites,
+  createFolder,
+  isFavorite,
+  loadFolders,
+  removeFromFavorites,
 } from "@/services/favorites-service";
 import { markIndividualAdhkarCompleted } from "@/services/individual-adhkar-progress-service";
 import { LevelChangeResult } from "@/services/level-settings-service";
 import { AdhkarItem } from "@/types/adhkar";
 import { getAdhkarByCategory } from "@/utils/adhkar-utils";
-import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Modal,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Animated,
+  Dimensions,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

@@ -4,14 +4,14 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  Share,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Pressable,
+    ScrollView,
+    Share,
+    StatusBar,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 type SettingItem = {
@@ -59,16 +59,10 @@ export default function SettingsScreen() {
       route: "/appearance-settings",
     },
     {
-      id: "level-system",
-      title: "Level System",
-      icon: "layers",
+      id: "levels",
+      title: "Levels",
+      icon: "star",
       route: "/level-settings",
-    },
-    {
-      id: "notifications",
-      title: "Notifications",
-      icon: "notifications",
-      route: "/notifications",
     },
     {
       id: "rain-alerts",

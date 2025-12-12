@@ -12,33 +12,32 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-  clearAllLogs,
-  exportLogsForDebugging,
-  getAnalyticsSummary,
+    clearAllLogs,
+    exportLogsForDebugging,
+    getAnalyticsSummary,
 } from "@/services/travel-analytics-service";
-import { sendTestTravelNotification } from "@/services/travel-notification-service";
 import {
-  getReminderFrequencyDisplayName,
-  getTravelSettings,
-  isValidTimeFormat,
-  saveTravelSettings,
-  type ReminderFrequency,
-  type TravelSettings,
-  type VehicleType,
+    getReminderFrequencyDisplayName,
+    getTravelSettings,
+    isValidTimeFormat,
+    saveTravelSettings,
+    type ReminderFrequency,
+    type TravelSettings,
+    type VehicleType,
 } from "@/services/travel-settings-service";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function TravelSettingsScreen() {
