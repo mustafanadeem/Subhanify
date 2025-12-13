@@ -210,155 +210,148 @@ export default function HomeScreen() {
         backgroundColor="transparent"
         translucent={false}
       />
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
-        ]}
+
+      {/* Main ScrollView - Single scroll for entire page */}
+      <ScrollView
+        style={styles.mainScrollView}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
       >
-        <Text
+        {/* Header */}
+        <View
           style={[
-            styles.headerTitle,
-            { color: Colors[colorScheme ?? "light"].text },
+            styles.header,
+            { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
           ]}
         >
-          Subhanify
-        </Text>
-      </View>
+          <Text
+            style={[
+              styles.headerTitle,
+              { color: Colors[colorScheme ?? "light"].text },
+            ]}
+          >
+            Subhanify
+          </Text>
+        </View>
 
-      {/* Prayer Time Card */}
-      <View style={styles.prayerCardWrapper}>
-        <PrayerTimeCard />
-      </View>
+        {/* Prayer Time Card */}
+        <View style={styles.prayerCardWrapper}>
+          <PrayerTimeCard />
+        </View>
 
-      {/* Level Progress Card */}
-      <TouchableOpacity
-        style={[
-          styles.levelProgressCard,
-          { backgroundColor: isDark ? "#0F1E2E" : "#E5F3FF" },
-        ]}
-        onPress={() => router.push("/streak-details")}
-        activeOpacity={0.8}
-      >
-        <Text
+        {/* Level Progress Card */}
+        <TouchableOpacity
           style={[
-            styles.levelProgressTitle,
-            { color: Colors[colorScheme ?? "light"].text },
+            styles.levelProgressCard,
+            { backgroundColor: isDark ? "#0F1E2E" : "#E5F3FF" },
           ]}
+          onPress={() => router.push("/streak-details")}
+          activeOpacity={0.8}
         >
-          Level Progress
-        </Text>
-        <View style={styles.levelProgressContent}>
-          <View style={styles.levelIconSmall}>
-            <Image
-              source={require("@/assets/images/streaks/beginner.svg")}
-              style={styles.levelIconImage}
-              contentFit="contain"
+          <Text
+            style={[
+              styles.levelProgressTitle,
+              { color: Colors[colorScheme ?? "light"].text },
+            ]}
+          >
+            Level Progress
+          </Text>
+          <View style={styles.levelProgressContent}>
+            <View style={styles.levelIconSmall}>
+              <Image
+                source={require("@/assets/images/streaks/beginner.svg")}
+                style={styles.levelIconImage}
+                contentFit="contain"
+              />
+            </View>
+            <View style={styles.levelTextContent}>
+              <Text
+                style={[
+                  styles.levelName,
+                  { color: Colors[colorScheme ?? "light"].text },
+                ]}
+              >
+                Beginner
+              </Text>
+              <Text
+                style={[
+                  styles.levelSubtext,
+                  { color: isDark ? "#8E9BAE" : "#666666" },
+                ]}
+              >
+                LEVEL 1
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={isDark ? "#8E9BAE" : "#666666"}
             />
           </View>
-          <View style={styles.levelTextContent}>
+        </TouchableOpacity>
+
+        {/* Tabs */}
+        <View
+          style={[
+            styles.tabsContainer,
+            { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === "adhkar" && styles.activeTab,
+              {
+                backgroundColor:
+                  activeTab === "adhkar"
+                    ? isDark
+                      ? "#2C2C2E"
+                      : "#FFFFFF"
+                    : "transparent",
+              },
+            ]}
+            onPress={() => handleTabPress("adhkar")}
+          >
             <Text
               style={[
-                styles.levelName,
-                { color: Colors[colorScheme ?? "light"].text },
+                styles.tabText,
+                activeTab === "adhkar" && styles.activeTabText,
+                { color: isDark ? "#FFFFFF" : "#000000" },
               ]}
             >
-              Beginner
+              Adhkar
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === "duas" && styles.activeTab,
+              {
+                backgroundColor:
+                  activeTab === "duas"
+                    ? isDark
+                      ? "#2C2C2E"
+                      : "#FFFFFF"
+                    : "transparent",
+              },
+            ]}
+            onPress={() => handleTabPress("duas")}
+          >
             <Text
               style={[
-                styles.levelSubtext,
-                { color: isDark ? "#8E9BAE" : "#666666" },
+                styles.tabText,
+                activeTab === "duas" && styles.activeTabText,
+                { color: isDark ? "#FFFFFF" : "#000000" },
               ]}
             >
-              LEVEL 1
+              Duas
             </Text>
-          </View>
-          <Ionicons
-            name="chevron-forward"
-            size={20}
-            color={isDark ? "#8E9BAE" : "#666666"}
-          />
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
 
-      {/* Tabs */}
-      <View
-        style={[
-          styles.tabsContainer,
-          { backgroundColor: isDark ? "#1C1C1E" : "#F5F5F5" },
-        ]}
-      >
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "adhkar" && styles.activeTab,
-            {
-              backgroundColor:
-                activeTab === "adhkar"
-                  ? isDark
-                    ? "#2C2C2E"
-                    : "#FFFFFF"
-                  : "transparent",
-            },
-          ]}
-          onPress={() => handleTabPress("adhkar")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "adhkar" && styles.activeTabText,
-              { color: isDark ? "#FFFFFF" : "#000000" },
-            ]}
-          >
-            Adhkar
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "duas" && styles.activeTab,
-            {
-              backgroundColor:
-                activeTab === "duas"
-                  ? isDark
-                    ? "#2C2C2E"
-                    : "#FFFFFF"
-                  : "transparent",
-            },
-          ]}
-          onPress={() => handleTabPress("duas")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "duas" && styles.activeTabText,
-              { color: isDark ? "#FFFFFF" : "#000000" },
-            ]}
-          >
-            Duas
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Swipeable Content */}
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        style={styles.pagerView}
-      >
-        {/* Adhkar Page */}
-        <View style={styles.page}>
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.cardsContainer}
-            showsVerticalScrollIndicator={false}
-          >
+        {/* Content based on active tab */}
+        {activeTab === "adhkar" ? (
+          <View style={styles.contentWrapper}>
             {adhkarCategories.map((category) => {
               // Determine if this card should be highlighted
               // @ts-ignore - TypeScript incorrectly infers literal types here
@@ -405,37 +398,29 @@ export default function HomeScreen() {
                 />
               );
             })}
-          </ScrollView>
-        </View>
-
-        {/* Duas Page */}
-        <View style={styles.page}>
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.gridContainer}
-            showsVerticalScrollIndicator={false}
-          >
-              <View style={styles.grid}>
-                {duasCategories.map((category) => (
-                  <View key={category.id} style={styles.gridItem}>
-                    <DuaCard
-                      title={category.title}
-                      subtitle={category.subtitle}
-                      icon={category.icon}
-                      count={category.count}
-                      onPress={() =>
-                        handleCardPress(category.title, category.category, true)
-                      }
-                    />
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
           </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
+        ) : (
+          <View style={styles.gridContentWrapper}>
+            <View style={styles.grid}>
+              {duasCategories.map((category) => (
+                <View key={category.id} style={styles.gridItem}>
+                  <DuaCard
+                    title={category.title}
+                    subtitle={category.subtitle}
+                    icon={category.icon}
+                    count={category.count}
+                    onPress={() =>
+                      handleCardPress(category.title, category.category, true)
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
 
 const styles = StyleSheet.create({
   container: {
@@ -487,22 +472,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     opacity: 1,
   },
-  pagerView: {
-    flex: 1,
+  contentWrapper: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
-  page: {
-    width: SCREEN_WIDTH,
-  },
-  scrollView: {
-    flex: 1,
+  gridContentWrapper: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   prayerCardWrapper: {
     paddingHorizontal: 16,
     marginBottom: 16,
-  },
-  cardsContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   levelProgressCard: {
     marginHorizontal: 16,
