@@ -421,6 +421,7 @@ export default function HomeScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
 
 const styles = StyleSheet.create({
   container: {
