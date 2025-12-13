@@ -508,7 +508,8 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   levelProgressCard: {
     marginHorizontal: 16,
