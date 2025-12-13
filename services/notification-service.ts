@@ -23,37 +23,38 @@
  * for consistency and proper user rationale dialogs.
  */
 
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { AdhkarItem } from '../types/adhkar';
 
-/**
- * Configure notification handler for foreground notifications
- * 
- * Determines how notifications are displayed when app is in foreground:
- * - shouldShowAlert: Display notification banner
- * - shouldPlaySound: Play notification sound
- * - shouldSetBadge: Update app icon badge (iOS)
- */
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Conditionally import expo-notifications (not available in Expo Go on Android SDK 53+)
+let Notifications: any = null;
+try {
+  Notifications = require('expo-notifications');
+  
+  /**
+   * Configure notification handler for foreground notifications
+   * 
+   * Determines how notifications are displayed when app is in foreground:
+   * - shouldShowAlert: Display notification banner
+   * - shouldPlaySound: Play notification sound
+   * - shouldSetBadge: Update app icon badge (iOS)
+   */
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (error) {
+  console.warn('expo-notifications not available - notifications disabled. Use development build for full notification support.');
+}
 
-/**
- * Setup notification channel for Android
- * 
- * Android requires notification channels (API 26+) to categorize notifications.
- * This should be called once during app initialization.
- * 
- * @returns Promise<void>
- */
 export async function setupNotificationChannel(): Promise<void> {
+  if (!Notifications) return;
+  
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('location-adhkar', {
       name: 'Location Adhkar',
@@ -65,15 +66,12 @@ export async function setupNotificationChannel(): Promise<void> {
   }
 }
 
-/**
- * Request notification permissions
- * 
- * DEPRECATED: Use permissions-manager.ts requestNotificationPermissionsWithRationale() instead
- * This function is kept for backward compatibility but should not be used directly.
- * 
- * @returns Promise<boolean>
- */
 export async function requestNotificationPermissions(): Promise<boolean> {
+  if (!Notifications) {
+    console.warn('Notifications not available in this environment');
+    return false;
+  }
+  
   console.warn('notification-service.requestNotificationPermissions() is deprecated. Use permissions-manager.ts instead.');
   
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -94,22 +92,13 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   return true;
 }
 
-/**
- * Show a notification with adhkar content
- * 
- * Platform Behavior:
- * - Android: Shows notification with channel 'location-adhkar'
- * - iOS: Shows notification with sound and badge
- * 
- * @param locationName - Name of the location (mosque, home, etc.)
- * @param eventType - 'entry' or 'exit'
- * @param adhkar - Adhkar item to display
- */
 export async function showAdhkarNotification(
   locationName: string,
   eventType: 'entry' | 'exit',
   adhkar: AdhkarItem
 ): Promise<void> {
+  if (!Notifications) return;
+  
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -130,21 +119,13 @@ export async function showAdhkarNotification(
   }
 }
 
-/**
- * Show multiple adhkar notifications (with slight delay between each)
- * 
- * Schedules multiple notifications with 2-second intervals to avoid overwhelming the user.
- * Only the first notification plays a sound.
- * 
- * @param locationName - Name of the location
- * @param eventType - 'entry' or 'exit'
- * @param adhkarList - Array of adhkar items to display
- */
 export async function showMultipleAdhkarNotifications(
   locationName: string,
   eventType: 'entry' | 'exit',
   adhkarList: AdhkarItem[]
 ): Promise<void> {
+  if (!Notifications) return;
+  
   for (let i = 0; i < adhkarList.length; i++) {
     // Show first immediately, others with delay
     const delay = i * 2; // 2 seconds between each notification
@@ -168,20 +149,19 @@ export async function showMultipleAdhkarNotifications(
   }
 }
 
-/**
- * Cancel all pending adhkar notifications
- */
 export async function cancelAllAdhkarNotifications(): Promise<void> {
+  if (!Notifications) return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
 
-/**
- * Get notification permissions status
- */
 export async function getNotificationPermissionsStatus(): Promise<{
   granted: boolean;
   canAskAgain: boolean;
 }> {
+  if (!Notifications) {
+    return { granted: false, canAskAgain: false };
+  }
+  
   const { status, canAskAgain } = await Notifications.getPermissionsAsync();
   return {
     granted: status === 'granted',
@@ -189,21 +169,17 @@ export async function getNotificationPermissionsStatus(): Promise<{
   };
 }
 
-/**
- * Add notification received listener
- */
 export function addNotificationReceivedListener(
-  listener: (notification: Notifications.Notification) => void
-): Notifications.Subscription {
+  listener: (notification: any) => void
+): any {
+  if (!Notifications) return { remove: () => {} };
   return Notifications.addNotificationReceivedListener(listener);
 }
 
-/**
- * Add notification response listener (when user taps notification)
- */
 export function addNotificationResponseListener(
-  listener: (response: Notifications.NotificationResponse) => void
-): Notifications.Subscription {
+  listener: (response: any) => void
+): any {
+  if (!Notifications) return { remove: () => {} };
   return Notifications.addNotificationResponseReceivedListener(listener);
 }
 
