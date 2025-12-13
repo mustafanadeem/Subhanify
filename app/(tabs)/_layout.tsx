@@ -7,6 +7,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const backgroundColor = colorScheme === "dark" ? "#000000" : "#FFFFFF";
 
   return (
     <Tabs
@@ -16,6 +17,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarShowLabel: false,
+        contentStyle: { backgroundColor },
         tabBarStyle: {
           backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
           borderTopColor: colorScheme === "dark" ? "#2C2C2E" : "#E5E5EA",
