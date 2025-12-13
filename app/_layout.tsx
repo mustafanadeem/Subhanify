@@ -24,12 +24,19 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { colorScheme } = useTheme();
+  const isDark = colorScheme === "dark";
+  const backgroundColor = isDark ? "#000000" : "#FFFFFF";
+
+  const screenOptions = {
+    headerShown: false,
+    contentStyle: { backgroundColor },
+  };
 
   return (
     <NavigationThemeProvider
       value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
-      <Stack>
+      <Stack screenOptions={screenOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="adhkar-detail" options={{ headerShown: false }} />
         <Stack.Screen name="dua-detail" options={{ headerShown: false }} />
