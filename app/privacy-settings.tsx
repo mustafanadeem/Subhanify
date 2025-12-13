@@ -12,38 +12,38 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-  addTravelStateListener,
-  getCurrentTravelState,
-  startMotionDetection,
-  stopMotionDetection,
-  type TravelState,
+    addTravelStateListener,
+    getCurrentTravelState,
+    startMotionDetection,
+    stopMotionDetection,
+    type TravelState,
 } from "@/services/motion-detection/motion-detection-service";
 import {
-  getAllPermissionsStatus,
-  requestMotionPermissionWithRationale,
-  showPermissionsDisclosure,
-  showTravelDetectionDisclosure,
+    getAllPermissionsStatus,
+    requestMotionPermissionWithRationale,
+    showPermissionsDisclosure,
+    showTravelDetectionDisclosure,
 } from "@/services/motion-permissions-manager";
 import {
-  configureTravelNotifications,
-  isTravelNotificationsEnabled,
-  sendTestTravelNotification,
-  setTravelNotificationsEnabled,
+    configureTravelNotifications,
+    isTravelNotificationsEnabled,
+    sendTestTravelNotification,
+    setTravelNotificationsEnabled,
 } from "@/services/travel-notification-service";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
-  Linking,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Linking,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 

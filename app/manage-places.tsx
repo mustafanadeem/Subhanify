@@ -190,16 +190,6 @@ export default function NearbyMosquesScreen() {
           >
             Nearby Mosques
           </Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handleAddLocation}
-          >
-            <Ionicons
-              name="add-circle"
-              size={24}
-              color={colorScheme === "dark" ? "#0A84FF" : "#007AFF"}
-            />
-          </TouchableOpacity>
         </View>
 
         {/* Content */}

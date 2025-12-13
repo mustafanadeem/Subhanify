@@ -7,16 +7,16 @@ import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
-  Animated,
-  Modal,
-  PanResponder,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Modal,
+    PanResponder,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
