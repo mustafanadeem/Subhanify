@@ -7,13 +7,10 @@ let db: SQLite.SQLiteDatabase | null = null;
 let initError: Error | null = null;
 let hasAttemptedInit = false;
 
-/**
- * Initialize the database and create tables if they don't exist
- */
 export async function initDatabase(): Promise<void> {
   if (hasAttemptedInit) {
     if (initError) throw initError;
-    return;
+    return; 
   }
 
   hasAttemptedInit = true;
