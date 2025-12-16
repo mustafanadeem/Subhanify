@@ -18,6 +18,7 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarShowLabel: false,
         contentStyle: { backgroundColor },
+        sceneContainerStyle: { backgroundColor },
         tabBarStyle: {
           backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
           borderTopColor: colorScheme === "dark" ? "#2C2C2E" : "#E5E5EA",

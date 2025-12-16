@@ -2,6 +2,7 @@ import { PrayerStructureCard } from "@/components/prayer-structure-card";
 import { Colors } from "@/constants/theme";
 import prayerStructureData from "@/data/prayer-structure.json";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { schedulePrayerNotifications } from "@/services/prayer-time-notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -161,16 +162,6 @@ function WeekCalendar({
               ]}
               onPress={() => onDateChange(date)}
             >
-              <Text
-                style={[
-                  weekCalendarStyles.dayName,
-                  {
-                    color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)",
-                  },
-                ]}
-              >
-                {dayNames[date.getDay()]}
-              </Text>
               <View
                 style={[
                   weekCalendarStyles.dayNumber,
@@ -254,6 +245,17 @@ export default function PrayerTimesScreen() {
     try {
       const res = await repo.getToday(date);
       setData(res);
+
+      // Schedule notifications for the fetched prayer times
+      try {
+        await schedulePrayerNotifications(res, true);
+      } catch (notificationError: any) {
+        console.warn(
+          "Failed to schedule prayer notifications:",
+          notificationError?.message
+        );
+        // Don't block prayer times display if notifications fail
+      }
     } catch (e: any) {
       setError(e?.message ?? "Failed to load");
     } finally {
@@ -307,10 +309,13 @@ export default function PrayerTimesScreen() {
 
   // Function to get suggested rakats/structure for each prayer
   const getSuggestedRakats = (prayerKey: string): string[] => {
-    const prayerData: any = prayerStructureData[prayerKey as keyof typeof prayerStructureData];
+    const prayerData: any =
+      prayerStructureData[prayerKey as keyof typeof prayerStructureData];
     if (!prayerData || !prayerData.structure) return [];
-    
-    return prayerData.structure.map((unit: any) => `${unit.label}: ${unit.rakats} rakats`);
+
+    return prayerData.structure.map(
+      (unit: any) => `${unit.label}: ${unit.rakats} rakats`
+    );
   };
 
   if (loading) {
@@ -474,13 +479,52 @@ export default function PrayerTimesScreen() {
         }
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Week Calendar */}
-        <WeekCalendar
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-          colorScheme={colorScheme}
-          data={data}
-        />
+        {/* Date Header */}
+        <View style={weekCalendarStyles.container}>
+          <View style={weekCalendarStyles.dateHeader}>
+            <TouchableOpacity
+              onPress={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setDate(selectedDate.getDate() - 1);
+                setSelectedDate(newDate);
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color={isDark ? "#FFF" : "#000"}
+              />
+            </TouchableOpacity>
+            <Text
+              style={[
+                weekCalendarStyles.dateHeaderText,
+                { color: isDark ? "#FFF" : "#000" },
+              ]}
+            >
+              {selectedDate.toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}{" "}
+              | {data?.info.hijri?.date}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setDate(selectedDate.getDate() + 1);
+                setSelectedDate(newDate);
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name="chevron-forward"
+                size={24}
+                color={isDark ? "#FFF" : "#000"}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Prayer Structure Card */}
         <PrayerStructureCard />
@@ -795,7 +839,7 @@ function PrayerTimeRow({
 }: PrayerTimeRowProps) {
   const isDark = colorScheme === "dark";
   const [expanded, setExpanded] = useState(false);
-  
+
   const getTextColor = () => {
     if (isInfo) {
       return isDark ? "#8E8E93" : "#8E8E93";
@@ -816,11 +860,14 @@ function PrayerTimeRow({
     Isha: ["Make Dua", "Read Quran", "Night Prayer"],
   };
 
-  const prayers = suggestedPrayers.length > 0 ? suggestedPrayers : defaultSuggestions[prayerName] || [];
+  const prayers =
+    suggestedPrayers.length > 0
+      ? suggestedPrayers
+      : defaultSuggestions[prayerName] || [];
 
   return (
     <View>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.prayerTimeRow}
         onPress={() => prayers.length > 0 && setExpanded(!expanded)}
         activeOpacity={0.7}
@@ -857,7 +904,11 @@ function PrayerTimeRow({
         <View
           style={[
             styles.suggestedPrayersContainer,
-            { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)" },
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(0,0,0,0.02)",
+            },
           ]}
         >
           {prayers.map((prayer, index) => (

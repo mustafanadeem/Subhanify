@@ -28,32 +28,51 @@ import { AdhkarItem } from '../types/adhkar';
 
 // Conditionally import expo-notifications (not available in Expo Go on Android SDK 53+)
 let Notifications: any = null;
-try {
-  Notifications = require('expo-notifications');
-  
-  /**
-   * Configure notification handler for foreground notifications
-   * 
-   * Determines how notifications are displayed when app is in foreground:
-   * - shouldShowAlert: Display notification banner
-   * - shouldPlaySound: Play notification sound
-   * - shouldSetBadge: Update app icon badge (iOS)
-   */
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
-} catch (error) {
-  console.warn('expo-notifications not available - notifications disabled. Use development build for full notification support.');
+let isNotificationsAvailable = false;
+
+// Only initialize at module load if needed, but don't set handlers yet
+function initializeNotifications() {
+  if (isNotificationsAvailable) {
+    return; // Already initialized
+  }
+
+  try {
+    // Use dynamic require to avoid build-time errors in Expo Go
+    Notifications = require('expo-notifications');
+    isNotificationsAvailable = true;
+    
+    /**
+     * Configure notification handler for foreground notifications
+     * 
+     * Determines how notifications are displayed when app is in foreground:
+     * - shouldShowAlert: Display notification banner
+     * - shouldPlaySound: Play notification sound
+     * - shouldSetBadge: Update app icon badge (iOS)
+     */
+    if (Notifications && Notifications.setNotificationHandler) {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    }
+  } catch (error) {
+    console.warn('⚠️  expo-notifications not available in Expo Go. Use a development build for full notification support.');
+    isNotificationsAvailable = false;
+    Notifications = null;
+  }
 }
 
+// Export availability status
+export const isNotificationsSupported = (): boolean => isNotificationsAvailable;
+
 export async function setupNotificationChannel(): Promise<void> {
-  if (!Notifications) return;
+  initializeNotifications();
+  if (!isNotificationsAvailable || !Notifications) return;
   
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('location-adhkar', {
@@ -67,8 +86,9 @@ export async function setupNotificationChannel(): Promise<void> {
 }
 
 export async function requestNotificationPermissions(): Promise<boolean> {
-  if (!Notifications) {
-    console.warn('Notifications not available in this environment');
+  initializeNotifications();
+  if (!isNotificationsAvailable || !Notifications) {
+    console.warn('⚠️  Notifications not available in Expo Go. Use a development build for notification support.');
     return false;
   }
   

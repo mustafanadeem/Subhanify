@@ -69,7 +69,9 @@ export default function LocationsScreen() {
     useState<Location.LocationObject | null>(null);
   const [geofencingActive, setGeofencingActive] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
-  const [expandedLocationId, setExpandedLocationId] = useState<string | null>(null);
+  const [expandedLocationId, setExpandedLocationId] = useState<string | null>(
+    null
+  );
   const [mapRegion, setMapRegion] = useState({
     latitude: 51.5074,
     longitude: -0.1278,
@@ -233,10 +235,9 @@ export default function LocationsScreen() {
       console.log("Loaded locations:", savedLocations.length);
       setLocations(savedLocations);
     } catch (error: any) {
-      console.error("Error loading locations:", error);
-      if (!error?.message?.includes("Database not initialized")) {
-        Alert.alert("Error", "Failed to load locations");
-      }
+      console.warn("Error loading locations:", error);
+      // Don't show alert - database errors are handled gracefully in location-db
+      setLocations([]); // Show empty state
     }
   };
 
@@ -285,7 +286,9 @@ export default function LocationsScreen() {
               await restartGeofencing();
               Alert.alert("Success", "Location deleted successfully");
             } catch (error) {
-              Alert.alert("Error", "Failed to delete location");
+              console.warn("Error deleting location:", error);
+              // Database errors are handled gracefully, just reload
+              await loadLocations();
             }
           },
         },
@@ -302,7 +305,9 @@ export default function LocationsScreen() {
       await loadLocations();
       await restartGeofencing();
     } catch (error) {
-      Alert.alert("Error", "Failed to update location");
+      console.warn("Error updating location:", error);
+      // Database errors are handled gracefully, just reload
+      await loadLocations();
     }
   };
 
@@ -531,7 +536,11 @@ export default function LocationsScreen() {
                 </View>
 
                 <Ionicons
-                  name={expandedLocationId === location.id ? "chevron-up" : "chevron-down"}
+                  name={
+                    expandedLocationId === location.id
+                      ? "chevron-up"
+                      : "chevron-down"
+                  }
                   size={20}
                   color={
                     isDark
@@ -573,9 +582,7 @@ export default function LocationsScreen() {
                   >
                     <Ionicons
                       name={
-                        location.enabled
-                          ? "notifications"
-                          : "notifications-off"
+                        location.enabled ? "notifications" : "notifications-off"
                       }
                       size={20}
                       color={
@@ -610,11 +617,7 @@ export default function LocationsScreen() {
                     style={styles.actionButton}
                     onPress={() => handleDeleteLocation(location)}
                   >
-                    <Ionicons
-                      name="trash-outline"
-                      size={20}
-                      color="#FF3B30"
-                    />
+                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                     <Text
                       style={[styles.actionButtonText, { color: "#FF3B30" }]}
                     >

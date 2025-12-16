@@ -1,45 +1,64 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    Keyboard,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  ActivityIndicator,
+  Animated,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 
-// Nominatim API response types
-interface NominatimAddress {
-  road?: string;
-  house_number?: string;
-  city?: string;
-  town?: string;
-  village?: string;
-  postcode?: string;
-  country?: string;
-  state?: string;
+// Google Places API response types
+interface GooglePlacePrediction {
+  place_id: string;
+  description: string;
+  main_text?: string;
+  secondary_text?: string;
+  structured_formatting?: {
+    main_text: string;
+    secondary_text?: string;
+  };
+  types: string[];
+  geometry?: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+  matched_substrings?: Array<{
+    length: number;
+    offset: number;
+  }>;
 }
 
-interface NominatimResult {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-  address?: NominatimAddress;
-  type: string;
-  importance: number;
+interface GooglePlacesResponse {
+  predictions: GooglePlacePrediction[];
+  status: string;
+}
+
+interface GooglePlaceDetailsResponse {
+  result: {
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      };
+    };
+    formatted_address: string;
+  };
+  status: string;
 }
 
 export interface PlaceSelection {
   label: string;
   latitude: number;
   longitude: number;
-  raw: NominatimResult;
+  raw: GooglePlacePrediction;
 }
 
 interface PlaceAutocompleteProps {
@@ -52,13 +71,33 @@ interface PlaceAutocompleteProps {
 }
 
 /**
- * Custom hook for Nominatim geocoding with debouncing
+ * Custom hook for Google Places Autocomplete with debouncing
+ * Restricted to UK locations
  */
-const useNominatimSearch = (query: string, delay: number = 300) => {
-  const [results, setResults] = useState<NominatimResult[]>([]);
+const useGooglePlacesSearch = (query: string, delay: number = 300) => {
+  const [results, setResults] = useState<GooglePlacePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Try both API key env vars
+  const apiKey =
+    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
+    process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+
+  // Log on mount to verify key is available
+  useEffect(() => {
+    if (!apiKey) {
+      console.warn("[useGooglePlacesSearch] No API key found!");
+      console.log(
+        "[useGooglePlacesSearch] EXPO_PUBLIC_GOOGLE_MAPS_API_KEY:",
+        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ? "✓ set" : "✗ not set"
+      );
+      console.log(
+        "[useGooglePlacesSearch] EXPO_PUBLIC_GOOGLE_PLACES_API_KEY:",
+        process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ? "✓ set" : "✗ not set"
+      );
+    }
+  }, [apiKey]);
 
   useEffect(() => {
     // Clear previous timeout
@@ -73,35 +112,83 @@ const useNominatimSearch = (query: string, delay: number = 300) => {
       return;
     }
 
+    if (!apiKey) {
+      setError("Google Places API key not configured");
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     // Debounce the search
     timeoutRef.current = setTimeout(async () => {
       try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-            `q=${encodeURIComponent(query)}` +
-            `&format=json` +
-            `&addressdetails=1` +
-            `&limit=5`,
-          {
-            headers: {
-              "User-Agent": "SubhanifyApp/1.0", // Required by Nominatim policy
-            },
-          }
+        const url =
+          `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
+          `input=${encodeURIComponent(query)}` +
+          `&key=${apiKey}` +
+          `&components=country:uk` +
+          `&language=en` +
+          `&sessiontoken=${Date.now()}`;
+
+        console.log(
+          "[PlaceAutocomplete] Fetching from:",
+          url.substring(0, 100) + "..."
         );
 
+        const response = await fetch(url);
+
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          throw new Error(`API error: ${response.status}`);
         }
 
-        const data: NominatimResult[] = await response.json();
-        console.log(`[PlaceAutocomplete] Found ${data.length} results for "${query}"`);
-        setResults(data);
-        setError(null);
+        const data: GooglePlacesResponse = await response.json();
+
+        console.log(
+          `[PlaceAutocomplete] Full API Response:`,
+          JSON.stringify(data).substring(0, 500)
+        );
+        console.log(`[PlaceAutocomplete] API Response status: ${data.status}`);
+        console.log(
+          `[PlaceAutocomplete] Found ${
+            data.predictions?.length || 0
+          } predictions`
+        );
+
+        if (data.predictions && data.predictions.length > 0) {
+          console.log(
+            "[PlaceAutocomplete] First prediction object:",
+            JSON.stringify(data.predictions[0], null, 2).substring(0, 500)
+          );
+          data.predictions.slice(0, 3).forEach((p, i) => {
+            const mainText =
+              p.structured_formatting?.main_text || p.main_text || "N/A";
+            const secondaryText =
+              p.structured_formatting?.secondary_text ||
+              p.secondary_text ||
+              "N/A";
+            console.log(
+              `  [${i}] main_text: "${mainText}", secondary: "${secondaryText}"`
+            );
+          });
+        }
+
+        if (data.status === "OK" || data.status === "ZERO_RESULTS") {
+          setResults(data.predictions || []);
+          setError(null);
+        } else if (data.status === "INVALID_REQUEST") {
+          setError("Invalid search request");
+          setResults([]);
+        } else if (data.status === "REQUEST_DENIED") {
+          setError("Google Places API key not valid");
+          setResults([]);
+        } else {
+          setError(`API status: ${data.status}`);
+          setResults([]);
+        }
       } catch (err) {
-        console.error("Nominatim search error:", err);
+        console.error("Google Places search error:", err);
         setError("Failed to fetch location suggestions");
         setResults([]);
       } finally {
@@ -115,35 +202,43 @@ const useNominatimSearch = (query: string, delay: number = 300) => {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [query, delay]);
+  }, [query, delay, apiKey]);
 
   return { results, isLoading, error };
 };
 
 /**
- * Extract human-readable location info from Nominatim address
+ * Get detailed coordinates for a place using Google Place Details API
  */
-const formatAddress = (result: NominatimResult): { main: string; secondary: string } => {
-  const addr = result.address;
-  
-  // Main text: road name or first part of display_name
-  let main = addr?.road || result.display_name.split(",")[0];
-  if (addr?.house_number) {
-    main = `${addr.house_number} ${main}`;
+const getPlaceDetails = async (
+  placeId: string,
+  apiKey: string
+): Promise<{ lat: number; lng: number } | null> => {
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?` +
+        `place_id=${placeId}` +
+        `&fields=geometry` +
+        `&key=${apiKey}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to get place details");
+    }
+
+    const data: GooglePlaceDetailsResponse = await response.json();
+
+    if (data.status === "OK" && data.result.geometry) {
+      return {
+        lat: data.result.geometry.location.lat,
+        lng: data.result.geometry.location.lng,
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error("Error getting place details:", err);
+    return null;
   }
-
-  // Secondary text: city, postcode
-  const parts: string[] = [];
-  const city = addr?.city || addr?.town || addr?.village;
-  if (city) parts.push(city);
-  if (addr?.postcode) parts.push(addr.postcode);
-  if (parts.length === 0 && addr?.country) parts.push(addr.country);
-  
-  const secondary = parts.length > 0 
-    ? parts.join(", ")
-    : result.display_name.split(",").slice(1, 3).join(",").trim();
-
-  return { main, secondary };
 };
 
 export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
@@ -157,11 +252,25 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   const [searchText, setSearchText] = useState(initialValue);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isGettingDetails, setIsGettingDetails] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const apiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
-  const { results, isLoading, error } = useNominatimSearch(searchText);
+  const { results, isLoading, error } = useGooglePlacesSearch(searchText);
 
   const isDark = theme === "dark";
+
+  // Log rendering info
+  useEffect(() => {
+    console.log("[PlaceAutocomplete] State:", {
+      showSuggestions,
+      isLoading,
+      resultsCount: results.length,
+      isFocused,
+      shouldShowSuggestions:
+        showSuggestions && (isLoading || results.length > 0),
+    });
+  }, [showSuggestions, isLoading, results.length, isFocused]);
 
   // Sync searchText with initialValue changes
   useEffect(() => {
@@ -210,24 +319,50 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   }, []);
 
   const handleSuggestionPress = useCallback(
-    (result: NominatimResult) => {
-      const { main } = formatAddress(result);
-      console.log('[PlaceAutocomplete] Suggestion pressed:', main);
-      setSearchText(main);
+    async (prediction: GooglePlacePrediction) => {
+      console.log("[PlaceAutocomplete] ✓ handleSuggestionPress FIRED");
+      console.log("[PlaceAutocomplete] prediction:", {
+        place_id: prediction.place_id,
+        main_text: prediction.main_text,
+        secondary_text: prediction.secondary_text,
+        description: prediction.description,
+      });
+
+      // Use full description (formatted address) instead of just main_text
+      console.log(
+        "[PlaceAutocomplete] Setting search text to:",
+        prediction.description
+      );
+      setSearchText(prediction.description);
       setShowSuggestions(false);
       Keyboard.dismiss();
 
-      // Call the parent's onSelect with structured data
-      const selection = {
-        label: main,
-        latitude: parseFloat(result.lat),
-        longitude: parseFloat(result.lon),
-        raw: result,
-      };
-      console.log('[PlaceAutocomplete] Calling onSelect with:', selection);
-      onSelect(selection);
+      setIsGettingDetails(true);
+
+      // Get detailed coordinates from Google Places Details API
+      if (!apiKey) {
+        console.error("API key not available");
+        setIsGettingDetails(false);
+        return;
+      }
+
+      const coordinates = await getPlaceDetails(prediction.place_id, apiKey);
+      setIsGettingDetails(false);
+
+      if (coordinates) {
+        const selection: PlaceSelection = {
+          label: prediction.description,
+          latitude: coordinates.lat,
+          longitude: coordinates.lng,
+          raw: prediction,
+        };
+        console.log("[PlaceAutocomplete] Calling onSelect with:", selection);
+        onSelect(selection);
+      } else {
+        console.warn("Could not get coordinates for selected place");
+      }
     },
-    [onSelect]
+    [apiKey, onSelect]
   );
 
   const handleClear = useCallback(() => {
@@ -238,156 +373,170 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   const colors = {
     background: isDark ? "#1C1C1E" : "#FFFFFF",
     text: isDark ? "#FFFFFF" : "#000000",
-    placeholder: isDark ? "#8E8E93" : "#A0A0A0",
-    border: isDark ? "#3A3A3C" : "#E5E5EA",
-    shadow: isDark ? "#000000" : "#000000",
-    suggestionBg: isDark ? "#2C2C2E" : "#F9F9F9",
-    suggestionHover: isDark ? "#3A3A3C" : "#F0F0F0",
-    secondaryText: isDark ? "#8E8E93" : "#6C6C70",
-    iconColor: isDark ? "#8E8E93" : "#A0A0A0",
+    placeholder: isDark ? "#A8A8A8" : "#C7C7CC",
+    border: isDark ? "#38383A" : "#E5E5EA",
+    suggestion: isDark ? "#2C2C2E" : "#F2F2F7",
   };
 
   return (
     <View style={[styles.container, style]}>
-      {/* Search Input */}
       <View
         style={[
-          styles.inputContainer,
+          styles.inputWrapper,
           {
             backgroundColor: colors.background,
-            borderColor: isFocused ? "#007AFF" : colors.border,
-            shadowColor: colors.shadow,
+            borderColor: colors.border,
+            borderWidth: isFocused ? 2 : 1,
           },
         ]}
       >
         <Ionicons
           name="search"
-          size={20}
-          color={colors.iconColor}
-          style={styles.searchIcon}
+          size={18}
+          color={colors.placeholder}
+          style={styles.icon}
         />
-        
         <TextInput
-          style={[styles.input, { color: colors.text }]}
+          style={[
+            styles.input,
+            {
+              color: colors.text,
+            },
+          ]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.placeholder}
           value={searchText}
           onChangeText={handleTextChange}
           onFocus={() => {
-            console.log('[PlaceAutocomplete] Input focused');
             setIsFocused(true);
           }}
           onBlur={() => {
-            console.log('[PlaceAutocomplete] Input blurred, hiding suggestions in 500ms');
-            // Delay to allow tap on suggestion
-            setTimeout(() => setIsFocused(false), 500);
+            setIsFocused(false);
           }}
-          placeholder={placeholder}
-          placeholderTextColor={colors.placeholder}
-          autoCapitalize="none"
-          autoCorrect={false}
+          editable={!isGettingDetails}
         />
-
-        {/* Right side icons: loading spinner or clear button */}
-        {isLoading ? (
+        {searchText.length > 0 && (
+          <TouchableOpacity
+            onPress={handleClear}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+          >
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={colors.placeholder}
+            />
+          </TouchableOpacity>
+        )}
+        {(isLoading || isGettingDetails) && (
           <ActivityIndicator
             size="small"
-            color="#007AFF"
-            style={styles.rightIcon}
+            color={isDark ? "#FFF" : "#000"}
+            style={styles.loader}
           />
-        ) : searchText.length > 0 ? (
-          <TouchableOpacity onPress={handleClear} style={styles.rightIcon}>
-            <Ionicons name="close-circle" size={20} color={colors.iconColor} />
-          </TouchableOpacity>
-        ) : null}
+        )}
       </View>
 
-      {/* Error message */}
-      {error && (
-        <Text style={[styles.errorText, { color: "#FF3B30" }]}>{error}</Text>
-      )}
-
       {/* Suggestions Dropdown */}
-      {showSuggestions && results.length > 0 && (
-        <Animated.View
+      {showSuggestions && (isLoading || results.length > 0) && (
+        <View
           style={[
             styles.suggestionsContainer,
             {
-              backgroundColor: colors.background,
-              borderColor: colors.border,
-              opacity: fadeAnim,
-              shadowColor: colors.shadow,
+              backgroundColor: colors.suggestion,
             },
           ]}
-          onStartShouldSetResponder={() => true}
-          onMoveShouldSetResponder={() => true}
-          onResponderGrant={() => {}}
-          onResponderMove={() => {}}
-          onResponderRelease={() => {}}
-          onResponderTerminationRequest={() => false}
         >
-          <ScrollView
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="always"
-            nestedScrollEnabled={true}
-            scrollEnabled={true}
-            bounces={true}
-            onStartShouldSetResponder={() => true}
-            onMoveShouldSetResponder={() => true}
-          >
-            {results.map((item, index) => {
-              const { main, secondary } = formatAddress(item);
-              return (
+          {isLoading ? (
+            <View
+              style={{
+                paddingVertical: 20,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ActivityIndicator size="small" color={colors.text} />
+              <Text
+                style={{
+                  marginTop: 8,
+                  fontSize: 14,
+                  color: colors.placeholder,
+                }}
+              >
+                Loading suggestions...
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              scrollEnabled={results.length > 4}
+              style={styles.suggestionsList}
+            >
+              {results.map((result, index) => (
                 <TouchableOpacity
-                  key={item.place_id.toString()}
+                  key={result.place_id}
+                  onPress={() => handleSuggestionPress(result)}
                   style={[
                     styles.suggestionItem,
                     {
-                      backgroundColor: colors.suggestionBg,
                       borderBottomColor: colors.border,
-                      borderBottomWidth: index < results.length - 1 ? 0.5 : 0,
+                      borderBottomWidth: index < results.length - 1 ? 1 : 0,
                     },
                   ]}
-                  onPress={() => {
-                    console.log('[PlaceAutocomplete] TouchableOpacity pressed for:', item.display_name);
-                    handleSuggestionPress(item);
-                  }}
-                  activeOpacity={0.7}
-                  accessible={true}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Select ${main}`}
                 >
-                  <View style={styles.iconContainer} pointerEvents="none">
-                    <Ionicons
-                      name="location"
-                      size={20}
-                      color="#007AFF"
-                    />
-                  </View>
-                  
-                  <View style={styles.textContainer} pointerEvents="none">
-                    <Text
-                      style={[styles.mainText, { color: colors.text }]}
-                      numberOfLines={1}
-                    >
-                      {main}
-                    </Text>
-                    <Text
-                      style={[styles.secondaryText, { color: colors.secondaryText }]}
-                      numberOfLines={1}
-                    >
-                      {secondary}
-                    </Text>
-                  </View>
-
                   <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={colors.iconColor}
+                    name="location-outline"
+                    size={16}
+                    color={colors.placeholder}
+                    style={styles.suggestionIcon}
                   />
+                  <View style={styles.suggestionText}>
+                    <Text
+                      style={[
+                        styles.mainText,
+                        {
+                          color: colors.text,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {result.structured_formatting?.main_text ||
+                        result.main_text ||
+                        result.description}
+                    </Text>
+                    {(result.structured_formatting?.secondary_text ||
+                      result.secondary_text) && (
+                      <Text
+                        style={[
+                          styles.secondaryText,
+                          {
+                            color: colors.placeholder,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {result.structured_formatting?.secondary_text ||
+                          result.secondary_text}
+                      </Text>
+                    )}
+                  </View>
                 </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
+
+      {/* Error Message */}
+      {error && !isLoading && (
+        <Text
+          style={[
+            styles.errorText,
+            {
+              color: "#FF3B30",
+            },
+          ]}
+        >
+          {error}
+        </Text>
       )}
     </View>
   );
@@ -395,79 +544,71 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: "relative",
-    zIndex: 9999,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    zIndex: 1000,
   },
-  inputContainer: {
+  inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 0,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
   },
-  searchIcon: {
-    marginRight: 10,
+  icon: {
+    marginRight: 4,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: 0,
+    fontWeight: "500",
   },
-  rightIcon: {
-    marginLeft: 10,
-    padding: 0,
-  },
-  errorText: {
-    fontSize: 12,
-    marginTop: 4,
+  loader: {
     marginLeft: 4,
   },
   suggestionsContainer: {
-    position: "absolute",
-    top: 56,
-    left: 0,
-    right: 0,
+    borderRadius: 8,
     maxHeight: 300,
-    borderRadius: 12,
-    borderWidth: 0,
     overflow: "hidden",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
     elevation: 10,
-    zIndex: 10000,
+    marginTop: 8,
+  },
+  suggestionsList: {
+    maxHeight: 300,
   },
   suggestionItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 12,
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(0, 122, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+  suggestionIcon: {
+    marginRight: 4,
   },
-  textContainer: {
+  suggestionText: {
     flex: 1,
   },
   mainText: {
     fontSize: 16,
     fontWeight: "500",
-    marginBottom: 3,
   },
   secondaryText: {
-    fontSize: 14,
-    fontWeight: "400",
+    fontSize: 13,
+    marginTop: 2,
+  },
+  errorText: {
+    marginTop: 8,
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
-

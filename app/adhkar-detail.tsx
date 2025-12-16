@@ -8,6 +8,7 @@ import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useFont } from "@/contexts/FontContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { PrayerTimesRepository } from "@/modules/prayer-times/data/repository";
 import {
@@ -54,6 +55,7 @@ export default function AdhkarDetailScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { getFontFamily, arabicTextSize, setArabicTextSize } = useFont();
+  const { themeMode, setThemeMode } = useTheme();
   const insets = useSafeAreaInsets();
 
   // Get the category from params
@@ -88,9 +90,6 @@ export default function AdhkarDetailScreen() {
   const groupSlideAnim = useRef(new Animated.Value(0)).current;
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const [textSize, setTextSize] = useState(17);
-  const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "auto">(
-    "auto"
-  );
   const slideAnim2 = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const [showRelatedArticles, setShowRelatedArticles] = useState(false);
 
@@ -825,26 +824,26 @@ export default function AdhkarDetailScreen() {
                       styles.themeOption,
                       {
                         backgroundColor:
-                          selectedTheme === "light"
+                          themeMode === "light"
                             ? "#3B82F6"
                             : isDark
                             ? "#2C2C2E"
                             : "#F2F2F7",
                         borderColor:
-                          selectedTheme === "light"
+                          themeMode === "light"
                             ? "#3B82F6"
                             : isDark
                             ? "#3A3A3C"
                             : "#E5E5EA",
                       },
                     ]}
-                    onPress={() => setSelectedTheme("light")}
+                    onPress={() => setThemeMode("light")}
                   >
                     <IconSymbol
                       name="sun.max.fill"
                       size={20}
                       color={
-                        selectedTheme === "light"
+                        themeMode === "light"
                           ? "#FFFFFF"
                           : isDark
                           ? "#FFFFFF"
@@ -856,7 +855,7 @@ export default function AdhkarDetailScreen() {
                         styles.themeOptionText,
                         {
                           color:
-                            selectedTheme === "light"
+                            themeMode === "light"
                               ? "#FFFFFF"
                               : Colors[colorScheme ?? "light"].text,
                         },
@@ -871,26 +870,26 @@ export default function AdhkarDetailScreen() {
                       styles.themeOption,
                       {
                         backgroundColor:
-                          selectedTheme === "dark"
+                          themeMode === "dark"
                             ? "#3B82F6"
                             : isDark
                             ? "#2C2C2E"
                             : "#F2F2F7",
                         borderColor:
-                          selectedTheme === "dark"
+                          themeMode === "dark"
                             ? "#3B82F6"
                             : isDark
                             ? "#3A3A3C"
                             : "#E5E5EA",
                       },
                     ]}
-                    onPress={() => setSelectedTheme("dark")}
+                    onPress={() => setThemeMode("dark")}
                   >
                     <IconSymbol
                       name="moon.fill"
                       size={20}
                       color={
-                        selectedTheme === "dark"
+                        themeMode === "dark"
                           ? "#FFFFFF"
                           : isDark
                           ? "#FFFFFF"
@@ -902,7 +901,7 @@ export default function AdhkarDetailScreen() {
                         styles.themeOptionText,
                         {
                           color:
-                            selectedTheme === "dark"
+                            themeMode === "dark"
                               ? "#FFFFFF"
                               : Colors[colorScheme ?? "light"].text,
                         },
@@ -917,26 +916,26 @@ export default function AdhkarDetailScreen() {
                       styles.themeOption,
                       {
                         backgroundColor:
-                          selectedTheme === "auto"
+                          themeMode === "auto"
                             ? "#3B82F6"
                             : isDark
                             ? "#2C2C2E"
                             : "#F2F2F7",
                         borderColor:
-                          selectedTheme === "auto"
+                          themeMode === "auto"
                             ? "#3B82F6"
                             : isDark
                             ? "#3A3A3C"
                             : "#E5E5EA",
                       },
                     ]}
-                    onPress={() => setSelectedTheme("auto")}
+                    onPress={() => setThemeMode("auto")}
                   >
                     <IconSymbol
                       name="sparkles"
                       size={20}
                       color={
-                        selectedTheme === "auto"
+                        themeMode === "auto"
                           ? "#FFFFFF"
                           : isDark
                           ? "#FFFFFF"
@@ -948,7 +947,7 @@ export default function AdhkarDetailScreen() {
                         styles.themeOptionText,
                         {
                           color:
-                            selectedTheme === "auto"
+                            themeMode === "auto"
                               ? "#FFFFFF"
                               : Colors[colorScheme ?? "light"].text,
                         },
@@ -1096,7 +1095,7 @@ export default function AdhkarDetailScreen() {
                   >
                     {/* Title and Counter */}
                     <View style={styles.titleSection}>
-                      <View style={styles.header}>
+                      <View style={styles.contentHeader}>
                         <Text
                           style={[
                             styles.categoryTitle,
@@ -1113,16 +1112,6 @@ export default function AdhkarDetailScreen() {
                         >
                           {displayItem.Adhkar}
                         </ThemedText>
-                        <View
-                          style={[
-                            styles.countBadge,
-                            { backgroundColor: isDark ? "#1E40AF" : "#3B82F6" },
-                          ]}
-                        >
-                          <Text style={styles.countText}>
-                            {index + 1} of {totalCount}
-                          </Text>
-                        </View>
                       </View>
 
                       {/* Group Indicator - only show when viewing this adhkar and it's grouped */}
@@ -1677,7 +1666,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingBottom: 12,
+    gap: 8,
+  },
+  contentHeader: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
   },
   headerButton: {
     padding: 8,
@@ -1690,19 +1684,27 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     flex: 1,
     textAlign: "center",
+    marginHorizontal: 12,
   },
   categoryTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: "#64748B",
-    textAlign: "center",
-    marginBottom: 8,
+    textAlign: "left",
+    marginBottom: 4,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0C4A6E",
+    textAlign: "left",
+    lineHeight: 32,
   },
   progressContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 8,
   },
   progressBar: {
@@ -1729,12 +1731,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 120,
     flexGrow: 1,
   },
   titleSection: {
-    marginBottom: 20,
+    marginBottom: 16,
+    marginTop: 0,
+    gap: 8,
   },
   badgeRow: {
     flexDirection: "row",

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Subhanify",
     "slug": "subhanify-react",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "Your companion for Islamic prayers, adhkar, and spiritual reminders. Never miss your daily remembrance with location-based notifications and prayer time tracking.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -20,14 +20,15 @@
         "NSMotionUsageDescription": "Subhanify uses motion data to detect when you're traveling for travel-specific adhkar, and to avoid sending notifications while you're driving for safety. Motion data is processed locally and never shared.",
         "UIBackgroundModes": [
           "location"
-        ]
+        ],
+        "GMSPlacesAPIKey": "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8"
       },
       "config": {
         "googleMapsApiKey": "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8"
       }
     },
     "android": {
-      "versionCode": 2,
+      "versionCode": 10,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -95,7 +96,9 @@
     "extra": {
       "eas": {
         "projectId": "1298b47e-e2ba-46f8-afa9-70caf85dc5b7"
-      }
+      },
+      "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8",
+      "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8"
     }
   }
 }

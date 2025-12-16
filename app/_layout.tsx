@@ -12,6 +12,7 @@ import "react-native-reanimated";
 
 import { FontProvider } from "@/contexts/FontContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
+import { requestPrayerNotificationPermissions } from "@/services/prayer-time-notifications";
 import { RainAlertNotificationHandler } from "@/services/rain-alert-notification-handler";
 import { preloadCriticalImages } from "@/utils/image-preloader";
 
@@ -30,6 +31,7 @@ function RootNavigator() {
   const screenOptions = {
     headerShown: false,
     contentStyle: { backgroundColor },
+    sceneContainerStyle: { backgroundColor },
   };
 
   return (
@@ -105,8 +107,22 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, imagesLoaded]);
 
+  // Initialize rain alerts
   useEffect(() => {
     RainAlertNotificationHandler.initialize();
+  }, []);
+
+  // Request notification permissions on app startup
+  useEffect(() => {
+    const requestPermissions = async () => {
+      try {
+        await requestPrayerNotificationPermissions();
+      } catch (error) {
+        console.warn("Failed to request notification permissions:", error);
+      }
+    };
+
+    requestPermissions();
   }, []);
 
   // Show nothing until both fonts and images are loaded
