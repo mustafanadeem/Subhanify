@@ -61,11 +61,21 @@ export default function HomeScreen() {
   const [duasCategories, setDuasCategories] = useState<CategorySummary[]>([]);
 
   useEffect(() => {
-    loadPrayerData();
-    loadStreakData();
-    loadAdhkarProgress();
+    // Load critical data first
     loadAdhkarCategories();
     loadDuasCategories();
+
+    // Load UI immediately, then load other data in background
+    setImmediate(async () => {
+      try {
+        // These can load in background
+        await loadPrayerData();
+        await loadStreakData();
+        await loadAdhkarProgress();
+      } catch (error) {
+        console.error("Error loading background data:", error);
+      }
+    });
   }, []);
 
   // Refresh progress and categories when screen comes into focus
@@ -221,7 +231,9 @@ export default function HomeScreen() {
         <View
           style={[
             styles.header,
-            { backgroundColor: Colors[colorScheme ?? "light"].headerBackground },
+            {
+              backgroundColor: Colors[colorScheme ?? "light"].headerBackground,
+            },
           ]}
         >
           <Text
@@ -356,8 +368,7 @@ export default function HomeScreen() {
               // Determine if this card should be highlighted
               // @ts-ignore - TypeScript incorrectly infers literal types here
               const isHighlighted =
-                currentPeriod !== "none" &&
-                category.category === currentPeriod;
+                currentPeriod !== "none" && category.category === currentPeriod;
 
               // Determine category type for gradient
               const categoryType =

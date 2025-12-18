@@ -105,65 +105,73 @@ export default function LocationsScreen() {
     try {
       setIsLoading(true);
 
+      // Critical: Initialize database first
       await initDatabase();
       setIsInitialized(true);
 
-      try {
-        console.log("Checking location permissions...");
-        const foregroundPerm =
-          await Location.requestForegroundPermissionsAsync();
-
-        if (foregroundPerm.status !== "granted") {
-          console.warn("Location permissions not granted");
-          Alert.alert(
-            "Location Permission Required",
-            "This app needs location access to show your current position and add location-based adhkar reminders.",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Try Again", onPress: () => initialize() },
-            ]
-          );
-          setIsLoading(false);
-          return;
-        }
-
-        setPermissionsGranted(true);
-        console.log("Location permissions granted");
-
-        console.log("Attempting to get current location...");
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-
-        if (location) {
-          console.log("Location retrieved successfully");
-          setCurrentLocation(location);
-          setMapRegion({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          });
-        }
-
-        const status = await getGeofencingStatus();
-        setGeofencingActive(status.isMonitoring);
-      } catch (permError: any) {
-        console.error("Location error:", permError);
-        Alert.alert(
-          "Location Error",
-          "Could not access location. Please ensure location services are enabled in your device settings."
-        );
-      }
-
+      // Critical: Load locations immediately
       await loadLocations();
-      await loadMosquesData();
-      await updateNearbyMosques();
+      setIsLoading(false); // Show UI with locations list
+
+      // Non-critical: Load everything else in background
+      // This allows the locations screen to display instantly
+      deferBackgroundTasks();
     } catch (error) {
       console.error("Error initializing locations screen:", error);
       Alert.alert("Error", "Failed to initialize location services");
-    } finally {
       setIsLoading(false);
+    }
+  };
+
+  const deferBackgroundTasks = async () => {
+    // Give the UI time to render first
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    try {
+      console.log("Checking location permissions...");
+      const foregroundPerm = await Location.requestForegroundPermissionsAsync();
+
+      if (foregroundPerm.status !== "granted") {
+        console.warn("Location permissions not granted");
+        Alert.alert(
+          "Location Permission Required",
+          "This app needs location access to show your current position and add location-based adhkar reminders.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Try Again", onPress: () => initialize() },
+          ]
+        );
+        return;
+      }
+
+      setPermissionsGranted(true);
+      console.log("Location permissions granted");
+
+      console.log("Attempting to get current location...");
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      if (location) {
+        console.log("Location retrieved successfully");
+        setCurrentLocation(location);
+        setMapRegion({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
+      }
+
+      const status = await getGeofencingStatus();
+      setGeofencingActive(status.isMonitoring);
+
+      // Load mosques and update nearby mosques
+      await loadMosquesData();
+      await updateNearbyMosques();
+    } catch (permError: any) {
+      console.error("Location error:", permError);
+      // Don't show alert for background errors - they're non-critical
     }
   };
 

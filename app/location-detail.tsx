@@ -82,7 +82,8 @@ export default function LocationDetailScreen() {
   const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
   const [isMapDragging, setIsMapDragging] = useState(false);
   const [hasInteractedWithMap, setHasInteractedWithMap] = useState(false);
-  const [selectedFromAutocomplete, setSelectedFromAutocomplete] = useState(false);
+  const [selectedFromAutocomplete, setSelectedFromAutocomplete] =
+    useState(false);
   const pinBounceAnim = useRef(new Animated.Value(0)).current;
 
   const allDuas = duasData as Dua[];
@@ -181,7 +182,9 @@ export default function LocationDetailScreen() {
     setLongitude(place.longitude);
     setHasSelectedLocation(true);
     setSelectedFromAutocomplete(true);
-    console.log("[LocationDetail] ✅ All states updated, address card should show");
+    console.log(
+      "[LocationDetail] ✅ All states updated, address card should show"
+    );
   };
 
   // Handle map region changes (dragging)
@@ -424,8 +427,7 @@ export default function LocationDetailScreen() {
                     style={[
                       styles.addressCardText,
                       {
-                        color:
-                          colorScheme === "dark" ? "#A5D6A7" : "#1B5E20",
+                        color: colorScheme === "dark" ? "#A5D6A7" : "#1B5E20",
                         marginLeft: 30,
                         lineHeight: 24,
                       },
@@ -438,8 +440,7 @@ export default function LocationDetailScreen() {
                     style={[
                       styles.coordinatesText,
                       {
-                        color:
-                          colorScheme === "dark" ? "#7CB342" : "#558B2F",
+                        color: colorScheme === "dark" ? "#7CB342" : "#558B2F",
                         marginLeft: 30,
                         marginTop: 8,
                       },
@@ -453,8 +454,7 @@ export default function LocationDetailScreen() {
                         marginLeft: 30,
                         marginTop: 10,
                         fontSize: 13,
-                        color:
-                          colorScheme === "dark" ? "#7CB342" : "#558B2F",
+                        color: colorScheme === "dark" ? "#7CB342" : "#558B2F",
                         fontWeight: "500",
                       },
                     ]}

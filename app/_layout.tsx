@@ -83,19 +83,27 @@ export default function RootLayout() {
 
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
-  // Load images and wait for completion before showing app
+  // Load images in background (don't block app startup)
   useEffect(() => {
+    // Set images as loaded immediately to show app faster
+    setImagesLoaded(true);
+
+    // Preload images in the background without blocking
     const loadImages = async () => {
       try {
         await preloadCriticalImages();
-        setImagesLoaded(true);
+        console.log("✓ Background image preload complete");
       } catch (error) {
-        console.warn("Error loading images:", error);
-        setImagesLoaded(true); // Show app even if images fail
+        console.warn("Error loading images in background:", error);
       }
     };
 
-    loadImages();
+    // Start background loading after a small delay
+    const timer = setTimeout(() => {
+      loadImages();
+    }, 1000); // 1 second after app is visible
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Only hide splash screen when BOTH fonts and images are loaded
@@ -112,9 +120,12 @@ export default function RootLayout() {
     RainAlertNotificationHandler.initialize();
   }, []);
 
-  // Request notification permissions on app startup
+  // Request notification permissions in background (don't block startup)
   useEffect(() => {
     const requestPermissions = async () => {
+      // Delay permission request to after app is visible
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       try {
         await requestPrayerNotificationPermissions();
       } catch (error) {
@@ -122,7 +133,12 @@ export default function RootLayout() {
       }
     };
 
-    requestPermissions();
+    // Start background permission request
+    const timer = setTimeout(() => {
+      requestPermissions();
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Show nothing until both fonts and images are loaded

@@ -3,12 +3,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  FlatList,
   Keyboard,
-  ScrollView,
+  Modal,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
   ViewStyle,
 } from "react-native";
@@ -255,7 +257,10 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   const [isGettingDetails, setIsGettingDetails] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const apiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+  const inputRef = useRef<TextInput>(null);
+  const isPressingRef = useRef(false);
 
+  // Get search results from Google Places API
   const { results, isLoading, error } = useGooglePlacesSearch(searchText);
 
   const isDark = theme === "dark";
@@ -295,24 +300,22 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   }, [showSuggestions, results.length]);
 
   // Show suggestions when we have results and input is focused
-  // BUT keep them visible for a bit after blur to allow tap
   useEffect(() => {
-    if (results.length > 0 && isFocused) {
+    if (results.length > 0 && isFocused && !isGettingDetails) {
+      console.log("[PlaceAutocomplete] Showing suggestions");
       setShowSuggestions(true);
       onSuggestionsVisibilityChange?.(true);
-    } else if (!isFocused && results.length > 0) {
-      // Don't hide immediately - the blur delay will handle this
-      // This allows the tap to register before hiding
-      const timer = setTimeout(() => {
-        setShowSuggestions(false);
-        onSuggestionsVisibilityChange?.(false);
-      }, 600); // Slightly longer than blur delay
-      return () => clearTimeout(timer);
     } else {
+      console.log("[PlaceAutocomplete] Hiding suggestions");
       setShowSuggestions(false);
       onSuggestionsVisibilityChange?.(false);
     }
-  }, [results.length, isFocused, onSuggestionsVisibilityChange]);
+  }, [
+    results.length,
+    isFocused,
+    isGettingDetails,
+    onSuggestionsVisibilityChange,
+  ]);
 
   const handleTextChange = useCallback((text: string) => {
     setSearchText(text);
@@ -320,34 +323,37 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
 
   const handleSuggestionPress = useCallback(
     async (prediction: GooglePlacePrediction) => {
-      console.log("[PlaceAutocomplete] ✓ handleSuggestionPress FIRED");
+      console.log("[PlaceAutocomplete] ✅ handleSuggestionPress FIRED");
       console.log("[PlaceAutocomplete] prediction:", {
         place_id: prediction.place_id,
-        main_text: prediction.main_text,
-        secondary_text: prediction.secondary_text,
         description: prediction.description,
       });
 
-      // Use full description (formatted address) instead of just main_text
-      console.log(
-        "[PlaceAutocomplete] Setting search text to:",
-        prediction.description
-      );
-      setSearchText(prediction.description);
-      setShowSuggestions(false);
-      Keyboard.dismiss();
+      // Mark that we're pressing a suggestion (prevent blur from hiding it)
+      isPressingRef.current = true;
 
+      // Immediately hide suggestions
+      setShowSuggestions(false);
+      onSuggestionsVisibilityChange?.(false);
+
+      // Update search text
+      setSearchText(prediction.description);
       setIsGettingDetails(true);
+
+      // Dismiss keyboard
+      Keyboard.dismiss();
 
       // Get detailed coordinates from Google Places Details API
       if (!apiKey) {
         console.error("API key not available");
         setIsGettingDetails(false);
+        isPressingRef.current = false;
         return;
       }
 
       const coordinates = await getPlaceDetails(prediction.place_id, apiKey);
       setIsGettingDetails(false);
+      isPressingRef.current = false;
 
       if (coordinates) {
         const selection: PlaceSelection = {
@@ -362,13 +368,21 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
         console.warn("Could not get coordinates for selected place");
       }
     },
-    [apiKey, onSelect]
+    [apiKey, onSelect, onSuggestionsVisibilityChange]
   );
 
   const handleClear = useCallback(() => {
     setSearchText("");
     setShowSuggestions(false);
   }, []);
+
+  const handleSuggestionItemPress = useCallback(
+    async (prediction: GooglePlacePrediction) => {
+      console.log("[PlaceAutocomplete] ✅ Suggestion item tapped:", prediction.description);
+      await handleSuggestionPress(prediction);
+    },
+    [handleSuggestionPress]
+  );
 
   const colors = {
     background: isDark ? "#1C1C1E" : "#FFFFFF",
@@ -397,6 +411,7 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
           style={styles.icon}
         />
         <TextInput
+          ref={inputRef}
           style={[
             styles.input,
             {
@@ -408,9 +423,22 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
           value={searchText}
           onChangeText={handleTextChange}
           onFocus={() => {
+            console.log("[PlaceAutocomplete] Input focused");
             setIsFocused(true);
           }}
           onBlur={() => {
+            console.log(
+              "[PlaceAutocomplete] Input blurred, isPressingRef:",
+              isPressingRef.current
+            );
+            // If we're pressing a suggestion, don't lose focus yet
+            if (isPressingRef.current) {
+              console.log(
+                "[PlaceAutocomplete] Skipping blur - currently pressing suggestion"
+              );
+              return;
+            }
+            // Otherwise, set unfocused
             setIsFocused(false);
           }}
           editable={!isGettingDetails}
@@ -436,94 +464,97 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
         )}
       </View>
 
-      {/* Suggestions Dropdown */}
-      {showSuggestions && (isLoading || results.length > 0) && (
-        <View
-          style={[
-            styles.suggestionsContainer,
-            {
-              backgroundColor: colors.suggestion,
-            },
-          ]}
+      {/* Modal Overlay for Suggestions */}
+      <Modal
+        visible={showSuggestions && (isLoading || results.length > 0)}
+        transparent={true}
+        animationType="none"
+        onRequestClose={() => {
+          setShowSuggestions(false);
+          setIsFocused(false);
+        }}
+      >
+        <TouchableWithoutFeedback
+          onPress={() => {
+            console.log("[PlaceAutocomplete] Overlay pressed");
+            setShowSuggestions(false);
+            setIsFocused(false);
+          }}
         >
-          {isLoading ? (
-            <View
-              style={{
-                paddingVertical: 20,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ActivityIndicator size="small" color={colors.text} />
-              <Text
-                style={{
-                  marginTop: 8,
-                  fontSize: 14,
-                  color: colors.placeholder,
-                }}
-              >
-                Loading suggestions...
-              </Text>
-            </View>
-          ) : (
-            <ScrollView
-              scrollEnabled={results.length > 4}
-              style={styles.suggestionsList}
-            >
-              {results.map((result, index) => (
-                <TouchableOpacity
-                  key={result.place_id}
-                  onPress={() => handleSuggestionPress(result)}
-                  style={[
-                    styles.suggestionItem,
-                    {
-                      borderBottomColor: colors.border,
-                      borderBottomWidth: index < results.length - 1 ? 1 : 0,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={16}
-                    color={colors.placeholder}
-                    style={styles.suggestionIcon}
-                  />
-                  <View style={styles.suggestionText}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dropdownWrapper}>
+                {isLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color={colors.text} />
                     <Text
                       style={[
-                        styles.mainText,
-                        {
-                          color: colors.text,
-                        },
+                        styles.loadingText,
+                        { color: colors.placeholder },
                       ]}
-                      numberOfLines={1}
                     >
-                      {result.structured_formatting?.main_text ||
-                        result.main_text ||
-                        result.description}
+                      Loading suggestions...
                     </Text>
-                    {(result.structured_formatting?.secondary_text ||
-                      result.secondary_text) && (
-                      <Text
+                  </View>
+                ) : (
+                  <FlatList
+                    data={results}
+                    keyExtractor={(item) => item.place_id}
+                    scrollEnabled={true}
+                    nestedScrollEnabled={true}
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item, index }) => (
+                      <TouchableOpacity
+                        onPress={() => handleSuggestionItemPress(item)}
+                        activeOpacity={0.7}
                         style={[
-                          styles.secondaryText,
+                          styles.suggestionItem,
                           {
-                            color: colors.placeholder,
+                            borderBottomColor: colors.border,
+                            borderBottomWidth:
+                              index < results.length - 1 ? 1 : 0,
+                            backgroundColor: colors.suggestion,
                           },
                         ]}
-                        numberOfLines={1}
                       >
-                        {result.structured_formatting?.secondary_text ||
-                          result.secondary_text}
-                      </Text>
+                        <Ionicons
+                          name="location-outline"
+                          size={16}
+                          color={colors.placeholder}
+                          style={styles.suggestionIcon}
+                        />
+                        <View style={styles.suggestionText}>
+                          <Text
+                            style={[styles.mainText, { color: colors.text }]}
+                            numberOfLines={1}
+                          >
+                            {item.structured_formatting?.main_text ||
+                              item.main_text ||
+                              item.description}
+                          </Text>
+                          {(item.structured_formatting?.secondary_text ||
+                            item.secondary_text) && (
+                            <Text
+                              style={[
+                                styles.secondaryText,
+                                { color: colors.placeholder },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {item.structured_formatting?.secondary_text ||
+                                item.secondary_text}
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
                     )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-      )}
+                  />
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       {/* Error Message */}
       {error && !isLoading && (
@@ -567,20 +598,50 @@ const styles = StyleSheet.create({
   loader: {
     marginLeft: 4,
   },
-  suggestionsContainer: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    justifyContent: "flex-start",
+  },
+  dropdownWrapper: {
+    maxHeight: 350,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 8,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 20,
+  },
+  suggestionsDropdown: {
     borderRadius: 8,
     maxHeight: 300,
     overflow: "hidden",
     backgroundColor: "#fff",
+    marginTop: 4,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 10,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 15,
+    zIndex: 9999,
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
     marginTop: 8,
+    fontSize: 14,
   },
   suggestionsList: {
     maxHeight: 300,
