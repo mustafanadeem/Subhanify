@@ -12,6 +12,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { GOOGLE_PLACES_API_KEY } from "@/constants/api-keys";
 
 // Google Places API response types
 interface GooglePlacePrediction {
@@ -79,25 +80,14 @@ const useGooglePlacesSearch = (query: string, delay: number = 300) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Try both API key env vars
-  const apiKey =
-    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-    process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
   // Log on mount to verify key is available
   useEffect(() => {
-    if (!apiKey) {
+    if (!GOOGLE_PLACES_API_KEY) {
       console.warn("[useGooglePlacesSearch] No API key found!");
-      console.log(
-        "[useGooglePlacesSearch] EXPO_PUBLIC_GOOGLE_MAPS_API_KEY:",
-        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ? "✓ set" : "✗ not set"
-      );
-      console.log(
-        "[useGooglePlacesSearch] EXPO_PUBLIC_GOOGLE_PLACES_API_KEY:",
-        process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ? "✓ set" : "✗ not set"
-      );
+      console.log("[useGooglePlacesSearch] GOOGLE_PLACES_API_KEY:", GOOGLE_PLACES_API_KEY);
     }
-  }, [apiKey]);
+  }, [GOOGLE_PLACES_API_KEY]);
 
   useEffect(() => {
     // Clear previous timeout
@@ -112,7 +102,7 @@ const useGooglePlacesSearch = (query: string, delay: number = 300) => {
       return;
     }
 
-    if (!apiKey) {
+    if (!GOOGLE_PLACES_API_KEY) {
       setError("Google Places API key not configured");
       setIsLoading(false);
       return;
@@ -127,7 +117,7 @@ const useGooglePlacesSearch = (query: string, delay: number = 300) => {
         const url =
           `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
           `input=${encodeURIComponent(query)}` +
-          `&key=${apiKey}` +
+          `&key=${GOOGLE_PLACES_API_KEY}` +
           `&components=country:uk` +
           `&language=en` +
           `&sessiontoken=${Date.now()}`;
@@ -202,7 +192,7 @@ const useGooglePlacesSearch = (query: string, delay: number = 300) => {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [query, delay, apiKey]);
+  }, [query, delay, GOOGLE_PLACES_API_KEY]);
 
   return { results, isLoading, error };
 };
@@ -211,28 +201,33 @@ const useGooglePlacesSearch = (query: string, delay: number = 300) => {
  * Get detailed coordinates for a place using Google Place Details API
  */
 const getPlaceDetails = async (
-  placeId: string,
-  apiKey: string
+  placeId: string
 ): Promise<{ lat: number; lng: number } | null> => {
   try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?` +
-        `place_id=${placeId}` +
-        `&fields=geometry` +
-        `&key=${apiKey}`
-    );
+    console.log("[getPlaceDetails] Fetching details for place:", placeId);
+    console.log("[getPlaceDetails] Using API key:", GOOGLE_PLACES_API_KEY?.substring(0, 20) + "...");
+    
+    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=${GOOGLE_PLACES_API_KEY}`;
+    console.log("[getPlaceDetails] URL:", url.substring(0, 100) + "...");
+    
+    const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error("Failed to get place details");
+      throw new Error(`Failed to get place details: ${response.status}`);
     }
 
     const data: GooglePlaceDetailsResponse = await response.json();
+    console.log("[getPlaceDetails] Response status:", data.status);
 
-    if (data.status === "OK" && data.result.geometry) {
-      return {
+    if (data.status === "OK" && data.result?.geometry?.location) {
+      const coords = {
         lat: data.result.geometry.location.lat,
         lng: data.result.geometry.location.lng,
       };
+      console.log("[getPlaceDetails] ✓ Got coordinates:", coords);
+      return coords;
+    } else {
+      console.error("[getPlaceDetails] Bad response status or missing geometry:", data.status);
     }
     return null;
   } catch (err) {
@@ -254,7 +249,6 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [isGettingDetails, setIsGettingDetails] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const apiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
   const { results, isLoading, error } = useGooglePlacesSearch(searchText);
 
@@ -294,25 +288,23 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
     }
   }, [showSuggestions, results.length]);
 
-  // Show suggestions when we have results and input is focused
-  // BUT keep them visible for a bit after blur to allow tap
+  // Show suggestions when we have results
   useEffect(() => {
-    if (results.length > 0 && isFocused) {
+    if (results.length > 0) {
+      console.log("[PlaceAutocomplete] Have results - SHOW suggestions");
       setShowSuggestions(true);
       onSuggestionsVisibilityChange?.(true);
-    } else if (!isFocused && results.length > 0) {
-      // Don't hide immediately - the blur delay will handle this
-      // This allows the tap to register before hiding
-      const timer = setTimeout(() => {
-        setShowSuggestions(false);
-        onSuggestionsVisibilityChange?.(false);
-      }, 600); // Slightly longer than blur delay
-      return () => clearTimeout(timer);
-    } else {
+    }
+  }, [results.length, onSuggestionsVisibilityChange]);
+
+  // Hide suggestions only when results are cleared (new search, clear button, etc)
+  useEffect(() => {
+    if (results.length === 0 && showSuggestions) {
+      console.log("[PlaceAutocomplete] No results - HIDE suggestions");
       setShowSuggestions(false);
       onSuggestionsVisibilityChange?.(false);
     }
-  }, [results.length, isFocused, onSuggestionsVisibilityChange]);
+  }, [results.length, showSuggestions, onSuggestionsVisibilityChange]);
 
   const handleTextChange = useCallback((text: string) => {
     setSearchText(text);
@@ -320,49 +312,44 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
 
   const handleSuggestionPress = useCallback(
     async (prediction: GooglePlacePrediction) => {
-      console.log("[PlaceAutocomplete] ✓ handleSuggestionPress FIRED");
+      console.log("[PlaceAutocomplete] ✓✓✓ handleSuggestionPress FIRED");
       console.log("[PlaceAutocomplete] prediction:", {
         place_id: prediction.place_id,
-        main_text: prediction.main_text,
-        secondary_text: prediction.secondary_text,
         description: prediction.description,
       });
 
-      // Use full description (formatted address) instead of just main_text
-      console.log(
-        "[PlaceAutocomplete] Setting search text to:",
-        prediction.description
-      );
-      setSearchText(prediction.description);
-      setShowSuggestions(false);
-      Keyboard.dismiss();
+      try {
+        // Dismiss keyboard FIRST (before any state changes)
+        Keyboard.dismiss();
+        
+        // Use full description (formatted address) instead of just main_text
+        setSearchText(prediction.description);
+        setShowSuggestions(false);
 
-      setIsGettingDetails(true);
-
-      // Get detailed coordinates from Google Places Details API
-      if (!apiKey) {
-        console.error("API key not available");
+        setIsGettingDetails(true);
+        console.log("[PlaceAutocomplete] Calling getPlaceDetails...");
+        
+        const coordinates = await getPlaceDetails(prediction.place_id);
         setIsGettingDetails(false);
-        return;
-      }
 
-      const coordinates = await getPlaceDetails(prediction.place_id, apiKey);
-      setIsGettingDetails(false);
-
-      if (coordinates) {
-        const selection: PlaceSelection = {
-          label: prediction.description,
-          latitude: coordinates.lat,
-          longitude: coordinates.lng,
-          raw: prediction,
-        };
-        console.log("[PlaceAutocomplete] Calling onSelect with:", selection);
-        onSelect(selection);
-      } else {
-        console.warn("Could not get coordinates for selected place");
+        if (coordinates) {
+          const selection: PlaceSelection = {
+            label: prediction.description,
+            latitude: coordinates.lat,
+            longitude: coordinates.lng,
+            raw: prediction,
+          };
+          console.log("[PlaceAutocomplete] ✓ Calling onSelect with:", selection);
+          onSelect(selection);
+        } else {
+          console.warn("[PlaceAutocomplete] ⚠️ Could not get coordinates for selected place");
+        }
+      } catch (error) {
+        console.error("[PlaceAutocomplete] ERROR in handleSuggestionPress:", error);
+        setIsGettingDetails(false);
       }
     },
-    [apiKey, onSelect]
+    [onSelect]
   );
 
   const handleClear = useCallback(() => {
@@ -468,12 +455,19 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
           ) : (
             <ScrollView
               scrollEnabled={results.length > 4}
+              keyboardShouldPersistTaps="handled"
               style={styles.suggestionsList}
             >
-              {results.map((result, index) => (
+              {results.map((result, index) => {
+                console.log(`[PlaceAutocomplete] Rendering suggestion ${index}:`, result.description);
+                return (
                 <TouchableOpacity
                   key={result.place_id}
-                  onPress={() => handleSuggestionPress(result)}
+                  activeOpacity={0.6}
+                  onPress={() => {
+                    console.log(`[PlaceAutocomplete] TouchableOpacity pressed for: ${result.description}`);
+                    handleSuggestionPress(result);
+                  }}
                   style={[
                     styles.suggestionItem,
                     {
@@ -519,7 +513,8 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
                     )}
                   </View>
                 </TouchableOpacity>
-              ))}
+              );
+              })}
             </ScrollView>
           )}
         </View>

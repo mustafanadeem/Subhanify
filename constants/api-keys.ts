@@ -15,8 +15,8 @@
  * - Enable only required APIs (Maps SDK, Places API)
  */
 
-export const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || "";
-export const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+export const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8";
+export const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8";
 
 // Validation: Warn if API keys are missing
 if (!GOOGLE_PLACES_API_KEY || !GOOGLE_MAPS_API_KEY) {

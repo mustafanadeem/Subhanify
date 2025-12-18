@@ -181,6 +181,8 @@ export default function LocationDetailScreen() {
     setLongitude(place.longitude);
     setHasSelectedLocation(true);
     setSelectedFromAutocomplete(true);
+    // Automatically open map modal for fine-tuning, same as "Locate on Map"
+    setShowMapModal(true);
     console.log("[LocationDetail] ✅ All states updated, address card should show");
   };
 
@@ -373,6 +375,7 @@ export default function LocationDetailScreen() {
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
           scrollEnabled={!suggestionsVisible}
+          keyboardShouldPersistTaps="handled"
         >
           {/* STEP 1: Location & Category Selection */}
           {step === 1 && mode === "add" && (
@@ -385,84 +388,6 @@ export default function LocationDetailScreen() {
                 initialValue={name}
                 onSuggestionsVisibilityChange={setSuggestionsVisible}
               />
-
-              {/* Selected Address Display */}
-              {selectedFromAutocomplete && latitude && longitude && (
-                <View
-                  style={[
-                    styles.selectedAddressCard,
-                    {
-                      backgroundColor:
-                        colorScheme === "dark" ? "#1B4D2B" : "#E8F5E9",
-                      borderColor: "#4CAF50",
-                      borderLeftWidth: 4,
-                      borderLeftColor: "#4CAF50",
-                    },
-                  ]}
-                >
-                  <View style={styles.addressCardHeader}>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={22}
-                      color="#4CAF50"
-                      style={styles.checkmarkIcon}
-                    />
-                    <Text
-                      style={[
-                        styles.addressCardTitle,
-                        {
-                          color: colorScheme === "dark" ? "#81C784" : "#2E7D32",
-                          fontSize: 15,
-                          fontWeight: "700",
-                        },
-                      ]}
-                    >
-                      ✓ Location Selected
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      styles.addressCardText,
-                      {
-                        color:
-                          colorScheme === "dark" ? "#A5D6A7" : "#1B5E20",
-                        marginLeft: 30,
-                        lineHeight: 24,
-                      },
-                    ]}
-                    numberOfLines={3}
-                  >
-                    {name}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.coordinatesText,
-                      {
-                        color:
-                          colorScheme === "dark" ? "#7CB342" : "#558B2F",
-                        marginLeft: 30,
-                        marginTop: 8,
-                      },
-                    ]}
-                  >
-                    {`📍 ${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
-                  </Text>
-                  <Text
-                    style={[
-                      {
-                        marginLeft: 30,
-                        marginTop: 10,
-                        fontSize: 13,
-                        color:
-                          colorScheme === "dark" ? "#7CB342" : "#558B2F",
-                        fontWeight: "500",
-                      },
-                    ]}
-                  >
-                    Now select a category and tap Next →
-                  </Text>
-                </View>
-              )}
 
               {/* Locate on Map Button */}
               <TouchableOpacity
