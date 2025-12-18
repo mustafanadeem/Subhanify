@@ -169,6 +169,17 @@ export default function ProfileScreen() {
           ]}
         >
           <SettingItem
+            title="Levels"
+            icon="star"
+            onPress={() => router.push("/level-settings")}
+          />
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: Colors[colorScheme ?? "light"].textSecondary },
+            ]}
+          />
+          <SettingItem
             title="Prayer Settings"
             icon="moon"
             onPress={() => router.push("/prayer-settings")}

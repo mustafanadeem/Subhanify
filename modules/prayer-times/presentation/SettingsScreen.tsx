@@ -27,6 +27,9 @@ export default function SettingsScreen() {
   const isDark = cs === "dark";
   const router = useRouter();
 
+  // DEBUG: Log to verify Levels item exists
+  console.log('[SettingsScreen] Rendering with appExperienceSettings count');
+
   const handleRateApp = () => {
     Alert.alert("Rate App", "Would you like to rate our app?", [
       { text: "Cancel", style: "cancel" },
@@ -59,12 +62,6 @@ export default function SettingsScreen() {
       route: "/appearance-settings",
     },
     {
-      id: "levels",
-      title: "Levels",
-      icon: "star",
-      route: "/level-settings",
-    },
-    {
       id: "rain-alerts",
       title: "Rain Alerts",
       icon: "rainy",
@@ -73,6 +70,12 @@ export default function SettingsScreen() {
   ];
 
   const appExperienceSettings: SettingItem[] = [
+    {
+      id: "levels",
+      title: "Levels",
+      icon: "star",
+      route: "/level-settings",
+    },
     {
       id: "prayer-settings",
       title: "Prayer Settings",
@@ -94,6 +97,9 @@ export default function SettingsScreen() {
       },
     },
   ];
+
+  // DEBUG
+  console.log('[SettingsScreen] appExperienceSettings:', appExperienceSettings.map(s => s.title));
 
   const supportSettings: SettingItem[] = [
     {

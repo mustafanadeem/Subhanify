@@ -11,7 +11,7 @@
  * 5. Restrict the key to your app's package name for security
  */
 
-export const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || "YOUR_API_KEY_HERE";
+export const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || "AIzaSyD3StMBIHSDntU1u9BACImccFJuUC2TMr8";
 
 // Alternative: Use a proxy server to keep API key secure
 // export const PLACES_API_ENDPOINT = "https://your-backend.com/api/places";

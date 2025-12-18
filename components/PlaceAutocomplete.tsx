@@ -12,34 +12,32 @@ import {
     View,
     ViewStyle,
 } from "react-native";
+import { GOOGLE_PLACES_API_KEY } from "@/constants/api-keys";
 
-// Nominatim API response types
-interface NominatimAddress {
-  road?: string;
-  house_number?: string;
-  city?: string;
-  town?: string;
-  village?: string;
-  postcode?: string;
-  country?: string;
-  state?: string;
+// Google Places API response types
+interface GooglePlacesPrediction {
+  place_id: string;
+  main_text: string;
+  secondary_text?: string;
+  description: string;
 }
 
-interface NominatimResult {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-  address?: NominatimAddress;
-  type: string;
-  importance: number;
+interface GooglePlacesDetails {
+  name: string;
+  formatted_address: string;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
 }
 
 export interface PlaceSelection {
   label: string;
   latitude: number;
   longitude: number;
-  raw: NominatimResult;
+  raw: GooglePlacesDetails;
 }
 
 interface PlaceAutocompleteProps {
@@ -52,10 +50,10 @@ interface PlaceAutocompleteProps {
 }
 
 /**
- * Custom hook for Nominatim geocoding with debouncing
+ * Custom hook for Google Places Autocomplete with debouncing
  */
-const useNominatimSearch = (query: string, delay: number = 300) => {
-  const [results, setResults] = useState<NominatimResult[]>([]);
+const useGooglePlacesSearch = (query: string, delay: number = 300) => {
+  const [results, setResults] = useState<GooglePlacesPrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -80,15 +78,12 @@ const useNominatimSearch = (query: string, delay: number = 300) => {
     timeoutRef.current = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-            `q=${encodeURIComponent(query)}` +
-            `&format=json` +
-            `&addressdetails=1` +
-            `&limit=5`,
+          `https://maps.googleapis.com/maps/api/place/autocomplete/json?` +
+            `input=${encodeURIComponent(query)}` +
+            `&key=${GOOGLE_PLACES_API_KEY}` +
+            `&components=country:gb`,
           {
-            headers: {
-              "User-Agent": "SubhanifyApp/1.0", // Required by Nominatim policy
-            },
+            method: "GET",
           }
         );
 
@@ -96,12 +91,25 @@ const useNominatimSearch = (query: string, delay: number = 300) => {
           throw new Error("Network response was not ok");
         }
 
-        const data: NominatimResult[] = await response.json();
-        console.log(`[PlaceAutocomplete] Found ${data.length} results for "${query}"`);
-        setResults(data);
-        setError(null);
+        const data = await response.json();
+        
+        if (data.status === "OK" || data.status === "ZERO_RESULTS") {
+          const predictions = data.predictions?.slice(0, 5) || [];
+          console.log(`[PlaceAutocomplete] Found ${predictions.length} results for "${query}"`);
+          setResults(predictions);
+          setError(null);
+        } else if (data.status === "INVALID_REQUEST") {
+          setError("Invalid search");
+          setResults([]);
+        } else if (data.status === "REQUEST_DENIED") {
+          setError("API key issue or service disabled");
+          setResults([]);
+        } else {
+          setError("Failed to fetch suggestions");
+          setResults([]);
+        }
       } catch (err) {
-        console.error("Nominatim search error:", err);
+        console.error("Google Places search error:", err);
         setError("Failed to fetch location suggestions");
         setResults([]);
       } finally {
@@ -121,29 +129,39 @@ const useNominatimSearch = (query: string, delay: number = 300) => {
 };
 
 /**
- * Extract human-readable location info from Nominatim address
+ * Extract text from prediction with fallbacks
  */
-const formatAddress = (result: NominatimResult): { main: string; secondary: string } => {
-  const addr = result.address;
-  
-  // Main text: road name or first part of display_name
-  let main = addr?.road || result.display_name.split(",")[0];
-  if (addr?.house_number) {
-    main = `${addr.house_number} ${main}`;
-  }
-
-  // Secondary text: city, postcode
-  const parts: string[] = [];
-  const city = addr?.city || addr?.town || addr?.village;
-  if (city) parts.push(city);
-  if (addr?.postcode) parts.push(addr.postcode);
-  if (parts.length === 0 && addr?.country) parts.push(addr.country);
-  
-  const secondary = parts.length > 0 
-    ? parts.join(", ")
-    : result.display_name.split(",").slice(1, 3).join(",").trim();
-
+const getPredictionText = (prediction: GooglePlacesPrediction): { main: string; secondary: string } => {
+  const main = prediction.main_text || prediction.description?.split(',')[0] || 'Unknown';
+  const secondary = prediction.secondary_text || prediction.description?.split(',').slice(1).join(',').trim() || '';
   return { main, secondary };
+};
+const fetchPlaceDetails = async (placeId: string): Promise<GooglePlacesDetails | null> => {
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?` +
+        `place_id=${placeId}` +
+        `&key=${GOOGLE_PLACES_API_KEY}` +
+        `&fields=name,formatted_address,geometry`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch place details");
+    }
+
+    const data = await response.json();
+    
+    if (data.status === "OK" && data.result) {
+      console.log('[PlaceAutocomplete] Place details fetched:', data.result.name);
+      return data.result;
+    } else {
+      console.error("Place details error:", data.status);
+      return null;
+    }
+  } catch (err) {
+    console.error("Error fetching place details:", err);
+    return null;
+  }
 };
 
 export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
@@ -157,9 +175,10 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
   const [searchText, setSearchText] = useState(initialValue);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const { results, isLoading, error } = useNominatimSearch(searchText);
+  const { results = [], isLoading, error } = useGooglePlacesSearch(searchText);
 
   const isDark = theme === "dark";
 
@@ -170,7 +189,7 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
 
   // Animate suggestions appearance
   useEffect(() => {
-    if (showSuggestions && results.length > 0) {
+    if (showSuggestions && results && results.length > 0) {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
@@ -183,15 +202,16 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
         useNativeDriver: true,
       }).start();
     }
-  }, [showSuggestions, results.length]);
+  }, [showSuggestions, results?.length]);
 
   // Show suggestions when we have results and input is focused
   // BUT keep them visible for a bit after blur to allow tap
   useEffect(() => {
-    if (results.length > 0 && isFocused) {
+    const resultsLength = results?.length || 0;
+    if (resultsLength > 0 && isFocused) {
       setShowSuggestions(true);
       onSuggestionsVisibilityChange?.(true);
-    } else if (!isFocused && results.length > 0) {
+    } else if (!isFocused && resultsLength > 0) {
       // Don't hide immediately - the blur delay will handle this
       // This allows the tap to register before hiding
       const timer = setTimeout(() => {
@@ -203,29 +223,38 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
       setShowSuggestions(false);
       onSuggestionsVisibilityChange?.(false);
     }
-  }, [results.length, isFocused, onSuggestionsVisibilityChange]);
+  }, [results?.length, isFocused, onSuggestionsVisibilityChange]);
 
   const handleTextChange = useCallback((text: string) => {
     setSearchText(text);
   }, []);
 
   const handleSuggestionPress = useCallback(
-    (result: NominatimResult) => {
-      const { main } = formatAddress(result);
+    async (prediction: GooglePlacesPrediction) => {
+      const { main } = getPredictionText(prediction);
       console.log('[PlaceAutocomplete] Suggestion pressed:', main);
       setSearchText(main);
       setShowSuggestions(false);
       Keyboard.dismiss();
 
-      // Call the parent's onSelect with structured data
-      const selection = {
-        label: main,
-        latitude: parseFloat(result.lat),
-        longitude: parseFloat(result.lon),
-        raw: result,
-      };
-      console.log('[PlaceAutocomplete] Calling onSelect with:', selection);
-      onSelect(selection);
+      // Fetch detailed location info using placeId
+      setIsFetchingDetails(true);
+      const details = await fetchPlaceDetails(prediction.place_id);
+      setIsFetchingDetails(false);
+
+      if (details) {
+        // Call the parent's onSelect with structured data
+        const selection = {
+          label: details.name,
+          latitude: details.geometry.location.lat,
+          longitude: details.geometry.location.lng,
+          raw: details,
+        };
+        console.log('[PlaceAutocomplete] Calling onSelect with:', selection);
+        onSelect(selection);
+      } else {
+        console.error('[PlaceAutocomplete] Failed to fetch place details');
+      }
     },
     [onSelect]
   );
@@ -287,7 +316,7 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
         />
 
         {/* Right side icons: loading spinner or clear button */}
-        {isLoading ? (
+        {isLoading || isFetchingDetails ? (
           <ActivityIndicator
             size="small"
             color="#007AFF"
@@ -306,7 +335,7 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
       )}
 
       {/* Suggestions Dropdown */}
-      {showSuggestions && results.length > 0 && (
+      {showSuggestions && results && results.length > 0 && (
         <Animated.View
           style={[
             styles.suggestionsContainer,
@@ -334,26 +363,26 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
             onMoveShouldSetResponder={() => true}
           >
             {results.map((item, index) => {
-              const { main, secondary } = formatAddress(item);
               return (
                 <TouchableOpacity
-                  key={item.place_id.toString()}
+                  key={item.place_id}
                   style={[
                     styles.suggestionItem,
                     {
                       backgroundColor: colors.suggestionBg,
                       borderBottomColor: colors.border,
-                      borderBottomWidth: index < results.length - 1 ? 0.5 : 0,
+                      borderBottomWidth: index < (results?.length || 0) - 1 ? 0.5 : 0,
                     },
                   ]}
                   onPress={() => {
-                    console.log('[PlaceAutocomplete] TouchableOpacity pressed for:', item.display_name);
+                    const { main } = getPredictionText(item);
+                    console.log('[PlaceAutocomplete] TouchableOpacity pressed for:', main);
                     handleSuggestionPress(item);
                   }}
                   activeOpacity={0.7}
                   accessible={true}
                   accessibilityRole="button"
-                  accessibilityLabel={`Select ${main}`}
+                  accessibilityLabel={`Select ${getPredictionText(item).main}`}
                 >
                   <View style={styles.iconContainer} pointerEvents="none">
                     <Ionicons
@@ -368,13 +397,13 @@ export const PlaceAutocomplete: React.FC<PlaceAutocompleteProps> = ({
                       style={[styles.mainText, { color: colors.text }]}
                       numberOfLines={1}
                     >
-                      {main}
+                      {getPredictionText(item).main}
                     </Text>
                     <Text
                       style={[styles.secondaryText, { color: colors.secondaryText }]}
                       numberOfLines={1}
                     >
-                      {secondary}
+                      {getPredictionText(item).secondary}
                     </Text>
                   </View>
 
@@ -445,8 +474,9 @@ const styles = StyleSheet.create({
   suggestionItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
+    minHeight: 56,
   },
   iconContainer: {
     width: 36,

@@ -993,23 +993,25 @@ export default function StreakDetailsScreen() {
             </>
           ) : (
             <>
-              {/* Level Progress Content */}
-              <Text
-                style={[
-                  styles.levelProgressTitle,
-                  { color: Colors[colorScheme ?? "light"].text },
-                ]}
-              >
-                Level Progress
-              </Text>
+              {/* Level Progress Content - Only show if level system is enabled */}
+              {levelSettings?.enabled ? (
+                <>
+                  <Text
+                    style={[
+                      styles.levelProgressTitle,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    Level Progress
+                  </Text>
 
-              {/* Level Cards Container */}
-              <View
-                style={[
-                  styles.levelCardsContainer,
-                  { backgroundColor: isDark ? "#0F1E2E" : "#E3F2FD" },
-                ]}
-              >
+                  {/* Level Cards Container */}
+                  <View
+                    style={[
+                      styles.levelCardsContainer,
+                      { backgroundColor: isDark ? "#0F1E2E" : "#E3F2FD" },
+                    ]}
+                  >
                 {/* Advanced Level */}
                 <View style={styles.levelItem}>
                   <View style={styles.levelIconWrapper}>
@@ -1361,6 +1363,41 @@ export default function StreakDetailsScreen() {
                   </View>
                 </View>
               </View>
+                </>
+              ) : (
+                <View
+                  style={[
+                    styles.disabledLevelContainer,
+                    {
+                      backgroundColor: isDark
+                        ? "#1C1C1E"
+                        : "#F5F5F5",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="information-circle"
+                    size={48}
+                    color={isDark ? "#8E9BAE" : "#999"}
+                  />
+                  <Text
+                    style={[
+                      styles.disabledLevelText,
+                      { color: Colors[colorScheme ?? "light"].text },
+                    ]}
+                  >
+                    Level System Disabled
+                  </Text>
+                  <Text
+                    style={[
+                      styles.disabledLevelSubText,
+                      { color: isDark ? "#8E9BAE" : "#666" },
+                    ]}
+                  >
+                    Enable levels in the settings to see your progress towards different adhkar levels.
+                  </Text>
+                </View>
+              )}
             </>
           )}
         </ScrollView>
@@ -1836,4 +1873,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "flex-start",
   },
+  disabledLevelContainer: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    marginBottom: 40,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  disabledLevelText: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 12,
+    textAlign: "center",
+  },
+  disabledLevelSubText: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });
+

@@ -170,6 +170,8 @@ export default function LocationDetailScreen() {
     setLatitude(place.latitude);
     setLongitude(place.longitude);
     setHasSelectedLocation(true);
+    // Automatically open map modal for fine-tuning, same as "Locate on Map"
+    setShowMapModal(true);
   };
 
   // Handle map region changes (dragging)
@@ -560,9 +562,9 @@ export default function LocationDetailScreen() {
                 </View>
                 <Slider
                   style={styles.slider}
-                  minimumValue={50}
+                  minimumValue={40}
                   maximumValue={500}
-                  step={10}
+                  step={5}
                   value={radius}
                   onValueChange={setRadius}
                   minimumTrackTintColor={categoryColors[category]}
